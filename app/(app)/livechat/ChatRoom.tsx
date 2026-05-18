@@ -227,26 +227,38 @@ export function ChatRoom() {
 
   return (
     <>
-      <header className="border-b border-foreground/10 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="font-semibold">Live chat</h1>
-          <p className="text-xs text-zinc-500">We typically reply within a few minutes</p>
+      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] flex items-center justify-center font-bold font-[family-name:var(--font-display)]">
+          K
         </div>
-        <a href="/" className="text-sm text-zinc-500 hover:underline">Home</a>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-[var(--text-hi)] text-sm">k8event 客服</h1>
+          <p className="text-[11px] text-[var(--pitch-400)] flex items-center gap-1.5">
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-[var(--pitch-500)]"
+              style={{ animation: "pulse-dot 1.6s ease-in-out infinite" }}
+            />
+            在线 · 通常几分钟内回复
+          </p>
+        </div>
       </header>
 
       {error && (
-        <div className="px-4 py-2 text-sm text-red-600 bg-red-500/10 flex items-center justify-between">
+        <div className="px-4 py-2 text-xs text-[var(--crimson-400)] bg-[var(--crimson-500)]/10 border-b border-[var(--crimson-500)]/30 flex items-center justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="text-xs underline">
-            dismiss
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-[11px] underline hover:text-[var(--crimson-500)]"
+          >
+            关闭
           </button>
         </div>
       )}
 
       {!session ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-zinc-500">
-          Connecting…
+        <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-lo)]">
+          连接中…
         </div>
       ) : (
         <MessageList messages={messages} perspective="guest" />

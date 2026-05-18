@@ -9,7 +9,6 @@ export function ThumbStrip({
 }: {
   onPick: (image: LocalImage) => void | Promise<void>;
 }) {
-  // Defer DB access to client (after mount) to avoid Dexie touching IndexedDB during SSR.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -26,7 +25,7 @@ export function ThumbStrip({
   if (!images || images.length === 0) return null;
 
   return (
-    <div className="px-3 py-2 border-b border-foreground/10 flex gap-2 overflow-x-auto">
+    <div className="px-3 py-2 border-b border-[var(--border-subtle)] flex gap-2 overflow-x-auto bg-[var(--bg-elevated)]">
       {images.map((img) => (
         <ThumbButton
           key={img.id}
@@ -70,18 +69,18 @@ function ThumbButton({
       type="button"
       onClick={onPick}
       disabled={busy}
-      className="relative h-14 w-14 flex-shrink-0 rounded-md overflow-hidden border border-foreground/10 hover:border-foreground/40 disabled:opacity-60"
-      title={uploading ? "Uploading…" : "Send this image"}
+      className="relative h-14 w-14 flex-shrink-0 rounded-md overflow-hidden border border-[var(--border-strong)] hover:border-[var(--gold-500)]/60 disabled:opacity-60 transition"
+      title={uploading ? "上传中…" : "发送这张图"}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="h-full w-full bg-foreground/[0.06]" />
+        <div className="h-full w-full bg-[var(--bg-raised)]" />
       )}
       {(uploading || busy) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-[10px]">
-          {busy ? "Sending" : "Up…"}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-[10px]">
+          {busy ? "发送" : "上传"}
         </div>
       )}
     </button>

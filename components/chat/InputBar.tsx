@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
 
 export function InputBar({
   onSendText,
@@ -18,7 +19,6 @@ export function InputBar({
   const [text, setText] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // When parent pushes a prefill (e.g. quick reply chip tapped), set it and focus.
   useEffect(() => {
     if (prefill === undefined || prefill === "") return;
     setText(prefill);
@@ -40,9 +40,9 @@ export function InputBar({
   }
 
   return (
-    <div className="border-t border-foreground/10 bg-background">
+    <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
       {topSlot}
-      <div className="flex items-end gap-2 px-3 py-2">
+      <div className="flex items-end gap-2 px-3 py-2.5">
         {leftSlot}
         <textarea
           ref={taRef}
@@ -55,17 +55,18 @@ export function InputBar({
             }
           }}
           rows={1}
-          placeholder="Type a message…"
+          placeholder="输入消息…"
           disabled={disabled}
-          className="flex-1 resize-none max-h-32 min-h-[40px] px-3 py-2 rounded-2xl border border-foreground/15 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20 disabled:opacity-60"
+          className="flex-1 resize-none max-h-32 min-h-[40px] px-3 py-2 rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-raised)] text-sm text-[var(--text-hi)] placeholder:text-[var(--text-lo)] focus:outline-none focus:border-[var(--gold-500)]/60 disabled:opacity-60"
         />
         <button
           type="button"
           onClick={trySend}
           disabled={disabled || !text.trim()}
-          className="h-10 px-4 rounded-full bg-foreground text-background text-sm font-medium disabled:opacity-50"
+          aria-label="发送"
+          className="h-10 w-10 rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] flex items-center justify-center hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 transition"
         >
-          Send
+          <Send size={16} />
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Camera, Image as ImageIcon, Paperclip, Plus } from "lucide-react";
 
 export function AttachMenu({
   onFiles,
@@ -27,24 +28,30 @@ export function AttachMenu({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className="h-10 w-10 rounded-full border border-foreground/15 flex items-center justify-center text-lg disabled:opacity-60"
-        aria-label="Attach"
+        className="h-10 w-10 rounded-full border border-[var(--border-strong)] bg-[var(--bg-raised)] flex items-center justify-center text-[var(--text-mid)] hover:border-[var(--gold-500)]/60 hover:text-[var(--gold-300)] disabled:opacity-60 transition"
+        aria-label="附件"
       >
-        +
+        <Plus size={18} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-12 left-0 z-20 w-48 rounded-lg border border-foreground/10 bg-background shadow-lg overflow-hidden">
+          <div className="absolute bottom-12 left-0 z-20 w-44 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] shadow-[var(--shadow-card)] overflow-hidden">
             <MenuItem
-              label="📷  Camera"
+              icon={<Camera size={16} />}
+              label="拍照"
               onClick={() => cameraRef.current?.click()}
             />
             <MenuItem
-              label="🖼️  Gallery (multi)"
+              icon={<ImageIcon size={16} />}
+              label="相册(多选)"
               onClick={() => galleryRef.current?.click()}
             />
-            <MenuItem label="📎  File" onClick={() => fileRef.current?.click()} />
+            <MenuItem
+              icon={<Paperclip size={16} />}
+              label="文件"
+              onClick={() => fileRef.current?.click()}
+            />
           </div>
         </>
       )}
@@ -70,13 +77,22 @@ export function AttachMenu({
   );
 }
 
-function MenuItem({ label, onClick }: { label: string; onClick: () => void }) {
+function MenuItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full px-4 py-3 text-left text-sm hover:bg-foreground/[0.06] flex items-center gap-2"
+      className="w-full px-4 py-3 text-left text-sm text-[var(--text-hi)] hover:bg-[var(--bg-raised)] flex items-center gap-2.5 transition"
     >
+      <span className="text-[var(--gold-300)]">{icon}</span>
       {label}
     </button>
   );
