@@ -1,16 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "k8event — World Cup Token Activity",
-  description: "World Cup token-guessing activity with live customer support.",
+  title: "k8event — 世界杯竞猜活动",
+  description: "世界杯竞猜 Token 活动 + 内建客服支持。",
 };
 
 export const viewport: Viewport = {
@@ -19,7 +26,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0F14" },
   ],
 };
 
@@ -29,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="bg-background text-foreground min-h-full flex flex-col font-sans">
+    <html lang="zh-CN" className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         {children}
         <Toaster richColors closeButton position="top-center" />
       </body>

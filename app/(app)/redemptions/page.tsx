@@ -25,7 +25,7 @@ export default async function MyRedemptionsPage() {
 
       {!rows?.length ? (
         <p className="text-zinc-500">
-          No redemptions yet. Visit the <Link href="/shop" className="underline">shop</Link>.
+          还没有兑换记录。去 <Link href="/reward" className="underline">奖励商城</Link> 看看。
         </p>
       ) : (
         <ul className="space-y-3">

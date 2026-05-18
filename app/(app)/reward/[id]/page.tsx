@@ -30,7 +30,7 @@ export default async function ShopItemPage(props: { params: Promise<{ id: string
 
   return (
     <main className="p-6 max-w-3xl mx-auto space-y-6">
-      <Link href="/shop" className="text-sm text-zinc-500 hover:underline">← Shop</Link>
+      <Link href="/reward" className="text-sm text-zinc-500 hover:underline">← 奖励商城</Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="aspect-square rounded-lg bg-foreground/[0.04] overflow-hidden">

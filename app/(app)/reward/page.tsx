@@ -40,7 +40,7 @@ export default async function ShopPage() {
             return (
               <Link
                 key={it.id}
-                href={`/shop/${it.id}`}
+                href={`/reward/${it.id}`}
                 className="block rounded-lg border border-foreground/10 hover:border-foreground/30 transition-colors overflow-hidden"
               >
                 <div className="aspect-[4/3] bg-foreground/[0.04] overflow-hidden">

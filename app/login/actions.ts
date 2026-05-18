@@ -33,7 +33,7 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
   if (role === "admin" || role === "agent") {
     redirect("/admin");
   }
-  redirect("/dashboard");
+  redirect("/event");
 }
 
 export async function signOutAction(): Promise<void> {
