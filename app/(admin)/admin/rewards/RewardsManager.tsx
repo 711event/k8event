@@ -37,7 +37,7 @@ export function RewardsManager({ items }: { items: Item[] }) {
 
   return (
     <>
-      <section className="rounded-lg border border-foreground/10 p-5 space-y-3">
+      <section className="rounded-lg border border-zinc-200 p-5 space-y-3">
         <h2 className="text-lg font-medium">Add reward</h2>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
           <Field name="name" label="Name" placeholder="e.g. Cash voucher" className="md:col-span-2" />
@@ -48,16 +48,16 @@ export function RewardsManager({ items }: { items: Item[] }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-10 rounded-md bg-foreground text-background font-medium disabled:opacity-60"
+            className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
             {pending ? "Saving…" : "Create"}
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Item</th>
               <th className="px-4 py-3 font-medium text-right">Cost</th>
@@ -66,7 +66,7 @@ export function RewardsManager({ items }: { items: Item[] }) {
               <th className="px-4 py-3 font-medium w-32"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {items.length === 0 ? (
               <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">No rewards yet.</td></tr>
             ) : (
@@ -117,7 +117,7 @@ function RewardRow({ item }: { item: Item }) {
           className={
             "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium disabled:opacity-60 " +
             (item.is_active
-              ? "bg-green-500/15 text-green-600 dark:text-green-400"
+              ? "bg-green-500/15 text-green-600"
               : "bg-zinc-500/15 text-zinc-500")
           }
         >

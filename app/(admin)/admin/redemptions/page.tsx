@@ -5,7 +5,7 @@ import { formatMalaysia } from "@/lib/time/malaysia";
 import { RedemptionActions } from "./RedemptionActions";
 import type { RedemptionStatus } from "@/lib/supabase/types";
 
-export const metadata = { title: "Redemptions · k8event admin" };
+export const metadata = { title: "兑换审核 · 管理后台" };
 
 const tabs: { key: RedemptionStatus | "all"; label: string }[] = [
   { key: "pending", label: "Pending" },
@@ -36,10 +36,10 @@ export default async function RedemptionsPage(props: {
   const { data: rows } = await query;
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6 max-w-5xl">
       <h1 className="text-2xl font-semibold">Redemption requests</h1>
 
-      <div className="flex gap-2 border-b border-foreground/10">
+      <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
           <Link
             key={t.key}
@@ -56,9 +56,9 @@ export default async function RedemptionsPage(props: {
         ))}
       </div>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Requested (GMT+8)</th>
               <th className="px-4 py-3 font-medium">Player</th>
@@ -68,7 +68,7 @@ export default async function RedemptionsPage(props: {
               <th className="px-4 py-3 font-medium w-72">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {!rows?.length ? (
               <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">No redemptions.</td></tr>
             ) : (
@@ -93,7 +93,7 @@ export default async function RedemptionsPage(props: {
           </tbody>
         </table>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -101,8 +101,8 @@ function StatusChip({ status }: { status: RedemptionStatus }) {
   const map: Record<RedemptionStatus, string> = {
     pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     approved: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-    fulfilled: "bg-green-500/15 text-green-600 dark:text-green-400",
-    rejected: "bg-red-500/15 text-red-600 dark:text-red-400",
+    fulfilled: "bg-green-500/15 text-green-600",
+    rejected: "bg-red-500/15 text-red-600",
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status]}`}>

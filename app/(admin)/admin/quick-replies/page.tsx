@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { QuickRepliesManager } from "./QuickRepliesManager";
 
-export const metadata = { title: "Quick replies · k8event admin" };
+export const metadata = { title: "快速回复 · 管理后台" };
 
 export default async function QuickRepliesPage() {
   await requireRole(["admin", "agent"]);
@@ -14,7 +14,7 @@ export default async function QuickRepliesPage() {
     .order("title");
 
   return (
-    <main className="p-6 max-w-3xl mx-auto space-y-8">
+    <div className="space-y-8 max-w-3xl">
       <div>
         <h1 className="text-2xl font-semibold">Quick replies</h1>
         <p className="text-sm text-zinc-500 mt-1">
@@ -23,6 +23,6 @@ export default async function QuickRepliesPage() {
         </p>
       </div>
       <QuickRepliesManager replies={replies ?? []} />
-    </main>
+    </div>
   );
 }

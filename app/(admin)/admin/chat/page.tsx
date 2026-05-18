@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMalaysia } from "@/lib/time/malaysia";
 import type { ChatThreadStatus } from "@/lib/supabase/types";
 
-export const metadata = { title: "Chat inbox · k8event admin" };
+export const metadata = { title: "客服会话 · 管理后台" };
 
 const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
   { key: "open", label: "Open" },
@@ -34,10 +34,10 @@ export default async function ChatInboxPage(props: {
   const { data: threads } = await query;
 
   return (
-    <main className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <h1 className="text-2xl font-semibold">Chat inbox</h1>
 
-      <div className="flex gap-2 border-b border-foreground/10">
+      <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
           <Link
             key={t.key}
@@ -54,7 +54,7 @@ export default async function ChatInboxPage(props: {
         ))}
       </div>
 
-      <ul className="divide-y divide-foreground/10 rounded-lg border border-foreground/10">
+      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200">
         {!threads?.length ? (
           <li className="px-4 py-6 text-zinc-500">No threads.</li>
         ) : (
@@ -64,7 +64,7 @@ export default async function ChatInboxPage(props: {
               <li key={t.id}>
                 <Link
                   href={`/admin/chat/${t.id}`}
-                  className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-foreground/[0.03]"
+                  className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-zinc-50"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">
@@ -96,6 +96,6 @@ export default async function ChatInboxPage(props: {
           })
         )}
       </ul>
-    </main>
+    </div>
   );
 }

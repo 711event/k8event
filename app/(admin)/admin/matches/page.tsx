@@ -5,7 +5,7 @@ import { formatMalaysia } from "@/lib/time/malaysia";
 import { CreateMatchForm } from "./CreateMatchForm";
 import { StatusBadge } from "./StatusBadge";
 
-export const metadata = { title: "Matches · k8event admin" };
+export const metadata = { title: "比赛 · 管理后台" };
 
 export default async function MatchesPage() {
   await requireRole("admin");
@@ -23,13 +23,13 @@ export default async function MatchesPage() {
   ]);
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Matches</h1>
         <span className="text-sm text-zinc-500">{matches?.length ?? 0} total</span>
       </div>
 
-      <section className="rounded-lg border border-foreground/10 p-5">
+      <section className="rounded-lg border border-zinc-200 p-5">
         <h2 className="text-lg font-medium mb-3">Create match</h2>
         {(!teams || teams.length < 2) ? (
           <p className="text-sm text-zinc-500">
@@ -41,9 +41,9 @@ export default async function MatchesPage() {
         )}
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Kickoff (GMT+8)</th>
               <th className="px-4 py-3 font-medium">Match</th>
@@ -52,7 +52,7 @@ export default async function MatchesPage() {
               <th className="px-4 py-3 font-medium w-20"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {!matches?.length ? (
               <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">No matches yet.</td></tr>
             ) : (
@@ -83,6 +83,6 @@ export default async function MatchesPage() {
           </tbody>
         </table>
       </section>
-    </main>
+    </div>
   );
 }

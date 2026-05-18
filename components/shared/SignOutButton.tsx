@@ -12,10 +12,10 @@ export function SignOutButton({ className }: { className?: string }) {
       disabled={pending}
       className={
         className ??
-        "text-sm text-zinc-600 dark:text-zinc-400 hover:text-foreground transition-colors disabled:opacity-60"
+        "text-sm text-zinc-600 hover:text-zinc-900 transition-colors disabled:opacity-60"
       }
     >
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? "退出中…" : "退出"}
     </button>
   );
 }

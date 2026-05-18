@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMalaysia } from "@/lib/time/malaysia";
 import { AgentChat } from "./AgentChat";
 
-export const metadata = { title: "Conversation · k8event admin" };
+export const metadata = { title: "会话 · 管理后台" };
 
 export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
   const user = await requireRole(["admin", "agent"]);
@@ -38,8 +38,8 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
   const claimer = Array.isArray(thread.claimer) ? thread.claimer[0] : thread.claimer;
 
   return (
-    <main className="flex flex-col h-[calc(100vh-56px)] max-w-3xl w-full mx-auto">
-      <header className="border-b border-foreground/10 px-4 py-3 flex items-center justify-between">
+    <div className="flex flex-col h-[calc(100vh-56px-2rem)] max-w-3xl w-full mx-auto bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <header className="border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
         <div>
           <Link href="/admin/chat" className="text-xs text-zinc-500 hover:underline">
             ← Inbox
@@ -72,6 +72,6 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
         }))}
         quickReplies={quickReplies ?? []}
       />
-    </main>
+    </div>
   );
 }

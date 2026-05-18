@@ -29,7 +29,7 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
 
   return (
     <>
-      <section className="rounded-lg border border-foreground/10 p-5">
+      <section className="rounded-lg border border-zinc-200 p-5">
         <h2 className="text-lg font-medium mb-3">Add team</h2>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
           <Field name="name" label="Name" placeholder="e.g. Argentina" />
@@ -38,16 +38,16 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-10 rounded-md bg-foreground text-background font-medium disabled:opacity-60"
+            className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
             {pending ? "Saving…" : "Add"}
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Code</th>
@@ -55,7 +55,7 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
               <th className="px-4 py-3 font-medium w-24"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {teams.length === 0 ? (
               <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">No teams yet.</td></tr>
             ) : (

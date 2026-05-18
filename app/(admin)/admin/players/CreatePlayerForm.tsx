@@ -26,12 +26,12 @@ export function CreatePlayerForm() {
       <button
         type="submit"
         disabled={pending}
-        className="h-10 rounded-md bg-foreground text-background font-medium disabled:opacity-60"
+        className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
       >
         {pending ? "Creating…" : "Create"}
       </button>
       {state && "error" in state && (
-        <p className="sm:col-span-4 text-sm text-red-600 dark:text-red-400">{state.error}</p>
+        <p className="sm:col-span-4 text-sm text-red-600">{state.error}</p>
       )}
     </form>
   );

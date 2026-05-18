@@ -28,7 +28,7 @@ export function QuickRepliesManager({ replies }: { replies: QR[] }) {
 
   return (
     <>
-      <section className="rounded-lg border border-foreground/10 p-5 space-y-3">
+      <section className="rounded-lg border border-zinc-200 p-5 space-y-3">
         <h2 className="text-lg font-medium">Add</h2>
         <form ref={formRef} action={formAction} className="space-y-3">
           <label className="flex flex-col gap-1.5 text-sm">
@@ -54,14 +54,14 @@ export function QuickRepliesManager({ replies }: { replies: QR[] }) {
           <button
             type="submit"
             disabled={pending}
-            className="h-10 px-4 rounded-md bg-foreground text-background font-medium text-sm disabled:opacity-60"
+            className="h-10 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium text-sm disabled:opacity-60"
           >
             {pending ? "Saving…" : "Add"}
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border border-foreground/10 divide-y divide-foreground/10">
+      <section className="rounded-lg border border-zinc-200 divide-y divide-zinc-200">
         {replies.length === 0 ? (
           <div className="px-4 py-6 text-zinc-500">No quick replies yet.</div>
         ) : (
@@ -78,7 +78,7 @@ function QRRow({ qr }: { qr: QR }) {
     <div className="px-4 py-3 flex items-start gap-4">
       <div className="flex-1 min-w-0">
         <div className="font-mono text-sm">{qr.title}</div>
-        <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 whitespace-pre-wrap break-words">
+        <div className="text-sm text-zinc-600 mt-0.5 whitespace-pre-wrap break-words">
           {qr.body}
         </div>
       </div>

@@ -91,7 +91,7 @@ export function MatchControls({
       </div>
 
       {settleable && (
-        <div className="rounded-md border border-foreground/10 p-4 space-y-3">
+        <div className="rounded-md border border-zinc-200 p-4 space-y-3">
           <div className="text-sm font-medium">Enter result and settle</div>
           <div className="flex flex-wrap gap-2">
             <ResultChoice value="home" current={chosen} onPick={setChosen} label={`Home: ${homeName}`} />
@@ -106,7 +106,7 @@ export function MatchControls({
               if (!confirm(`Settle match with result "${chosen}"? This awards tokens to winning predictions and cannot be undone.`)) return;
               run(() => settleMatchAction(id, chosen as Result), "Match settled");
             }}
-            className="h-10 px-5 rounded-md bg-foreground text-background text-sm font-medium disabled:opacity-60"
+            className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium disabled:opacity-60"
           >
             {pending ? "Settling…" : "Settle match"}
           </button>

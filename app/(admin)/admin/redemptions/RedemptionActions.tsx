@@ -44,7 +44,7 @@ export function RedemptionActions({
           type="button"
           disabled={pending}
           onClick={() => decide("fulfilled")}
-          className="h-8 px-3 rounded-md bg-foreground text-background text-xs font-medium disabled:opacity-60"
+          className="h-8 px-3 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60"
         >
           Mark fulfilled
         </button>

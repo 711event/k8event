@@ -162,7 +162,7 @@ export function RechargeImporter() {
             type="button"
             onClick={runImport}
             disabled={pending || (summary.ok + summary.overwrite === 0)}
-            className="h-10 px-5 rounded-md bg-foreground text-background font-medium disabled:opacity-60"
+            className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
             {pending ? "Importing…" : `Import ${summary.ok + summary.overwrite} rows`}
           </button>
@@ -174,10 +174,10 @@ export function RechargeImporter() {
 
 function Chip({ color, label }: { color: "green" | "amber" | "zinc" | "red"; label: string }) {
   const map = {
-    green: "bg-green-500/15 text-green-600 dark:text-green-400",
+    green: "bg-green-500/15 text-green-600",
     amber: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     zinc: "bg-zinc-500/15 text-zinc-500",
-    red: "bg-red-500/15 text-red-600 dark:text-red-400",
+    red: "bg-red-500/15 text-red-600",
   };
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[color]}`}>{label}</span>;
 }
@@ -185,12 +185,12 @@ function Chip({ color, label }: { color: "green" | "amber" | "zinc" | "red"; lab
 function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
   if (!rows.length) return null;
   return (
-    <details className="rounded-md border border-foreground/10">
+    <details className="rounded-md border border-zinc-200">
       <summary className="px-3 py-2 cursor-pointer text-sm font-medium capitalize">
         {group.replace("_", " ")} ({rows.length})
       </summary>
       <table className="w-full text-sm">
-        <thead className="bg-foreground/[0.03] text-left">
+        <thead className="bg-zinc-50 text-left">
           <tr>
             <th className="px-3 py-2 font-medium">Date</th>
             <th className="px-3 py-2 font-medium">Username</th>
@@ -198,7 +198,7 @@ function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
             <th className="px-3 py-2 font-medium text-right">Existing</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-foreground/10">
+        <tbody className="divide-y divide-zinc-200">
           {rows.slice(0, 50).map((r, i) => (
             <tr key={i}>
               <td className="px-3 py-1.5 text-zinc-500">{r.date}</td>

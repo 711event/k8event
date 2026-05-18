@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMalaysia } from "@/lib/time/malaysia";
 import { CreatePlayerForm } from "./CreatePlayerForm";
 
-export const metadata = { title: "Players · k8event admin" };
+export const metadata = { title: "玩家管理 · 管理后台" };
 
 export default async function PlayersPage() {
   await requireRole("admin");
@@ -17,27 +17,27 @@ export default async function PlayersPage() {
     .limit(200);
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Players</h1>
         <span className="text-sm text-zinc-500">{players?.length ?? 0} total</span>
       </div>
 
-      <section className="rounded-lg border border-foreground/10 p-5">
+      <section className="rounded-lg border border-zinc-200 p-5">
         <h2 className="text-lg font-medium mb-3">Create new player</h2>
         <CreatePlayerForm />
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Username</th>
               <th className="px-4 py-3 font-medium">Display name</th>
               <th className="px-4 py-3 font-medium">Created (GMT+8)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {error ? (
               <tr><td colSpan={3} className="px-4 py-6 text-red-500">{error.message}</td></tr>
             ) : !players?.length ? (
@@ -54,6 +54,6 @@ export default async function PlayersPage() {
           </tbody>
         </table>
       </section>
-    </main>
+    </div>
   );
 }

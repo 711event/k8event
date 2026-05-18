@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { malaysiaDateString } from "@/lib/time/malaysia";
 import { RechargeImporter } from "./RechargeImporter";
 
-export const metadata = { title: "Recharge import · k8event admin" };
+export const metadata = { title: "充值导入 · 管理后台" };
 
 export default async function RechargePage(props: {
   searchParams: Promise<{ date?: string }>;
@@ -24,10 +24,10 @@ export default async function RechargePage(props: {
   const eligibleCount = (todays ?? []).filter((r) => Number(r.amount) >= 500).length;
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="space-y-8 max-w-5xl">
       <h1 className="text-2xl font-semibold">Daily recharge import</h1>
 
-      <section className="rounded-lg border border-foreground/10 p-5 space-y-2">
+      <section className="rounded-lg border border-zinc-200 p-5 space-y-2">
         <h2 className="text-lg font-medium">Import CSV</h2>
         <p className="text-sm text-zinc-500">
           Columns required: <code>date,username,amount</code> (header row optional). Dates are
@@ -36,22 +36,22 @@ export default async function RechargePage(props: {
         <RechargeImporter />
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-foreground/10">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200">
           <h2 className="text-lg font-medium">Recharges for {date}</h2>
           <span className="text-sm text-zinc-500">
             {todays?.length ?? 0} rows · {eligibleCount} eligible (≥ 500)
           </span>
         </div>
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Player</th>
               <th className="px-4 py-3 font-medium text-right">Amount</th>
               <th className="px-4 py-3 font-medium">Eligible?</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {!todays?.length ? (
               <tr><td colSpan={3} className="px-4 py-6 text-zinc-500">No recharges for this date.</td></tr>
             ) : (
@@ -70,7 +70,7 @@ export default async function RechargePage(props: {
                         className={
                           "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
                           (eligible
-                            ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                            ? "bg-green-500/15 text-green-600"
                             : "bg-zinc-500/15 text-zinc-500")
                         }
                       >
@@ -84,6 +84,6 @@ export default async function RechargePage(props: {
           </tbody>
         </table>
       </section>
-    </main>
+    </div>
   );
 }

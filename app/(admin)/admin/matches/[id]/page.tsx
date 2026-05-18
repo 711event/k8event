@@ -6,7 +6,7 @@ import { formatMalaysia } from "@/lib/time/malaysia";
 import { StatusBadge } from "../StatusBadge";
 import { MatchControls } from "./MatchControls";
 
-export const metadata = { title: "Match · k8event admin" };
+export const metadata = { title: "比赛详情 · 管理后台" };
 
 export default async function MatchDetailPage(props: { params: Promise<{ id: string }> }) {
   await requireRole("admin");
@@ -33,7 +33,7 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
     .order("submitted_at", { ascending: false });
 
   return (
-    <main className="p-6 max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8 max-w-4xl">
       <div>
         <Link href="/admin/matches" className="text-sm text-zinc-500 hover:underline">
           ← All matches
@@ -50,7 +50,7 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
         </div>
       </div>
 
-      <section className="rounded-lg border border-foreground/10 p-5">
+      <section className="rounded-lg border border-zinc-200 p-5">
         <h2 className="text-lg font-medium mb-3">Controls</h2>
         <MatchControls
           id={match.id}
@@ -60,12 +60,12 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
         />
       </section>
 
-      <section className="rounded-lg border border-foreground/10 overflow-x-auto">
-        <h2 className="px-5 py-3 text-lg font-medium border-b border-foreground/10">
+      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
+        <h2 className="px-5 py-3 text-lg font-medium border-b border-zinc-200">
           Predictions ({predictions?.length ?? 0})
         </h2>
         <table className="w-full text-sm">
-          <thead className="bg-foreground/[0.03] text-left">
+          <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Player</th>
               <th className="px-4 py-3 font-medium">Pick</th>
@@ -73,7 +73,7 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
               <th className="px-4 py-3 font-medium">Awarded</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-foreground/10">
+          <tbody className="divide-y divide-zinc-200">
             {!predictions?.length ? (
               <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">No predictions yet.</td></tr>
             ) : (
@@ -94,6 +94,6 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
           </tbody>
         </table>
       </section>
-    </main>
+    </div>
   );
 }

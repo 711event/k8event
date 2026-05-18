@@ -207,13 +207,13 @@ export function AgentChat({
 
   return (
     <>
-      <div className="px-4 py-2 border-b border-foreground/10 flex flex-wrap items-center gap-2">
+      <div className="px-4 py-2 border-b border-zinc-200 flex flex-wrap items-center gap-2">
         {!claimedBy && status !== "closed" && (
           <button
             type="button"
             disabled={pending}
             onClick={() => doClaim(true)}
-            className="h-8 px-3 rounded-md bg-foreground text-background text-xs font-medium disabled:opacity-60"
+            className="h-8 px-3 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60"
           >
             Claim
           </button>
@@ -253,13 +253,13 @@ export function AgentChat({
           <>
             <ThumbStrip onPick={(img) => sendImage(img.id)} />
             {quickReplies.length > 0 && (
-              <div className="px-3 py-2 border-b border-foreground/10 flex gap-2 overflow-x-auto">
+              <div className="px-3 py-2 border-b border-zinc-200 flex gap-2 overflow-x-auto">
                 {quickReplies.map((q) => (
                   <button
                     key={q.id}
                     type="button"
                     onClick={() => setPrefill(q.body)}
-                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-foreground/[0.06] hover:bg-foreground/[0.12] text-xs font-medium"
+                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-zinc-100 hover:bg-foreground/[0.12] text-xs font-medium"
                     title={q.body.slice(0, 80)}
                   >
                     {q.title}

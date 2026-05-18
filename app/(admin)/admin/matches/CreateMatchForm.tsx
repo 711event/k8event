@@ -47,7 +47,7 @@ export function CreateMatchForm({ teams }: { teams: { id: string; name: string }
       <button
         type="submit"
         disabled={pending}
-        className="h-10 rounded-md bg-foreground text-background font-medium disabled:opacity-60"
+        className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
       >
         {pending ? "Saving…" : "Create"}
       </button>
