@@ -12,27 +12,28 @@ export type RedeemState = { ok: true; redemptionId: string } | { error: string }
 export async function redeemAction(itemId: string): Promise<RedeemState> {
   await requireRole("player");
   const parsed = idSchema.safeParse(itemId);
-  if (!parsed.success) return { error: "Invalid item id" };
+  if (!parsed.success) return { error: "奖品 ID 无效" };
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("request_redemption", { p_item: parsed.data });
 
   if (error) {
     if (/Insufficient tokens/i.test(error.message)) {
-      return { error: "You don't have enough tokens." };
+      return { error: "Token 余额不足。" };
     }
     if (/out of stock/i.test(error.message)) {
-      return { error: "This item is out of stock." };
+      return { error: "本奖品已售罄。" };
     }
     if (/not available/i.test(error.message)) {
-      return { error: "This item is no longer available." };
+      return { error: "本奖品已下架。" };
     }
     return { error: error.message };
   }
 
-  revalidatePath("/shop");
-  revalidatePath("/shop/" + parsed.data);
+  revalidatePath("/reward");
+  revalidatePath("/reward/" + parsed.data);
   revalidatePath("/redemptions");
   revalidatePath("/tokens");
+  revalidatePath("/event");
   return { ok: true, redemptionId: data as string };
 }

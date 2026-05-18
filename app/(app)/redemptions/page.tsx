@@ -1,14 +1,37 @@
 import Link from "next/link";
+import { CheckCircle2, Clock, Truck, XCircle, Gift } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMalaysia } from "@/lib/time/malaysia";
+import { SectionHeader } from "@/components/player/SectionHeader";
+import { EmptyState } from "@/components/player/EmptyState";
+import { Chip } from "@/components/player/Chip";
 import type { RedemptionStatus } from "@/lib/supabase/types";
 
-export const metadata = { title: "My redemptions · k8event" };
+export const metadata = { title: "兑换记录 · k8event" };
+export const dynamic = "force-dynamic";
 
 export default async function MyRedemptionsPage() {
   const user = await getCurrentUser();
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="space-y-5">
+        <SectionHeader title="兑换记录" />
+        <EmptyState
+          icon={<Gift size={28} />}
+          title="登录后查看兑换记录"
+          action={
+            <Link
+              href="/login"
+              className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
+            >
+              去登录
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
   const supabase = await createSupabaseServerClient();
 
   const { data: rows } = await supabase
@@ -20,72 +43,154 @@ export default async function MyRedemptionsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <main className="p-6 max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">My redemptions</h1>
+    <div className="space-y-5">
+      <SectionHeader title="兑换记录" hint="奖励由客服线下发放" />
 
       {!rows?.length ? (
-        <p className="text-zinc-500">
-          还没有兑换记录。去 <Link href="/reward" className="underline">奖励商城</Link> 看看。
-        </p>
+        <EmptyState
+          icon={<Gift size={28} />}
+          title="还没有兑换记录"
+          body="去奖励中心看看心仪的奖品吧。"
+          action={
+            <Link
+              href="/reward"
+              className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
+            >
+              去兑换
+            </Link>
+          }
+        />
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-3">
           {rows.map((r) => {
             const item = Array.isArray(r.item) ? r.item[0] : r.item;
             return (
-              <li key={r.id} className="rounded-lg border border-foreground/10 p-4 flex items-center gap-4">
-                <div className="h-14 w-14 rounded bg-foreground/[0.04] overflow-hidden flex-shrink-0">
-                  {item?.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.image_url} alt="" className="h-full w-full object-cover" />
-                  ) : null}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{item?.name ?? "—"}</div>
-                  <div className="text-xs text-zinc-500">
-                    Requested {formatMalaysia(r.created_at)} · {r.cost_at_request} tokens
+              <li
+                key={r.id}
+                className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 rounded-[var(--radius-sm)] bg-[var(--bg-raised)] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    {item?.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <Gift size={22} className="text-[var(--text-lo)]" />
+                    )}
                   </div>
-                  <StatusTimeline status={r.status} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-semibold text-sm text-[var(--text-hi)] truncate">
+                        {item?.name ?? "—"}
+                      </div>
+                      <StatusBadge status={r.status} />
+                    </div>
+                    <div className="text-[11px] text-[var(--text-lo)] mt-0.5">
+                      {formatMalaysia(r.created_at, "yyyy-MM-dd HH:mm")} · 花费{" "}
+                      <span className="text-[var(--gold-300)] tabular-nums">
+                        {r.cost_at_request.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                <StatusTimeline status={r.status} />
+                {r.status === "rejected" && r.note && (
+                  <div className="mt-2 text-xs text-[var(--text-mid)] bg-[var(--bg-raised)] rounded px-3 py-2">
+                    备注:{r.note}
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
       )}
-    </main>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: RedemptionStatus }) {
+  if (status === "rejected") {
+    return (
+      <Chip variant="crimson" className="inline-flex items-center gap-1 flex-shrink-0">
+        <XCircle size={11} />
+        已拒绝
+      </Chip>
+    );
+  }
+  if (status === "fulfilled") {
+    return (
+      <Chip variant="pitch" className="inline-flex items-center gap-1 flex-shrink-0">
+        <CheckCircle2 size={11} />
+        已发放
+      </Chip>
+    );
+  }
+  if (status === "approved") {
+    return (
+      <Chip variant="azure" className="inline-flex items-center gap-1 flex-shrink-0">
+        <Truck size={11} />
+        已批准
+      </Chip>
+    );
+  }
+  return (
+    <Chip variant="gold" className="inline-flex items-center gap-1 flex-shrink-0">
+      <Clock size={11} />
+      待审核
+    </Chip>
   );
 }
 
 function StatusTimeline({ status }: { status: RedemptionStatus }) {
-  const steps: { key: RedemptionStatus; label: string }[] = [
-    { key: "pending", label: "Pending" },
-    { key: "approved", label: "Approved" },
-    { key: "fulfilled", label: "Fulfilled" },
-  ];
-
   if (status === "rejected") {
     return (
-      <div className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium">
-        Rejected · tokens refunded
+      <div className="mt-3 text-[11px] text-[var(--crimson-500)]">
+        Token 已自动退回到你的余额。
       </div>
     );
   }
-
+  const steps: { key: RedemptionStatus; label: string }[] = [
+    { key: "pending", label: "待审核" },
+    { key: "approved", label: "已批准" },
+    { key: "fulfilled", label: "已发放" },
+  ];
   const reachedIdx = steps.findIndex((s) => s.key === status);
 
   return (
-    <div className="mt-2 flex items-center gap-1.5 text-xs">
+    <div className="mt-3 flex items-center gap-2">
       {steps.map((s, i) => {
         const done = i <= reachedIdx;
+        const isCurrent = i === reachedIdx;
         return (
-          <div key={s.key} className="flex items-center gap-1.5">
-            <span
-              className={
-                "h-1.5 w-1.5 rounded-full " +
-                (done ? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-700")
-              }
-            />
-            <span className={done ? "text-foreground" : "text-zinc-500"}>{s.label}</span>
-            {i < steps.length - 1 && <span className="w-3 h-px bg-foreground/10" />}
+          <div key={s.key} className="flex items-center gap-2 flex-1">
+            <div className="flex flex-col items-center gap-1 flex-1">
+              <span
+                className={
+                  "h-2 w-2 rounded-full " +
+                  (done
+                    ? isCurrent
+                      ? "bg-[var(--gold-300)] shadow-[0_0_8px_var(--gold-500)]"
+                      : "bg-[var(--pitch-500)]"
+                    : "bg-[var(--border-strong)]")
+                }
+              />
+              <span
+                className={
+                  "text-[10px] " +
+                  (done ? "text-[var(--text-mid)] font-medium" : "text-[var(--text-lo)]")
+                }
+              >
+                {s.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className={
+                  "h-px flex-1 -mt-3 " +
+                  (i < reachedIdx ? "bg-[var(--pitch-500)]/40" : "bg-[var(--border-strong)]")
+                }
+              />
+            )}
           </div>
         );
       })}
