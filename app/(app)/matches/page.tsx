@@ -1,18 +1,27 @@
 import Link from "next/link";
+import { Trophy } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatMalaysia } from "@/lib/time/malaysia";
+import { MatchCard, type MatchCardData } from "@/components/player/MatchCard";
+import { SectionHeader } from "@/components/player/SectionHeader";
+import { EmptyState } from "@/components/player/EmptyState";
 
-export const metadata = { title: "Matches · k8event" };
+export const metadata = { title: "比赛 · k8event" };
+export const dynamic = "force-dynamic";
 
 type Tab = "open" | "live" | "finished";
 
 const tabs: { key: Tab; label: string }[] = [
-  { key: "open", label: "Open" },
-  { key: "live", label: "Locked / live" },
-  { key: "finished", label: "Finished" },
+  { key: "open", label: "可竞猜" },
+  { key: "live", label: "进行中" },
+  { key: "finished", label: "已结束" },
 ];
 
-export default async function PlayerMatchesPage(props: {
+function oneOrNull<T>(v: T | T[] | null | undefined): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? v[0] ?? null : v;
+}
+
+export default async function MatchesListPage(props: {
   searchParams: Promise<{ tab?: string }>;
 }) {
   const sp = await props.searchParams;
@@ -22,7 +31,7 @@ export default async function PlayerMatchesPage(props: {
   const query = supabase
     .from("matches")
     .select(
-      "id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)",
+      "id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name, logo_url), away:teams!matches_away_team_id_fkey(name, logo_url)",
     )
     .order("kickoff_at", { ascending: active !== "finished" });
 
@@ -31,56 +40,57 @@ export default async function PlayerMatchesPage(props: {
       ? await query.eq("status", "scheduled").gte("kickoff_at", new Date().toISOString())
       : active === "live"
         ? await query.in("status", ["locked"])
-        : await query.eq("status", "finished");
+        : await query.eq("status", "finished").limit(40);
+
+  const matches: MatchCardData[] = (data ?? []).map((m) => ({
+    ...m,
+    home: oneOrNull(m.home),
+    away: oneOrNull(m.away),
+  })) as MatchCardData[];
 
   return (
-    <main className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Matches</h1>
+    <div className="space-y-5">
+      <SectionHeader title="所有比赛" hint="世界杯赛程 · GMT+8 时间" />
+
+      <div className="inline-flex rounded-full bg-[var(--bg-raised)] p-1 border border-[var(--border-strong)]">
+        {tabs.map((t) => {
+          const isActive = active === t.key;
+          return (
+            <Link
+              key={t.key}
+              href={`/matches?tab=${t.key}`}
+              className={
+                "px-4 py-1.5 text-xs font-semibold rounded-full transition " +
+                (isActive
+                  ? "bg-[var(--bg-elevated)] text-[var(--gold-300)] shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset]"
+                  : "text-[var(--text-lo)] hover:text-[var(--text-mid)]")
+              }
+            >
+              {t.label}
+            </Link>
+          );
+        })}
       </div>
 
-      <div className="flex gap-2 border-b border-foreground/10">
-        {tabs.map((t) => (
-          <Link
-            key={t.key}
-            href={`/matches?tab=${t.key}`}
-            className={
-              "px-4 py-2 text-sm font-medium -mb-px border-b-2 " +
-              (active === t.key
-                ? "border-foreground text-foreground"
-                : "border-transparent text-zinc-500 hover:text-foreground")
-            }
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
-
-      <ul className="divide-y divide-foreground/10 rounded-lg border border-foreground/10">
-        {!data?.length ? (
-          <li className="px-4 py-6 text-zinc-500">No matches.</li>
-        ) : (
-          data.map((m) => {
-            const home = Array.isArray(m.home) ? m.home[0] : m.home;
-            const away = Array.isArray(m.away) ? m.away[0] : m.away;
-            return (
-              <li key={m.id}>
-                <Link href={`/matches/${m.id}`} className="flex items-center justify-between gap-4 px-4 py-4 hover:bg-foreground/[0.03]">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">
-                      {home?.name ?? "?"} <span className="text-zinc-500 mx-2">vs</span> {away?.name ?? "?"}
-                    </div>
-                    <div className="text-xs text-zinc-500 mt-0.5">
-                      {formatMalaysia(m.kickoff_at)} · {m.token_reward} tokens
-                    </div>
-                  </div>
-                  <span className="text-sm text-zinc-500">→</span>
-                </Link>
-              </li>
-            );
-          })
-        )}
-      </ul>
-    </main>
+      {matches.length === 0 ? (
+        <EmptyState
+          icon={<Trophy size={28} />}
+          title={
+            active === "open"
+              ? "暂无可竞猜比赛"
+              : active === "live"
+                ? "暂无进行中比赛"
+                : "暂无已结束比赛"
+          }
+          body="检查赛程或回头再来看看。"
+        />
+      ) : (
+        <div className="grid gap-3">
+          {matches.map((m) => (
+            <MatchCard key={m.id} match={m} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -21,7 +21,7 @@ export async function submitPredictionAction(
     matchId: formData.get("matchId"),
     pick: formData.get("pick"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "输入无效" };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("predictions").insert({
@@ -31,24 +31,24 @@ export async function submitPredictionAction(
   });
 
   if (error) {
-    // Map known DB trigger errors to friendly messages
     if (/Player not eligible/i.test(error.message)) {
-      return { error: "You need to recharge at least 500 today to predict." };
+      return { error: "今日充值未满 500,暂无法参与竞猜。" };
     }
     if (/already started/i.test(error.message)) {
-      return { error: "Kickoff has already passed for this match." };
+      return { error: "已超过开赛时间,无法再提交。" };
     }
     if (/not open for predictions/i.test(error.message)) {
-      return { error: "Predictions are closed for this match." };
+      return { error: "本场比赛已停止竞猜。" };
     }
     if (/duplicate key|already exists/i.test(error.message)) {
-      return { error: "You have already submitted a prediction for this match." };
+      return { error: "你已经预测过这场比赛了。" };
     }
     return { error: error.message };
   }
 
   revalidatePath(`/matches/${parsed.data.matchId}`);
   revalidatePath("/matches");
+  revalidatePath("/event");
   revalidatePath("/history");
   return { ok: true };
 }
