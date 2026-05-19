@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   MessageSquare,
   Zap,
+  LayoutGrid,
+  CalendarCheck,
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 
@@ -25,6 +27,8 @@ const iconMap = {
   ClipboardCheck,
   MessageSquare,
   Zap,
+  LayoutGrid,
+  CalendarCheck,
 };
 
 export type AdminNavItem = {

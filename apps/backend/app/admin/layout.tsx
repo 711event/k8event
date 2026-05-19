@@ -8,10 +8,10 @@ const adminNav: AdminNavItem[] = [
   { href: "/admin", label: "总览", icon: "LayoutDashboard" },
   { href: "/admin/players", label: "玩家管理", icon: "Users" },
   { href: "/admin/recharge", label: "充值导入", icon: "Upload" },
-  { href: "/admin/teams", label: "球队", icon: "Shield" },
-  { href: "/admin/matches", label: "比赛", icon: "Calendar" },
+  { href: "/admin/activities", label: "活动管理", icon: "LayoutGrid" },
   { href: "/admin/rewards", label: "奖品", icon: "Gift" },
   { href: "/admin/redemptions", label: "兑换审核", icon: "ClipboardCheck" },
+  { href: "/admin/checkins", label: "签到记录", icon: "CalendarCheck" },
   { href: "/admin/chat", label: "客服会话", icon: "MessageSquare" },
   { href: "/admin/quick-replies", label: "快速回复", icon: "Zap" },
 ];

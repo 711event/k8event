@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Coins, TrendingUp, ArrowDownRight, ArrowUpRight, Trophy, Gift } from "lucide-react";
+import { Coins, TrendingUp, ArrowDownRight, ArrowUpRight, Trophy, Gift, CalendarCheck } from "lucide-react";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia, malaysiaDateString } from "@k8event/shared/time/malaysia";
@@ -180,6 +180,8 @@ function ReasonIcon({ reason, delta }: { reason: TokenReason; delta: number }) {
         <Trophy size={14} />
       ) : reason === "redeem" ? (
         <Gift size={14} />
+      ) : reason === "daily_checkin" ? (
+        <CalendarCheck size={14} />
       ) : delta >= 0 ? (
         <ArrowUpRight size={14} />
       ) : (
@@ -197,6 +199,8 @@ function reasonLabel(reason: TokenReason): string {
       return "兑换扣减";
     case "admin_adjust":
       return "管理员调整";
+    case "daily_checkin":
+      return "每日签到";
     default:
       return reason;
   }

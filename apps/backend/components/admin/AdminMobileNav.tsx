@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   MessageSquare,
   Zap,
+  LayoutGrid,
+  CalendarCheck,
   Menu,
   X,
 } from "lucide-react";
@@ -30,6 +32,8 @@ const iconMap = {
   ClipboardCheck,
   MessageSquare,
   Zap,
+  LayoutGrid,
+  CalendarCheck,
 };
 
 export function AdminMobileNav({

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Gift, MessageSquare } from "lucide-react";
+import { CalendarDays, Gift, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@k8event/shared/utils";
 
 const tabs = [
@@ -18,6 +18,13 @@ const tabs = [
       p.startsWith("/matches/") ||
       p === "/leaderboard" ||
       p === "/history",
+  },
+  {
+    key: "activities",
+    label: "活动",
+    href: "/activities",
+    icon: Sparkles,
+    match: (p: string) => p === "/activities" || p.startsWith("/activities/"),
   },
   {
     key: "livechat",
@@ -46,7 +53,7 @@ export function PlayerBottomNav() {
       className="fixed bottom-0 inset-x-0 z-30 border-t border-[var(--border-subtle)] bg-[var(--bg-base)]/90 backdrop-blur-md"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="mx-auto max-w-3xl grid grid-cols-3">
+      <ul className="mx-auto max-w-3xl grid grid-cols-4">
         {tabs.map((t) => {
           const active = t.match(pathname);
           const Icon = t.icon;

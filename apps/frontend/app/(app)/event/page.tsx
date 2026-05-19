@@ -8,6 +8,7 @@ import { MatchCard, type MatchCardData } from "@/components/player/MatchCard";
 import { LeaderboardPreview, type PodiumEntry } from "@/components/player/LeaderboardPreview";
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
+import { CheckinCard } from "@/components/player/CheckinCard";
 
 export const metadata = { title: "赛事 · 711event" };
 export const dynamic = "force-dynamic";
@@ -25,7 +26,9 @@ export default async function EventHomePage() {
   const today = malaysiaDateString();
   const nowIso = new Date().toISOString();
 
-  const [matchesQ, top3Q, balanceQ, earnedQ, rechargeQ] = await Promise.all([
+  const DEFAULT_CHECKIN_REWARDS = [5, 8, 10, 12, 15, 20, 30];
+
+  const [matchesQ, top3Q, balanceQ, earnedQ, rechargeQ, checkinActivityQ] = await Promise.all([
     supabase
       .from("matches")
       .select(
@@ -49,6 +52,12 @@ export default async function EventHomePage() {
           .eq("recharge_date", today)
           .maybeSingle()
       : Promise.resolve({ data: null } as const),
+    supabase
+      .from("activities")
+      .select("id, settings")
+      .eq("type", "daily_checkin")
+      .eq("is_active", true)
+      .maybeSingle(),
   ]);
 
   // Normalize join shape (Supabase returns either object or array depending on FK uniqueness)
@@ -82,6 +91,47 @@ export default async function EventHomePage() {
   const earned = earnedQ.data?.earned ?? 0;
   const todayRecharge = Number(rechargeQ.data?.amount ?? 0);
 
+  // Check-in data
+  const checkinActivity = checkinActivityQ.data;
+  let checkedInToday = false;
+  let currentStreak = 0;
+  if (user && checkinActivity) {
+    const [todayCI, recentCI] = await Promise.all([
+      supabase
+        .from("player_checkins")
+        .select("id")
+        .eq("player_id", user.id)
+        .eq("activity_id", checkinActivity.id)
+        .eq("checkin_date", today)
+        .maybeSingle(),
+      supabase
+        .from("player_checkins")
+        .select("checkin_date, streak_day")
+        .eq("player_id", user.id)
+        .eq("activity_id", checkinActivity.id)
+        .order("checkin_date", { ascending: false })
+        .limit(2),
+    ]);
+    checkedInToday = !!todayCI.data;
+    const latest = recentCI.data?.[0];
+    if (latest) {
+      if (checkedInToday) {
+        currentStreak = latest.streak_day;
+      } else {
+        // Check if yesterday was checked in
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yStr = malaysiaDateString(yesterday);
+        const hasYesterday = recentCI.data?.some((c) => c.checkin_date === yStr);
+        currentStreak = hasYesterday ? latest.streak_day : 0;
+      }
+    }
+  }
+  const checkinSettings = checkinActivity?.settings as Record<string, unknown> | null;
+  const dayRewards = (checkinSettings?.day_rewards as number[] | undefined) ?? DEFAULT_CHECKIN_REWARDS;
+  const nextStreakDay = checkedInToday ? currentStreak : currentStreak >= 7 ? 1 : currentStreak + 1;
+  const todayCheckinTokens = dayRewards[nextStreakDay - 1] ?? dayRewards[0];
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <HeroBanner match={featured} ctaHref={featured ? `/matches/${featured.id}` : "/matches"} />
@@ -92,6 +142,15 @@ export default async function EventHomePage() {
         todayRecharge={todayRecharge}
         guest={!user}
       />
+
+      {user && checkinActivity && (
+        <CheckinCard
+          checkedInToday={checkedInToday}
+          currentStreak={currentStreak}
+          todayTokens={todayCheckinTokens}
+          activityId={checkinActivity.id}
+        />
+      )}
 
       <section className="space-y-3">
         <SectionHeader title="今日比赛" hint="开赛前可提交一次预测" href="/matches" />
