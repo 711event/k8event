@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 
 type Ctx = { unreadCount: number };
@@ -11,32 +10,45 @@ const ChatUnreadContext = createContext<Ctx>({ unreadCount: 0 });
 export const useChatUnread = () => useContext(ChatUnreadContext);
 
 const STORAGE_KEY = "bo_chat_last_seen_at";
+const POLL_INTERVAL_MS = 5000;
 
 /**
  * Tracks unread guest chat messages across the entire BO 管理后台 shell.
- * - On mount, queries Supabase for guest messages newer than localStorage `last_seen_at`.
- * - Subscribes to realtime INSERT on chat_messages (sender=guest) and bumps the count.
- * - When the user navigates to /admin/chat*, marks all as read (zero count + update timestamp).
- * - Plays a short "ding" via Web Audio when a new message lands AND the user is not on the chat page.
+ *
+ * Strategy: HTTP polling, NOT websocket realtime. We tried Supabase Realtime
+ * postgres_changes (commits up through 0004) but the free tier never actually
+ * broadcasts events even with publication + REPLICA IDENTITY FULL set
+ * (Realtime Messages stayed 0 in usage across the whole billing cycle even
+ * with live websocket subscribers). Polling is identical UX-wise to ~5s
+ * realtime delay and has no service-tier failure mode.
+ *
+ * - Polls chat_messages count where sender='guest' AND created_at > localStorage
+ *   `last_seen_at`, every 5 seconds, while the tab is visible.
+ * - When the user navigates to /admin/chat*, marks all as read (count=0,
+ *   update timestamp).
+ * - On count increase, plays the ding once (Web Audio).
+ * - Pauses polling when document.hidden (Page Visibility API); resumes + fires
+ *   one immediate fetch on visibilitychange back to visible.
  */
 export function ChatUnreadProvider({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
   const onChatPageRef = useRef(false);
   const audioPrimedRef = useRef(false);
+  const lastCountRef = useRef(0);
 
   // Whenever route changes, decide if we're on a chat page.
   useEffect(() => {
     const onChat = pathname?.startsWith("/admin/chat") ?? false;
     onChatPageRef.current = onChat;
     if (onChat) {
-      // Mark everything as read.
       try {
         localStorage.setItem(STORAGE_KEY, new Date().toISOString());
       } catch {
         /* private mode etc. */
       }
       setUnreadCount(0);
+      lastCountRef.current = 0;
     }
   }, [pathname]);
 
@@ -56,94 +68,85 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  // Initial count + realtime subscription. Runs once.
+  // Polling loop. Runs once on mount; teardown on unmount.
   useEffect(() => {
     let cancelled = false;
-    let retries = 0;
-    let channel: RealtimeChannel | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const supabase = createSupabaseBrowserClient();
 
-    const lastSeen = (() => {
+    function readLastSeen(): string {
       try {
         return localStorage.getItem(STORAGE_KEY) ?? new Date(0).toISOString();
       } catch {
         return new Date(0).toISOString();
       }
-    })();
-
-    // Initial fetch (only meaningful if we're NOT on the chat page).
-    (async () => {
-      if (onChatPageRef.current) return;
-      const { count } = await supabase
-        .from("chat_messages")
-        .select("id", { count: "exact", head: true })
-        .eq("sender", "guest")
-        .gt("created_at", lastSeen);
-      if (cancelled) return;
-      if (!onChatPageRef.current) setUnreadCount(count ?? 0);
-    })();
-
-    async function subscribe() {
-      // KEY: hydrate the session BEFORE opening the channel. createBrowserClient
-      // pulls the JWT from cookies asynchronously; subscribing first means the
-      // channel opens unauthenticated and silently receives zero events even
-      // after setAuth() updates the connection later.
-      await supabase.auth.getSession();
-      if (cancelled) return;
-
-      channel = supabase
-        .channel("bo:chat-unread")
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "chat_messages",
-            // NOTE: don't use `filter: "sender=eq.guest"` here — Supabase
-            // realtime's server-side filter is unreliable on ENUM-typed columns
-            // (chat_messages.sender is type chat_sender). Filter client-side
-            // instead so the channel actually receives the events.
-          },
-          (payload) => {
-            // eslint-disable-next-line no-console
-            console.log("[ChatUnread] payload", payload);
-            if (onChatPageRef.current) return;
-            const row = payload.new as { sender?: string } | null;
-            if (row?.sender !== "guest") return;
-            setUnreadCount((c) => c + 1);
-            playDing(audioPrimedRef.current);
-          },
-        )
-        .subscribe((status, err) => {
-          // Temporary: always log so we can diagnose production realtime issues.
-          // eslint-disable-next-line no-console
-          console.log("[ChatUnread] channel", status, err ?? "");
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            if (cancelled || retries >= 5) return;
-            retries += 1;
-            setTimeout(() => {
-              if (cancelled) return;
-              if (channel) supabase.removeChannel(channel);
-              void subscribe();
-            }, 2000);
-          } else if (status === "SUBSCRIBED") {
-            retries = 0;
-          }
-        });
     }
 
-    void subscribe();
+    async function pollOnce() {
+      if (cancelled) return;
+      // If we're on the chat page, don't accumulate; just keep the badge at 0.
+      if (onChatPageRef.current) {
+        scheduleNext();
+        return;
+      }
+      try {
+        const lastSeen = readLastSeen();
+        const { count, error } = await supabase
+          .from("chat_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("sender", "guest")
+          .gt("created_at", lastSeen);
+        if (cancelled) return;
+        if (error) {
+          // Silent fail; just retry on next tick.
+        } else {
+          const next = count ?? 0;
+          // Ding only when the count grows (new message arrived between polls).
+          if (next > lastCountRef.current) {
+            playDing(audioPrimedRef.current);
+          }
+          lastCountRef.current = next;
+          setUnreadCount(next);
+        }
+      } catch {
+        /* network blip — retry next tick */
+      }
+      scheduleNext();
+    }
 
-    // NOTE: we used to re-subscribe on SIGNED_IN / TOKEN_REFRESHED here, but
-    // supabase-js already calls realtime.setAuth(newToken) on TOKEN_REFRESHED
-    // and that updates the existing channel's auth in-place — so we don't need
-    // to tear it down. Re-creating the channel after .subscribe() also
-    // throws "cannot add postgres_changes callbacks after subscribe()" when the
-    // listener fires before removeChannel() has actually settled (it's async).
+    function scheduleNext() {
+      if (cancelled) return;
+      // Pause polling when the tab is hidden — resumes on visibilitychange.
+      if (typeof document !== "undefined" && document.hidden) return;
+      timer = setTimeout(pollOnce, POLL_INTERVAL_MS);
+    }
+
+    function onVisibility() {
+      if (cancelled) return;
+      if (document.hidden) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      } else {
+        // Tab came back to foreground — fetch immediately.
+        if (timer) clearTimeout(timer);
+        void pollOnce();
+      }
+    }
+
+    // Kick off
+    void pollOnce();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
 
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+      if (timer) clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -2,79 +2,70 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
+
+const POLL_INTERVAL_MS = 8000;
 
 /**
- * Tiny client island that re-runs the (server-rendered) inbox whenever:
- *   - A new chat_message lands (any sender)
- *   - A chat_thread row is created or updated (status / claim / last_message_at)
- * The page itself stays a server component — this just calls router.refresh()
- * to re-fetch the latest list with no full page reload.
+ * Tiny client island that re-runs the (server-rendered) inbox via polling.
  *
- * NOTE: we MUST await supabase.auth.getSession() before opening the channel.
- * createBrowserClient hydrates the session asynchronously from cookies; if we
- * subscribe before the JWT is attached the channel opens unauthenticated and
- * Supabase Realtime never delivers any postgres_changes events (silent
- * CHANNEL_ERROR). See plan P11 for the diagnosis.
+ * Previously this used Supabase Realtime postgres_changes subscriptions, but
+ * the free-tier project never actually broadcast events even after publication
+ * + REPLICA IDENTITY FULL were set (see ChatUnreadProvider for the same
+ * diagnosis). Switched to HTTP polling: every 8 seconds (while the tab is
+ * visible) we call router.refresh() which re-fetches the server-rendered
+ * inbox with fresh thread data. Cheap because Next.js diffs the streamed
+ * markup — only changed rows actually re-render.
+ *
+ * On tab visibilitychange to visible, refreshes immediately (so the operator
+ * sees the latest state right when they come back to the tab).
  */
 export function ChatInboxAutoRefresh() {
   const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
-    let retries = 0;
-    let channel: RealtimeChannel | null = null;
-    const supabase = createSupabaseBrowserClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    async function subscribe() {
-      await supabase.auth.getSession();
+    function tick() {
       if (cancelled) return;
-
-      channel = supabase
-        .channel("bo:chat-inbox-refresh")
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "chat_messages" },
-          () => router.refresh(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "chat_threads" },
-          () => router.refresh(),
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "chat_threads" },
-          () => router.refresh(),
-        )
-        .subscribe((status, err) => {
-          // Temporary: always log so we can diagnose production realtime issues.
-          // eslint-disable-next-line no-console
-          console.log("[ChatInboxAutoRefresh] channel", status, err ?? "");
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            if (cancelled || retries >= 5) return;
-            retries += 1;
-            setTimeout(() => {
-              if (cancelled) return;
-              if (channel) supabase.removeChannel(channel);
-              void subscribe();
-            }, 2000);
-          } else if (status === "SUBSCRIBED") {
-            retries = 0;
-          }
-        });
+      router.refresh();
+      schedule();
     }
 
-    void subscribe();
+    function schedule() {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      timer = setTimeout(tick, POLL_INTERVAL_MS);
+    }
 
-    // supabase-js handles realtime.setAuth() on TOKEN_REFRESHED in-place,
-    // so we don't tear the channel down — re-creating after subscribe()
-    // throws "cannot add postgres_changes callbacks after subscribe()".
+    function onVisibility() {
+      if (cancelled) return;
+      if (document.hidden) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      } else {
+        if (timer) clearTimeout(timer);
+        // Immediate refresh on focus return, then resume schedule.
+        router.refresh();
+        schedule();
+      }
+    }
+
+    // Don't fire immediately on mount — the page just rendered with fresh
+    // server data. Wait one full interval before the first poll.
+    schedule();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
 
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+      if (timer) clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
     };
   }, [router]);
 

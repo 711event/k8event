@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import { MessageList, type ChatMessageView } from "@k8event/shared/components/chat/MessageList";
 import { InputBar } from "@k8event/shared/components/chat/InputBar";
@@ -49,58 +48,77 @@ export function AgentChat({
   const canType = isClaimer || status === "open";
   const senderCtx: SenderContext = { sender: "agent", userId };
 
+  // Track the latest message's created_at so polling fetches only newer rows.
+  const lastCreatedAtRef = useRef<string>(
+    initialMessages.length > 0 ? initialMessages[initialMessages.length - 1].createdAt : new Date(0).toISOString(),
+  );
+
   useEffect(() => {
     let cancelled = false;
-    let retries = 0;
-    let channel: RealtimeChannel | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    // Hydrate session BEFORE subscribing so Supabase Realtime attaches the
-    // admin's JWT to the channel; subscribing first means the channel opens
-    // unauthenticated and never receives any postgres_changes events (silent
-    // CHANNEL_ERROR). See plan P11.
-    async function subscribe() {
-      await supabase.auth.getSession();
+    // Polling instead of Supabase Realtime. The free-tier project never
+    // actually broadcasts postgres_changes events even with publication and
+    // REPLICA IDENTITY FULL configured (Realtime Messages stat = 0 across a
+    // whole billing cycle even with live subscribers). See ChatUnreadProvider.
+    async function pollNewMessages() {
       if (cancelled) return;
-
-      channel = supabase
-        .channel(`agent-thread:${threadId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "chat_messages",
-            filter: `thread_id=eq.${threadId}`,
-          },
-          (payload) => mergeNewRow(payload.new),
-        )
-        .subscribe((status, err) => {
-          // Temporary: always log so we can diagnose production realtime issues.
-          // eslint-disable-next-line no-console
-          console.log("[AgentChat] channel", status, err ?? "");
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            if (cancelled || retries >= 5) return;
-            retries += 1;
-            setTimeout(() => {
-              if (cancelled) return;
-              if (channel) supabase.removeChannel(channel);
-              void subscribe();
-            }, 2000);
-          } else if (status === "SUBSCRIBED") {
-            retries = 0;
+      try {
+        const since = lastCreatedAtRef.current;
+        const { data } = await supabase
+          .from("chat_messages")
+          .select("id, sender, kind, body, image_url, width, height, created_at, client_id")
+          .eq("thread_id", threadId)
+          .gt("created_at", since)
+          .order("created_at", { ascending: true })
+          .limit(50);
+        if (cancelled) return;
+        if (data && data.length > 0) {
+          for (const row of data) mergeNewRow(row);
+          // Advance the cursor to the newest row we just received.
+          const last = data[data.length - 1];
+          if (last?.created_at && last.created_at > lastCreatedAtRef.current) {
+            lastCreatedAtRef.current = last.created_at;
           }
-        });
+        }
+      } catch {
+        /* network blip — retry next tick */
+      }
+      scheduleNext();
     }
 
-    void subscribe();
+    function scheduleNext() {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      timer = setTimeout(pollNewMessages, 3000);
+    }
 
-    // supabase-js handles realtime.setAuth() on TOKEN_REFRESHED in-place;
-    // re-subscribing here would throw "cannot add postgres_changes after subscribe()".
+    function onVisibility() {
+      if (cancelled) return;
+      if (document.hidden) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      } else {
+        if (timer) clearTimeout(timer);
+        void pollNewMessages();
+      }
+    }
+
+    scheduleNext();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
 
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+      if (timer) clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, threadId]);
 
   useEffect(() => {
