@@ -158,16 +158,53 @@ export function ChatRoom() {
         pending: true,
       },
     ]);
-    const res = await fetch("/api/chat/send", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ body, clientId }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error ?? "send_failed");
+    try {
+      const res = await fetchWithTimeout(
+        "/api/chat/send",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ body, clientId }),
+        },
+        15000,
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error ?? "send_failed");
+        setMessages((prev) => prev.filter((m) => m.id !== clientId));
+        return;
+      }
+      // POST succeeded — mark the optimistic bubble as delivered immediately, even
+      // if the realtime echo hasn't arrived yet (slow network / blocked websocket).
+      // When the real row eventually streams in via realtime, mergeNewRow() will
+      // dedupe by client_id and replace the temp one with the canonical row.
+      setMessages((prev) =>
+        prev.map((m) => (m.id === clientId ? { ...m, pending: false } : m)),
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "send_failed";
+      setError(msg === "timeout" ? "网络较慢,消息可能尚未送达,请刷新页面确认。" : msg);
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
+  }
+
+  function fetchWithTimeout(input: RequestInfo, init: RequestInit, ms: number): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => {
+        ctrl.abort();
+        reject(new Error("timeout"));
+      }, ms);
+      fetch(input, { ...init, signal: ctrl.signal })
+        .then((r) => {
+          clearTimeout(t);
+          resolve(r);
+        })
+        .catch((err) => {
+          clearTimeout(t);
+          reject(err);
+        });
+    });
   }
 
   async function handleFiles(files: File[]) {
@@ -194,33 +231,44 @@ export function ChatRoom() {
     ]);
     try {
       const img = await ensureUploaded(localId, senderCtx);
-      const res = await fetch("/api/chat/send", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: img.publicUrl,
-          width: img.width,
-          height: img.height,
-          clientId,
-        }),
-      });
+      const res = await fetchWithTimeout(
+        "/api/chat/send",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: img.publicUrl,
+            width: img.width,
+            height: img.height,
+            clientId,
+          }),
+        },
+        20000,
+      );
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         setError(j.error ?? "send_failed");
         setMessages((prev) => prev.filter((m) => m.id !== clientId));
         return;
       }
-      // Optimistically update bubble with the public URL while waiting for the real row
+      // POST succeeded — fill in image url + clear pending immediately.
+      // Realtime echo will dedupe by client_id when it arrives.
       setMessages((prev) =>
         prev.map((m) =>
           m.id === clientId
-            ? { ...m, imageUrl: img.publicUrl ?? null, width: img.width, height: img.height }
+            ? {
+                ...m,
+                imageUrl: img.publicUrl ?? null,
+                width: img.width,
+                height: img.height,
+                pending: false,
+              }
             : m,
         ),
       );
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "upload_pending";
-      setError(msg);
+      const msg = e instanceof Error ? e.message : "upload_failed";
+      setError(msg === "timeout" ? "网络较慢,图片可能尚未送达,请刷新页面确认。" : msg);
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
   }
