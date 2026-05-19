@@ -75,10 +75,9 @@ export function AgentChat({
           (payload) => mergeNewRow(payload.new),
         )
         .subscribe((status, err) => {
-          if (process.env.NODE_ENV !== "production") {
-            // eslint-disable-next-line no-console
-            console.log("[AgentChat] channel", status, err ?? "");
-          }
+          // Temporary: always log so we can diagnose production realtime issues.
+          // eslint-disable-next-line no-console
+          console.log("[AgentChat] channel", status, err ?? "");
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             if (cancelled || retries >= 5) return;
             retries += 1;
