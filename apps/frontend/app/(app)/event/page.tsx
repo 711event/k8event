@@ -28,39 +28,31 @@ export default async function EventHomePage() {
 
   const DEFAULT_CHECKIN_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
-  const [matchesQ, top3Q, balanceQ, earnedQ, rechargeQ, checkinActivityQ] = await Promise.all([
+  // Single parallel round-trip — all 9 queries fire at once
+  const [
+    matchesQ, top3Q, balanceQ, earnedQ, rechargeQ,
+    checkinActivityQ, profilesQ, todayCIQ, recentCIQ,
+  ] = await Promise.all([
     supabase
       .from("matches")
-      .select(
-        "id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name, logo_url), away:teams!matches_away_team_id_fkey(name, logo_url)",
-      )
+      .select("id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name, logo_url), away:teams!matches_away_team_id_fkey(name, logo_url)")
       .in("status", ["scheduled", "locked"])
       .order("kickoff_at", { ascending: true })
       .limit(6),
-    supabase
-      .from("token_earned")
-      .select("player_id, earned")
-      .order("earned", { ascending: false })
-      .limit(3),
+    supabase.from("token_earned").select("player_id, earned").order("earned", { ascending: false }).limit(3),
     user ? supabase.from("token_balances").select("balance").eq("player_id", user.id).maybeSingle() : Promise.resolve({ data: null } as const),
     user ? supabase.from("token_earned").select("earned").eq("player_id", user.id).maybeSingle() : Promise.resolve({ data: null } as const),
-    user
-      ? supabase
-          .from("daily_recharge")
-          .select("amount")
-          .eq("player_id", user.id)
-          .eq("recharge_date", today)
-          .maybeSingle()
-      : Promise.resolve({ data: null } as const),
-    supabase
-      .from("activities")
-      .select("id, settings")
-      .eq("type", "daily_checkin")
-      .eq("is_active", true)
-      .maybeSingle(),
+    user ? supabase.from("daily_recharge").select("amount").eq("player_id", user.id).eq("recharge_date", today).maybeSingle() : Promise.resolve({ data: null } as const),
+    supabase.from("activities").select("id, settings").eq("type", "daily_checkin").eq("is_active", true).maybeSingle(),
+    // Profiles for leaderboard — fetched speculatively (filtered in code)
+    supabase.from("profiles").select("user_id, username, display_name"),
+    // Player checkin for today (no activity_id needed — only 1 daily_checkin activity)
+    user ? supabase.from("player_checkins").select("activity_id").eq("player_id", user.id).eq("checkin_date", today).maybeSingle() : Promise.resolve({ data: null } as const),
+    // Recent 2 checkins for streak
+    user ? supabase.from("player_checkins").select("checkin_date, streak_day, activity_id").eq("player_id", user.id).order("checkin_date", { ascending: false }).limit(2) : Promise.resolve({ data: null } as const),
   ]);
 
-  // Normalize join shape (Supabase returns either object or array depending on FK uniqueness)
+  // Normalize join shape
   const matches: RawMatch[] = (matchesQ.data ?? []).map((m) => ({
     ...m,
     home: oneOrNull(m.home),
@@ -70,61 +62,37 @@ export default async function EventHomePage() {
   const featured: HeroMatch | null = matches.find((m) => new Date(m.kickoff_at).getTime() > Date.now()) ?? null;
   const todayList = matches.slice(0, 4);
 
-  // Top 3 with profile names
+  // Top 3 with profile names (resolved from the speculative profiles fetch)
   const top3Ids = (top3Q.data ?? []).map((r) => r.player_id);
-  let top3: PodiumEntry[] = [];
-  if (top3Ids.length) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, username, display_name")
-      .in("user_id", top3Ids);
-    const byId = new Map(profiles?.map((p) => [p.user_id, p]));
-    top3 = (top3Q.data ?? []).map((r) => ({
+  const allProfiles = profilesQ.data ?? [];
+  const byId = new Map(allProfiles.map((p) => [p.user_id, p]));
+  const top3: PodiumEntry[] = (top3Q.data ?? [])
+    .filter((r) => top3Ids.includes(r.player_id))
+    .map((r) => ({
       player_id: r.player_id,
       earned: r.earned ?? 0,
       username: byId.get(r.player_id)?.username ?? null,
       display_name: byId.get(r.player_id)?.display_name ?? null,
     }));
-  }
 
   const balance = balanceQ.data?.balance ?? 0;
   const earned = earnedQ.data?.earned ?? 0;
   const todayRecharge = Number(rechargeQ.data?.amount ?? 0);
 
-  // Check-in data
+  // Check-in data (derived from single-round-trip queries above)
   const checkinActivity = checkinActivityQ.data;
-  let checkedInToday = false;
+  const checkedInToday = !!(todayCIQ.data && checkinActivity && todayCIQ.data.activity_id === checkinActivity.id);
+  const recentCheckins = (recentCIQ.data ?? []).filter((c) => !checkinActivity || c.activity_id === checkinActivity.id);
   let currentStreak = 0;
-  if (user && checkinActivity) {
-    const [todayCI, recentCI] = await Promise.all([
-      supabase
-        .from("player_checkins")
-        .select("id")
-        .eq("player_id", user.id)
-        .eq("activity_id", checkinActivity.id)
-        .eq("checkin_date", today)
-        .maybeSingle(),
-      supabase
-        .from("player_checkins")
-        .select("checkin_date, streak_day")
-        .eq("player_id", user.id)
-        .eq("activity_id", checkinActivity.id)
-        .order("checkin_date", { ascending: false })
-        .limit(2),
-    ]);
-    checkedInToday = !!todayCI.data;
-    const latest = recentCI.data?.[0];
-    if (latest) {
-      if (checkedInToday) {
-        currentStreak = latest.streak_day;
-      } else {
-        // Check if yesterday was checked in
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yStr = malaysiaDateString(yesterday);
-        const hasYesterday = recentCI.data?.some((c) => c.checkin_date === yStr);
-        currentStreak = hasYesterday ? latest.streak_day : 0;
-      }
+  const latest = recentCheckins[0];
+  if (latest) {
+    if (checkedInToday) {
+      currentStreak = latest.streak_day;
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = malaysiaDateString(yesterday);
+      currentStreak = recentCheckins.some((c) => c.checkin_date === yStr) ? latest.streak_day : 0;
     }
   }
   const checkinSettings = checkinActivity?.settings as Record<string, unknown> | null;
