@@ -3,14 +3,22 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import type { ChatThreadStatus } from "@k8event/shared/supabase/types";
+import { ChatInboxAutoRefresh } from "./ChatInboxAutoRefresh";
 
 export const metadata = { title: "客服会话 · 管理后台" };
+export const dynamic = "force-dynamic";
+
+const STATUS_LABEL: Record<ChatThreadStatus, string> = {
+  open: "未处理",
+  claimed: "已认领",
+  closed: "已关闭",
+};
 
 const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
-  { key: "open", label: "Open" },
-  { key: "claimed", label: "Claimed" },
-  { key: "closed", label: "Closed" },
-  { key: "all", label: "All" },
+  { key: "open", label: "未处理" },
+  { key: "claimed", label: "已认领" },
+  { key: "closed", label: "已关闭" },
+  { key: "all", label: "全部" },
 ];
 
 export default async function ChatInboxPage(props: {
@@ -35,7 +43,13 @@ export default async function ChatInboxPage(props: {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-semibold">Chat inbox</h1>
+      <ChatInboxAutoRefresh />
+      <div>
+        <h1 className="text-2xl font-semibold">客服会话</h1>
+        <p className="text-sm text-zinc-500 mt-1">
+          新消息会自动到达 · 点会话进入对话页 · 多客服时记得"认领"避免重复回复
+        </p>
+      </div>
 
       <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
@@ -43,10 +57,10 @@ export default async function ChatInboxPage(props: {
             key={t.key}
             href={`/admin/chat?status=${t.key}`}
             className={
-              "px-4 py-2 text-sm font-medium -mb-px border-b-2 " +
+              "px-4 py-2 text-sm font-medium -mb-px border-b-2 transition " +
               (active === t.key
-                ? "border-foreground text-foreground"
-                : "border-transparent text-zinc-500 hover:text-foreground")
+                ? "border-zinc-900 text-zinc-900"
+                : "border-transparent text-zinc-500 hover:text-zinc-900")
             }
           >
             {t.label}
@@ -54,9 +68,9 @@ export default async function ChatInboxPage(props: {
         ))}
       </div>
 
-      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200">
+      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
         {!threads?.length ? (
-          <li className="px-4 py-6 text-zinc-500">No threads.</li>
+          <li className="px-4 py-8 text-center text-zinc-500 text-sm">暂无会话</li>
         ) : (
           threads.map((t) => {
             const claimed = Array.isArray(t.claimed_by) ? t.claimed_by[0] : t.claimed_by;
@@ -68,27 +82,27 @@ export default async function ChatInboxPage(props: {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">
-                      {t.guest_name ?? "Guest"}{" "}
+                      {t.guest_name ?? "访客"}{" "}
                       <span className="text-xs text-zinc-500 font-mono">{t.id.slice(0, 8)}</span>
                     </div>
                     <div className="text-xs text-zinc-500 mt-0.5">
                       {t.last_message_at
-                        ? `Last activity ${formatMalaysia(t.last_message_at)}`
-                        : `Started ${formatMalaysia(t.created_at)} (no messages yet)`}
-                      {claimed && ` · claimed by ${claimed.display_name}`}
+                        ? `最新活动 ${formatMalaysia(t.last_message_at)}`
+                        : `创建于 ${formatMalaysia(t.created_at)} (暂无消息)`}
+                      {claimed && ` · 由 ${claimed.display_name} 认领`}
                     </div>
                   </div>
                   <span
                     className={
                       "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
                       (t.status === "open"
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                        ? "bg-amber-500/15 text-amber-700"
                         : t.status === "claimed"
-                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                          : "bg-zinc-500/15 text-zinc-500")
+                          ? "bg-blue-500/15 text-blue-700"
+                          : "bg-zinc-500/15 text-zinc-600")
                     }
                   >
-                    {t.status}
+                    {STATUS_LABEL[t.status]}
                   </span>
                 </Link>
               </li>

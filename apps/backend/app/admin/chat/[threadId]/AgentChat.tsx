@@ -192,16 +192,17 @@ export function AgentChat({
     startTransition(async () => {
       const r = await (claim ? claimThreadAction(threadId) : unclaimThreadAction(threadId));
       if (r && "error" in r) toast.error(r.error);
-      else toast.success(claim ? "Claimed" : "Unclaimed");
+      else toast.success(claim ? "已认领" : "已释放");
     });
   }
 
   function doClose() {
-    if (!confirm("Close this thread? Agents won't be able to reply afterwards (until reopened).")) return;
+    if (!confirm("确认结束此会话?\n\n结束后此会话进入“已关闭”列表,客服无法继续回复。如果之后再有新消息进来,系统会自动重新打开。"))
+      return;
     startTransition(async () => {
       const r = await closeThreadAction(threadId);
       if (r && "error" in r) toast.error(r.error);
-      else toast.success("Thread closed");
+      else toast.success("会话已结束");
     });
   }
 
@@ -213,9 +214,10 @@ export function AgentChat({
             type="button"
             disabled={pending}
             onClick={() => doClaim(true)}
+            title="我接手这个对话(防止其他客服重复回复)"
             className="h-8 px-3 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60"
           >
-            Claim
+            认领
           </button>
         )}
         {claimedBy && isClaimer && status !== "closed" && (
@@ -223,9 +225,10 @@ export function AgentChat({
             type="button"
             disabled={pending}
             onClick={() => doClaim(false)}
-            className="h-8 px-3 rounded-md border border-foreground/20 text-xs font-medium disabled:opacity-60"
+            title="把这个会话放回未认领,让别的客服可以接手"
+            className="h-8 px-3 rounded-md border border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs font-medium disabled:opacity-60"
           >
-            Release
+            释放
           </button>
         )}
         {status !== "closed" && (
@@ -233,13 +236,14 @@ export function AgentChat({
             type="button"
             disabled={pending}
             onClick={doClose}
-            className="h-8 px-3 rounded-md border border-red-500/30 text-red-600 text-xs font-medium disabled:opacity-60"
+            title="处理完了 · 关闭这个会话(归档)"
+            className="h-8 px-3 rounded-md border border-red-500/30 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60"
           >
-            Close thread
+            结束会话
           </button>
         )}
         {claimedBy && !isClaimer && (
-          <span className="text-xs text-zinc-500">Claimed by another agent</span>
+          <span className="text-xs text-zinc-500">已被其他客服认领</span>
         )}
       </div>
 

@@ -7,6 +7,12 @@ import { AgentChat } from "./AgentChat";
 
 export const metadata = { title: "会话 · 管理后台" };
 
+const STATUS_LABEL = {
+  open: "未处理",
+  claimed: "已认领",
+  closed: "已关闭",
+} as const;
+
 export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
   const user = await requireRole(["admin", "agent"]);
   const { threadId } = await props.params;
@@ -46,15 +52,15 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       <header className="border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
         <div>
           <Link href="/admin/chat" className="text-xs text-zinc-500 hover:underline">
-            ← Inbox
+            ← 返回收件箱
           </Link>
           <h1 className="font-semibold mt-1">
-            {thread.guest_name ?? "Guest"}{" "}
+            {thread.guest_name ?? "访客"}{" "}
             <span className="text-xs text-zinc-500 font-mono">{thread.id.slice(0, 8)}</span>
           </h1>
           <p className="text-xs text-zinc-500">
-            Started {formatMalaysia(thread.created_at)} · status {thread.status}
-            {claimer && ` · claimed by ${claimer.display_name}`}
+            创建于 {formatMalaysia(thread.created_at)} · 状态 {STATUS_LABEL[thread.status]}
+            {claimer && ` · 由 ${claimer.display_name} 认领`}
           </p>
         </div>
       </header>
