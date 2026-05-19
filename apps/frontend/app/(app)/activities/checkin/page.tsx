@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { CalendarCheck } from "lucide-react";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@k8event/shared/supabase/database.types";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { malaysiaDateString } from "@k8event/shared/time/malaysia";
@@ -11,17 +14,30 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
+// Activity config changes rarely — cache for 60 s
+const getCheckinActivity = unstable_cache(
+  async () => {
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data } = await supabase
+      .from("activities")
+      .select("id, name, description, rules, settings")
+      .eq("type", "daily_checkin")
+      .eq("is_active", true)
+      .maybeSingle();
+    return data ?? null;
+  },
+  ["checkin-activity-v1"],
+  { revalidate: 60, tags: ["activities"] },
+);
+
 export default async function CheckinPage() {
   const user = await getCurrentUser();
-  const supabase = await createSupabaseServerClient();
 
-  // Load the daily_checkin activity
-  const { data: activity } = await supabase
-    .from("activities")
-    .select("id, name, description, rules, settings")
-    .eq("type", "daily_checkin")
-    .eq("is_active", true)
-    .maybeSingle();
+  // Load the daily_checkin activity (cached)
+  const activity = await getCheckinActivity();
 
   if (!activity) {
     return (
@@ -46,6 +62,7 @@ export default async function CheckinPage() {
   let recentCheckins: { checkin_date: string; streak_day: number; tokens_awarded: number }[] = [];
 
   if (user) {
+    const supabase = await createSupabaseServerClient();
     const [todayQ, recentQ] = await Promise.all([
       supabase
         .from("player_checkins")
