@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Zap,
 } from "lucide-react";
+import { ChatUnreadBadge } from "./ChatUnreadBadge";
 
 const iconMap = {
   LayoutDashboard,
@@ -77,7 +78,8 @@ export function AdminSidebar({
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 rounded-r bg-amber-400" />
               )}
               <Icon size={16} className={active ? "text-amber-300" : ""} />
-              {it.label}
+              <span className="flex-1">{it.label}</span>
+              {it.href === "/admin/chat" && <ChatUnreadBadge />}
             </Link>
           );
         })}

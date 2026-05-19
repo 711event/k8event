@@ -2,6 +2,7 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { SignOutButton } from "@k8event/shared/components/SignOutButton";
 import { AdminSidebar, type AdminNavItem } from "@/components/admin/AdminSidebar";
 import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
+import { ChatUnreadProvider } from "@/components/admin/ChatUnreadProvider";
 
 const adminNav: AdminNavItem[] = [
   { href: "/admin", label: "总览", icon: "LayoutDashboard" },
@@ -23,27 +24,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       : adminNav;
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
-      <AdminSidebar items={links} userLabel={user.displayName} userRole={user.role} />
+    <ChatUnreadProvider>
+      <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
+        <AdminSidebar items={links} userLabel={user.displayName} userRole={user.role} />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-20 bg-white border-b border-zinc-200 h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <AdminMobileNav items={links} userLabel={user.displayName} userRole={user.role} />
-            <div className="font-semibold text-sm truncate">BO 管理后台</div>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-zinc-500 hidden sm:inline truncate max-w-[160px]">
-              {user.displayName}
-              <span className="ml-1.5 text-[10px] uppercase tracking-wide bg-zinc-100 text-zinc-600 rounded px-1.5 py-0.5">
-                {user.role}
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="sticky top-0 z-20 bg-white border-b border-zinc-200 h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <AdminMobileNav items={links} userLabel={user.displayName} userRole={user.role} />
+              <div className="font-semibold text-sm truncate">BO 管理后台</div>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-zinc-500 hidden sm:inline truncate max-w-[160px]">
+                {user.displayName}
+                <span className="ml-1.5 text-[10px] uppercase tracking-wide bg-zinc-100 text-zinc-600 rounded px-1.5 py-0.5">
+                  {user.role}
+                </span>
               </span>
-            </span>
-            <SignOutButton />
-          </div>
-        </header>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+              <SignOutButton />
+            </div>
+          </header>
+          <main className="flex-1 p-4 sm:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </ChatUnreadProvider>
   );
 }

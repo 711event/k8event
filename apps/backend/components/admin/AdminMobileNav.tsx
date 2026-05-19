@@ -17,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import type { AdminNavItem } from "./AdminSidebar";
+import { ChatUnreadBadge } from "./ChatUnreadBadge";
+import { useChatUnread } from "./ChatUnreadProvider";
 
 const iconMap = {
   LayoutDashboard,
@@ -48,9 +50,12 @@ export function AdminMobileNav({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="打开菜单"
-        className="md:hidden h-9 w-9 rounded border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50"
+        className="md:hidden relative h-9 w-9 rounded border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50"
       >
         <Menu size={18} />
+        <span className="absolute -top-1 -right-1">
+          <MobileMenuChatDot />
+        </span>
       </button>
 
       {open && (
@@ -96,7 +101,8 @@ export function AdminMobileNav({
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 rounded-r bg-amber-400" />
                     )}
                     <Icon size={16} className={active ? "text-amber-300" : ""} />
-                    {it.label}
+                    <span className="flex-1">{it.label}</span>
+                    {it.href === "/admin/chat" && <ChatUnreadBadge />}
                   </Link>
                 );
               })}
@@ -111,5 +117,15 @@ export function AdminMobileNav({
         </div>
       )}
     </>
+  );
+}
+
+function MobileMenuChatDot() {
+  const { unreadCount } = useChatUnread();
+  if (unreadCount === 0) return null;
+  return (
+    <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold tabular-nums ring-2 ring-white">
+      {unreadCount > 99 ? "99+" : unreadCount}
+    </span>
   );
 }
