@@ -99,10 +99,17 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
             event: "INSERT",
             schema: "public",
             table: "chat_messages",
-            filter: "sender=eq.guest",
+            // NOTE: don't use `filter: "sender=eq.guest"` here — Supabase
+            // realtime's server-side filter is unreliable on ENUM-typed columns
+            // (chat_messages.sender is type chat_sender). Filter client-side
+            // instead so the channel actually receives the events.
           },
-          () => {
+          (payload) => {
+            // eslint-disable-next-line no-console
+            console.log("[ChatUnread] payload", payload);
             if (onChatPageRef.current) return;
+            const row = payload.new as { sender?: string } | null;
+            if (row?.sender !== "guest") return;
             setUnreadCount((c) => c + 1);
             playDing(audioPrimedRef.current);
           },
