@@ -1,0 +1,47 @@
+{
+  "name": "@k8event/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabase/server": "./src/supabase/server.ts",
+    "./supabase/client": "./src/supabase/client.ts",
+    "./supabase/admin": "./src/supabase/admin.ts",
+    "./supabase/types": "./src/supabase/types.ts",
+    "./auth/get-user": "./src/auth/get-user.ts",
+    "./auth/require-role": "./src/auth/require-role.ts",
+    "./time/malaysia": "./src/time/malaysia.ts",
+    "./chat/dexie": "./src/chat/dexie.ts",
+    "./chat/uploadImage": "./src/chat/uploadImage.ts",
+    "./components/chat/MessageList": "./src/components/chat/MessageList.tsx",
+    "./components/chat/InputBar": "./src/components/chat/InputBar.tsx",
+    "./components/chat/ThumbStrip": "./src/components/chat/ThumbStrip.tsx",
+    "./components/chat/AttachMenu": "./src/components/chat/AttachMenu.tsx",
+    "./components/SignOutButton": "./src/components/SignOutButton.tsx",
+    "./utils": "./src/utils.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.105.4",
+    "browser-image-compression": "^2.0.2",
+    "clsx": "^2.1.1",
+    "date-fns-tz": "^3.2.0",
+    "dexie": "^4.4.2",
+    "dexie-react-hooks": "^4.4.0",
+    "lucide-react": "^1.16.0",
+    "next": "^16.2.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}
