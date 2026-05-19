@@ -11,6 +11,7 @@ import {
 
 type ParsedRow = { date: string; username: string; amount: number };
 
+// ─── CSV parser ───────────────────────────────────────────────────────────────
 function parseCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
   const errors: string[] = [];
   const out: ParsedRow[] = [];
@@ -41,6 +42,92 @@ function parseCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
   return { rows: out, errors };
 }
 
+// ─── Excel date → YYYY-MM-DD ──────────────────────────────────────────────────
+function excelDateToString(val: unknown): string | null {
+  if (val === null || val === undefined || val === "") return null;
+  if (val instanceof Date) {
+    return val.toISOString().slice(0, 10);
+  }
+  if (typeof val === "number") {
+    // Excel serial: days since Dec 30, 1899 (Lotus 1-2-3 epoch)
+    const d = new Date(Date.UTC(1899, 11, 30) + val * 86400000);
+    return d.toISOString().slice(0, 10);
+  }
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // DD/MM/YYYY
+    const dmY = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dmY) return `${dmY[3]}-${dmY[2].padStart(2, "0")}-${dmY[1].padStart(2, "0")}`;
+    // YYYY/MM/DD
+    const Ymd = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+    if (Ymd) return `${Ymd[1]}-${Ymd[2]}-${Ymd[3]}`;
+  }
+  return null;
+}
+
+// ─── Excel parser (SheetJS) ───────────────────────────────────────────────────
+// Expected columns: Date, Superid, In  (Max In / Out / P/L are ignored)
+// Header detection is case-insensitive, so column order doesn't matter.
+async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; errors: string[] }> {
+  const { read, utils } = await import("xlsx");
+  const workbook = read(buffer, { type: "array", cellDates: true });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!sheet) return { rows: [], errors: ["Excel 文件没有工作表"] };
+
+  const raw: unknown[][] = utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  if (raw.length < 2) return { rows: [], errors: ["Excel 没有数据行"] };
+
+  const headers = (raw[0] as unknown[]).map((h) => String(h ?? "").trim().toLowerCase());
+  const dateIdx    = headers.findIndex((h) => h === "date");
+  const superidIdx = headers.findIndex((h) => h === "superid");
+  const inIdx      = headers.findIndex((h) => h === "in");
+
+  const missing: string[] = [];
+  if (dateIdx    === -1) missing.push("Date");
+  if (superidIdx === -1) missing.push("Superid");
+  if (inIdx      === -1) missing.push("In");
+  if (missing.length) {
+    return { rows: [], errors: [`Excel 缺少列: ${missing.join(", ")}（需要 Date、Superid、In 三列）`] };
+  }
+
+  const errors: string[] = [];
+  const rows: ParsedRow[] = [];
+
+  for (let i = 1; i < raw.length; i++) {
+    const row = raw[i] as unknown[];
+    const rawDate   = row[dateIdx];
+    const rawUser   = row[superidIdx];
+    const rawAmount = row[inIdx];
+
+    // Skip blank rows
+    if (!rawDate && !rawUser && !rawAmount) continue;
+
+    const date = excelDateToString(rawDate);
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      errors.push(`第 ${i + 1} 行: 日期无法识别 "${rawDate}"`);
+      continue;
+    }
+
+    const username = String(rawUser ?? "").trim();
+    if (!username) {
+      errors.push(`第 ${i + 1} 行: Superid 为空`);
+      continue;
+    }
+
+    const amount = Number(rawAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      errors.push(`第 ${i + 1} 行: In 金额无效 "${rawAmount}"`);
+      continue;
+    }
+    if (amount === 0) continue; // skip zero-recharge rows
+
+    rows.push({ date, username, amount });
+  }
+
+  return { rows, errors };
+}
+
 export function RechargeImporter() {
   const [text, setText] = useState("");
   const [parseErrors, setParseErrors] = useState<string[]>([]);
@@ -51,9 +138,43 @@ export function RechargeImporter() {
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setText(String(reader.result ?? ""));
-    reader.readAsText(file);
+
+    const isExcel =
+      file.name.endsWith(".xlsx") ||
+      file.name.endsWith(".xls") ||
+      file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel";
+
+    if (isExcel) {
+      // Parse Excel directly — bypass the CSV textarea
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const buffer = reader.result as ArrayBuffer;
+        const { rows, errors } = await parseExcel(buffer);
+        setParseErrors(errors);
+        if (!rows.length && !errors.length) {
+          toast.error("Excel 没有找到有效数据");
+          return;
+        }
+        if (!rows.length) {
+          setPreview([]);
+          setSummary(null);
+          return;
+        }
+        startTransition(async () => {
+          const r = await previewRechargeAction(rows);
+          if (r.error) { toast.error(r.error); return; }
+          setPreview(r.rows);
+          setSummary(r.summary);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // CSV / plain text
+      const reader = new FileReader();
+      reader.onload = () => setText(String(reader.result ?? ""));
+      reader.readAsText(file);
+    }
   }
 
   function runPreview() {
@@ -120,8 +241,13 @@ export function RechargeImporter() {
         />
         <div className="flex flex-col gap-2">
           <label className="text-sm">
-            <span className="block mb-1">Or upload .csv:</span>
-            <input type="file" accept=".csv,text/csv" onChange={handleFile} className="text-sm" />
+            <span className="block mb-1">Or upload .xlsx / .csv:</span>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={handleFile}
+              className="text-sm"
+            />
           </label>
           <button
             type="button"
