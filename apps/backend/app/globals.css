@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* Scan shared package sources so classes used in @k8event/shared/components/* are emitted. */
+@source "../../../packages/shared/src/**/*.{ts,tsx}";
+
+/* ─────────────────────────────────────────────────────────────
+   Dark Stadium Gold — design tokens for the player experience.
+   Scoped at the route-group level via [data-theme="player"] so
+   admin pages stay on their own neutral theme.
+   ───────────────────────────────────────────────────────────── */
+
+[data-theme="player"] {
+  /* surface */
+  --bg-base: #0B0F14;
+  --bg-elevated: #131922;
+  --bg-raised: #1B2230;
+  --bg-overlay: rgba(11, 15, 20, 0.9);
+
+  /* borders */
+  --border-subtle: #1F2937;
+  --border-strong: #2B3445;
+
+  /* gold (CTAs, tokens, hero accents) */
+  --gold-50: #FFF7E0;
+  --gold-300: #FFE08A;
+  --gold-500: #FFC857;
+  --gold-600: #E0A93A;
+  --gold-700: #9C7424;
+
+  /* pitch green (eligible, correct, success) */
+  --pitch-400: #4ADE80;
+  --pitch-500: #22C55E;
+  --pitch-600: #16A34A;
+
+  /* crimson (wrong, error, live pulse) */
+  --crimson-400: #F87171;
+  --crimson-500: #EF4444;
+
+  /* azure (info) */
+  --azure-400: #60A5FA;
+  --azure-500: #3B82F6;
+
+  /* text */
+  --text-hi: #F5F7FA;
+  --text-mid: #B7BFCC;
+  --text-lo: #6B7382;
+  --text-on-gold: #0B0F14;
+
+  /* radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-full: 9999px;
+
+  /* shadows */
+  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+                 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 0 1px rgba(255, 200, 87, 0.2),
+                 0 12px 30px -10px rgba(255, 200, 87, 0.2);
+
+  /* fonts */
+  --font-display: var(--font-space-grotesk, ui-sans-serif);
+  --font-sans: var(--font-inter, ui-sans-serif);
+
+  background: var(--bg-base);
+  color: var(--text-hi);
+  font-family: var(--font-sans);
+}
+
+/* Admin keeps a neutral light look (untouched). */
+[data-theme="admin"] {
+  --font-sans: var(--font-inter, ui-sans-serif);
+  font-family: var(--font-sans);
+}
+
+/* Light/dark for routes that don't set a theme (login, root). */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@theme inline {
+  /* expose tokens as Tailwind utilities — only meaningful inside [data-theme="player"] */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bg: var(--bg-base);
+  --color-surface: var(--bg-elevated);
+  --color-surface-2: var(--bg-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-gold: var(--gold-500);
+  --color-gold-soft: var(--gold-300);
+  --color-pitch: var(--pitch-500);
+  --color-crimson: var(--crimson-500);
+  --color-azure: var(--azure-500);
+  --color-text: var(--text-hi);
+  --color-text-mid: var(--text-mid);
+  --color-text-lo: var(--text-lo);
+  --color-on-gold: var(--text-on-gold);
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --radius-card: var(--radius-md);
+  --radius-hero: var(--radius-lg);
+}
+
+@keyframes aurora {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.9); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--tx), var(--ty), 0) rotate(720deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+}
