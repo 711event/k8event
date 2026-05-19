@@ -2,7 +2,7 @@
 
 import imageCompression from "browser-image-compression";
 import { getChatDb, type LocalImage } from "./dexie";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "../supabase/client";
 
 const uuid = () => crypto.randomUUID();
 

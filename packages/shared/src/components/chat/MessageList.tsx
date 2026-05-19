@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MessageCircle } from "lucide-react";
-import { formatMalaysia } from "@/lib/time/malaysia";
+import { formatMalaysia } from "../../time/malaysia";
 
 export type ChatMessageView = {
   id: string;

@@ -1,5 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { UserRole } from "@/lib/supabase/types";
+import { createSupabaseServerClient } from "../supabase/server";
+import type { UserRole } from "../supabase/types";
 
 export type AuthedUser = {
   id: string;

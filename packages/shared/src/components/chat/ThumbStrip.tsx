@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { getChatDb, type LocalImage } from "@/lib/chat/dexie";
+import { getChatDb, type LocalImage } from "../../chat/dexie";
 
 export function ThumbStrip({
   onPick,
