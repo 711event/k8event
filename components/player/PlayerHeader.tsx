@@ -8,11 +8,11 @@ export async function PlayerHeader() {
     <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--bg-base)]/85 backdrop-blur-md">
       <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
         <Link href="/event" className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-sm">
-            K
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-[11px] tracking-tight">
+            711
           </span>
           <span className="font-[family-name:var(--font-display)] font-bold text-[var(--text-hi)] tracking-tight">
-            k8event
+            711event
           </span>
         </Link>
         {user ? (

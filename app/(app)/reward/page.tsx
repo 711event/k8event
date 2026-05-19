@@ -6,7 +6,7 @@ import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
 
-export const metadata = { title: "奖励中心 · k8event" };
+export const metadata = { title: "奖励中心 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function RewardPage() {

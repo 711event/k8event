@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
 
-export const metadata = { title: "我的预测 · k8event" };
+export const metadata = { title: "我的预测 · 711event" };
 export const dynamic = "force-dynamic";
 
 type Filter = "all" | "won" | "lost" | "pending";

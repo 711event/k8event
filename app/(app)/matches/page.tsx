@@ -5,7 +5,7 @@ import { MatchCard, type MatchCardData } from "@/components/player/MatchCard";
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 
-export const metadata = { title: "比赛 · k8event" };
+export const metadata = { title: "比赛 · 711event" };
 export const dynamic = "force-dynamic";
 
 type Tab = "open" | "live" | "finished";

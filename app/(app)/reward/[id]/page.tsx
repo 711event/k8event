@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RedeemButton } from "./RedeemButton";
 
-export const metadata = { title: "奖品详情 · k8event" };
+export const metadata = { title: "奖品详情 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function RewardItemPage(props: { params: Promise<{ id: string }> }) {

@@ -59,10 +59,10 @@ export function AdminMobileNav({
           <aside className="relative h-full w-64 bg-zinc-900 text-zinc-100 flex flex-col">
             <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-sm">
-                  K
+                <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight">
+                  711
                 </div>
-                <span className="font-semibold text-sm">管理后台</span>
+                <span className="font-semibold text-sm">711event 后台</span>
               </div>
               <button
                 type="button"

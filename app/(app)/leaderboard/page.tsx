@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Leaderboard · k8event" };
+export const metadata = { title: "排行榜 · 711event" };
 
 export default async function LeaderboardPage() {
   const user = await getCurrentUser();

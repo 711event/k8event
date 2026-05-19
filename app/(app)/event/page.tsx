@@ -9,7 +9,7 @@ import { LeaderboardPreview, type PodiumEntry } from "@/components/player/Leader
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 
-export const metadata = { title: "赛事 · k8event" };
+export const metadata = { title: "赛事 · 711event" };
 export const dynamic = "force-dynamic";
 
 type RawMatch = MatchCardData;

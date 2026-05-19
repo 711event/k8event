@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/player/EmptyState";
 import { AnimatedNumber } from "@/components/player/AnimatedNumber";
 import type { TokenReason } from "@/lib/supabase/types";
 
-export const metadata = { title: "Token 流水 · k8event" };
+export const metadata = { title: "Token 流水 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function TokensPage() {

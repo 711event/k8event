@@ -8,7 +8,7 @@ import { StadiumHero } from "@/components/player/StadiumHero";
 import { Chip } from "@/components/player/Chip";
 import { PredictionForm } from "./PredictionForm";
 
-export const metadata = { title: "比赛详情 · k8event" };
+export const metadata = { title: "比赛详情 · 711event" };
 export const dynamic = "force-dynamic";
 
 function oneOrNull<T>(v: T | T[] | null | undefined): T | null {

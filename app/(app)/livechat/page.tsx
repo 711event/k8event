@@ -1,6 +1,6 @@
 import { ChatRoom } from "./ChatRoom";
 
-export const metadata = { title: "客服 · k8event" };
+export const metadata = { title: "客服 · 711event" };
 
 export default function LiveChatPage() {
   // Inside (app) layout: top header ~56px sticky, bottom nav ~76px fixed.

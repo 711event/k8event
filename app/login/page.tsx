@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/get-user";
 import { FieldGridOverlay } from "@/components/player/FieldGridOverlay";
 import { LoginForm } from "./LoginForm";
 
-export const metadata = { title: "登录 · k8event" };
+export const metadata = { title: "登录 · 711event" };
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
@@ -37,11 +37,11 @@ export default async function LoginPage() {
 
       <div className="relative w-full max-w-sm space-y-6">
         <div className="text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-xl mb-3">
-            K
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-lg mb-3 tracking-tight">
+            711
           </span>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight">k8event</h1>
-          <p className="text-sm text-[var(--text-mid)] mt-1.5">世界杯竞猜 · 用用户名登录</p>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight">711event</h1>
+          <p className="text-sm text-[var(--text-mid)] mt-1.5">免费畅聊 · 竞猜赢豪礼,天天来领奖</p>
         </div>
         <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
           <LoginForm />

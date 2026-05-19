@@ -228,11 +228,11 @@ export function ChatRoom() {
   return (
     <>
       <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] flex items-center justify-center font-bold font-[family-name:var(--font-display)]">
-          K
+        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] flex items-center justify-center font-bold font-[family-name:var(--font-display)] text-[11px] tracking-tight">
+          711
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-[var(--text-hi)] text-sm">k8event 客服</h1>
+          <h1 className="font-semibold text-[var(--text-hi)] text-sm">711event 客服</h1>
           <p className="text-[11px] text-[var(--pitch-400)] flex items-center gap-1.5">
             <span
               className="h-1.5 w-1.5 rounded-full bg-[var(--pitch-500)]"

@@ -62,7 +62,7 @@ export default async function AdminHomePage() {
     <div className="space-y-6 max-w-6xl">
       <div>
         <h1 className="text-xl font-semibold text-zinc-900">总览</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">k8event 运营数据快照 · {today} (GMT+8)</p>
+        <p className="text-sm text-zinc-500 mt-0.5">711event 运营数据快照 · {today} (GMT+8)</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

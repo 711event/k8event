@@ -16,8 +16,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "k8event — 世界杯竞猜活动",
-  description: "世界杯竞猜 Token 活动 + 内建客服支持。",
+  title: "711event — 世界杯竞猜活动",
+  description: "免费畅聊 · 竞猜赢豪礼,天天来领奖。",
 };
 
 export const viewport: Viewport = {

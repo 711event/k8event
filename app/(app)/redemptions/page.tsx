@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
 import type { RedemptionStatus } from "@/lib/supabase/types";
 
-export const metadata = { title: "兑换记录 · k8event" };
+export const metadata = { title: "兑换记录 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function MyRedemptionsPage() {
