@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import { MessageList, type ChatMessageView } from "@k8event/shared/components/chat/MessageList";
 import { InputBar } from "@k8event/shared/components/chat/InputBar";
@@ -13,6 +13,7 @@ import {
   type SenderContext,
 } from "@k8event/shared/chat/uploadImage";
 
+const PAGE_SIZE = 50;
 const uuid = () => crypto.randomUUID();
 
 type Session = { threadId: string; guestToken: string; status: string; guestName: string | null };
@@ -43,6 +44,10 @@ export function ChatRoom() {
   const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<ChatMessageView[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // oldest created_at we've loaded — used as cursor for loading older messages
+  const oldestAt = useRef<string | null>(null);
 
   const supabase = useMemo(
     () => (session ? createSupabaseBrowserClient({ "x-guest-token": session.guestToken }) : null),
@@ -69,20 +74,24 @@ export function ChatRoom() {
     };
   }, []);
 
-  // Initial load + realtime + polling fallback
+  // Initial load: fetch the 50 most recent messages, then set up realtime + polling
   useEffect(() => {
     if (!supabase || !session) return;
     let cancelled = false;
 
+    // Fetch newest PAGE_SIZE messages (DESC so we get the most recent, then reverse for display)
     supabase
       .from("chat_messages")
       .select("id, sender, kind, body, image_url, width, height, created_at, client_id")
       .eq("thread_id", session.threadId)
-      .order("created_at", { ascending: true })
-      .limit(200)
+      .order("created_at", { ascending: false })
+      .limit(PAGE_SIZE)
       .then(({ data }) => {
         if (cancelled) return;
-        setMessages((data ?? []).map(rowToView));
+        const rows = (data ?? []).reverse(); // oldest → newest for display
+        setMessages(rows.map(rowToView));
+        setHasMore((data ?? []).length === PAGE_SIZE);
+        oldestAt.current = rows[0]?.created_at ?? null;
       });
 
     const channel = supabase
@@ -100,16 +109,23 @@ export function ChatRoom() {
       .subscribe();
 
     const poll = setInterval(async () => {
-      const last = messages[messages.length - 1];
-      const since = last?.createdAt;
-      const q = supabase
-        .from("chat_messages")
-        .select("id, sender, kind, body, image_url, width, height, created_at, client_id")
-        .eq("thread_id", session.threadId)
-        .order("created_at", { ascending: true });
-      const { data } = since ? await q.gt("created_at", since) : await q;
-      if (cancelled || !data?.length) return;
-      for (const r of data) mergeNewRow(r);
+      // Poll only for new messages (after the latest we know about)
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        const since = last?.createdAt;
+        if (!since) return prev;
+        supabase
+          .from("chat_messages")
+          .select("id, sender, kind, body, image_url, width, height, created_at, client_id")
+          .eq("thread_id", session.threadId)
+          .gt("created_at", since)
+          .order("created_at", { ascending: true })
+          .then(({ data }) => {
+            if (cancelled || !data?.length) return;
+            for (const r of data) mergeNewRow(r);
+          });
+        return prev; // no-op update; mergeNewRow will trigger real update
+      });
     }, 5000);
 
     return () => {
@@ -124,6 +140,30 @@ export function ChatRoom() {
   useEffect(() => {
     pruneOldImages().catch(() => undefined);
   }, []);
+
+  // Load older messages (cursor-based, called when user scrolls to top)
+  async function loadOlderMessages() {
+    if (!supabase || !session || !hasMore || loadingMore || !oldestAt.current) return;
+    setLoadingMore(true);
+    try {
+      const { data } = await supabase
+        .from("chat_messages")
+        .select("id, sender, kind, body, image_url, width, height, created_at, client_id")
+        .eq("thread_id", session.threadId)
+        .lt("created_at", oldestAt.current)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+      const rows = (data ?? []).reverse();
+      if (rows.length > 0) {
+        oldestAt.current = rows[0].created_at;
+        setMessages((prev) => [...rows.map(rowToView), ...prev]);
+      }
+      setHasMore(rows.length === PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   function mergeNewRow(raw: unknown) {
     const r = raw as Parameters<typeof rowToView>[0] & { client_id: string | null };
@@ -174,10 +214,6 @@ export function ChatRoom() {
         setMessages((prev) => prev.filter((m) => m.id !== clientId));
         return;
       }
-      // POST succeeded — mark the optimistic bubble as delivered immediately, even
-      // if the realtime echo hasn't arrived yet (slow network / blocked websocket).
-      // When the real row eventually streams in via realtime, mergeNewRow() will
-      // dedupe by client_id and replace the temp one with the canonical row.
       setMessages((prev) =>
         prev.map((m) => (m.id === clientId ? { ...m, pending: false } : m)),
       );
@@ -251,8 +287,6 @@ export function ChatRoom() {
         setMessages((prev) => prev.filter((m) => m.id !== clientId));
         return;
       }
-      // POST succeeded — fill in image url + clear pending immediately.
-      // Realtime echo will dedupe by client_id when it arrives.
       setMessages((prev) =>
         prev.map((m) =>
           m.id === clientId
@@ -309,7 +343,13 @@ export function ChatRoom() {
           连接中…
         </div>
       ) : (
-        <MessageList messages={messages} perspective="guest" />
+        <MessageList
+          messages={messages}
+          perspective="guest"
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={loadOlderMessages}
+        />
       )}
 
       <InputBar

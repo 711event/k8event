@@ -210,6 +210,7 @@ export type Database = {
         Row: {
           id: string;
           guest_session: string;
+          player_id: string | null;
           guest_name: string | null;
           status: ChatThreadStatus;
           claimed_by: string | null;
@@ -219,6 +220,7 @@ export type Database = {
         Insert: {
           id?: string;
           guest_session: string;
+          player_id?: string | null;
           guest_name?: string | null;
           status?: ChatThreadStatus;
           claimed_by?: string | null;
@@ -240,6 +242,7 @@ export type Database = {
           width: number | null;
           height: number | null;
           client_id: string | null;
+          read_at: Timestamp | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -253,9 +256,30 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           client_id?: string | null;
+          read_at?: Timestamp | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["chat_messages"]["Insert"]>;
+        Relationships: [];
+      };
+      chat_retention_settings: {
+        Row: {
+          id: string;
+          message_retention_days: number;
+          media_retention_days: number;
+          archive_closed_threads_after_days: number;
+          updated_by: string | null;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          message_retention_days?: number;
+          media_retention_days?: number;
+          archive_closed_threads_after_days?: number;
+          updated_by?: string | null;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_retention_settings"]["Insert"]>;
         Relationships: [];
       };
       quick_replies: {

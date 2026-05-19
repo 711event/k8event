@@ -44,11 +44,19 @@ export default async function ChatInboxPage(props: {
   return (
     <div className="space-y-6 max-w-4xl">
       <ChatInboxAutoRefresh />
-      <div>
-        <h1 className="text-2xl font-semibold">客服会话</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          新消息会自动到达 · 点会话进入对话页 · 多客服时记得"认领"避免重复回复
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">客服会话</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            新消息会自动到达 · 点会话进入对话页 · 多客服时记得"认领"避免重复回复
+          </p>
+        </div>
+        <Link
+          href="/admin/chat/retention"
+          className="shrink-0 text-xs text-zinc-400 hover:text-zinc-700 mt-1"
+        >
+          保留策略设置 →
+        </Link>
       </div>
 
       <div className="flex gap-2 border-b border-zinc-200">

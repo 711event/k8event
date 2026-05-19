@@ -34,6 +34,7 @@ const migrations = [
   "0005_activities.sql",
   "0006_token_sources.sql",
   "0007_checkin.sql",
+  "0008_chat_player.sql",
 ];
 
 console.log(`Connecting to Supabase project ${projectRef}...`);

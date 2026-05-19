@@ -21,14 +21,16 @@ export async function POST() {
   }
 
   // If the user is logged in (player session), use their username as the chat name
-  // so admins see a real account name instead of "Guest".
+  // and look up their thread by player_id (persists across cookie loss / devices).
   let memberLabel: string | null = null;
+  let authUserId: string | null = null;
   try {
     const supabase = await createSupabaseServerClient();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
     if (authUser) {
+      authUserId = authUser.id;
       const { data: profile } = await supabase
         .from("profiles")
         .select("username, display_name")
@@ -43,6 +45,45 @@ export async function POST() {
   }
 
   const admin = getSupabaseAdmin();
+
+  // -----------------------------------------------------------------------
+  // 1. Logged-in player: find the most-recent non-closed thread by player_id.
+  //    This is the persistence key — survives cookie loss and device changes.
+  // -----------------------------------------------------------------------
+  if (authUserId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: playerThread } = await (admin as any)
+      .from("chat_threads")
+      .select("id, status, guest_name")
+      .eq("player_id", authUserId)
+      .neq("status", "closed")
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (playerThread) {
+      // Re-anchor cookie so RLS guest policies still work on this device,
+      // and refresh the display name if it changed.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const patch: Record<string, unknown> = { guest_session: token };
+      if (memberLabel && playerThread.guest_name !== memberLabel) {
+        patch.guest_name = memberLabel;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).from("chat_threads").update(patch).eq("id", playerThread.id);
+
+      return NextResponse.json({
+        threadId: playerThread.id,
+        guestToken: token,
+        status: playerThread.status,
+        guestName: memberLabel ?? playerThread.guest_name,
+      });
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 2. Fall back to cookie-based lookup (anonymous guests + first login).
+  // -----------------------------------------------------------------------
   let { data: thread } = await admin
     .from("chat_threads")
     .select("id, status, guest_name")
@@ -50,24 +91,43 @@ export async function POST() {
     .maybeSingle();
 
   if (!thread) {
-    const { data: created, error } = await admin
+    // -----------------------------------------------------------------------
+    // 3. No existing thread — create one, linking player_id if authenticated.
+    // -----------------------------------------------------------------------
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertPayload: Record<string, unknown> = {
+      guest_session: token,
+      guest_name: memberLabel,
+    };
+    if (authUserId) insertPayload.player_id = authUserId;
+
+    const { data: created, error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from("chat_threads")
-      .insert({ guest_session: token, guest_name: memberLabel })
+      .insert(insertPayload)
       .select("id, status, guest_name")
       .single();
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     thread = created;
-  } else if (memberLabel && thread.guest_name !== memberLabel) {
-    // Backfill / refresh name when the same browser is now a logged-in member.
-    const { data: updated } = await admin
-      .from("chat_threads")
-      .update({ guest_name: memberLabel })
-      .eq("id", thread.id)
-      .select("id, status, guest_name")
-      .single();
-    if (updated) thread = updated;
+  } else {
+    // -----------------------------------------------------------------------
+    // 4. Existing cookie thread — backfill player_id and name if now logged in.
+    // -----------------------------------------------------------------------
+    const patch: Record<string, unknown> = {};
+    if (memberLabel && thread.guest_name !== memberLabel) patch.guest_name = memberLabel;
+    if (authUserId) patch.player_id = authUserId;
+
+    if (Object.keys(patch).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: updated } = await (admin as any)
+        .from("chat_threads")
+        .update(patch)
+        .eq("id", thread.id)
+        .select("id, status, guest_name")
+        .single();
+      if (updated) thread = updated;
+    }
   }
 
   return NextResponse.json({
