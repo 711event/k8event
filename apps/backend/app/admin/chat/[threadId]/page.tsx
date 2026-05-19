@@ -26,9 +26,13 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true })
       .limit(500),
+    // Only "++"-prefixed AND active rows show up as composer chips.
+    // Plain templates (no "++") are managed in /admin/quick-replies but not surfaced as buttons here.
     supabase
       .from("quick_replies")
       .select("id, title, body")
+      .eq("is_active", true)
+      .like("title", "++%")
       .order("sort_order")
       .order("title"),
   ]);
