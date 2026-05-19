@@ -68,19 +68,12 @@ export function ChatInboxAutoRefresh() {
 
     void subscribe();
 
-    const {
-      data: { subscription: authSub },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (channel) supabase.removeChannel(channel);
-        retries = 0;
-        void subscribe();
-      }
-    });
+    // supabase-js handles realtime.setAuth() on TOKEN_REFRESHED in-place,
+    // so we don't tear the channel down — re-creating after subscribe()
+    // throws "cannot add postgres_changes callbacks after subscribe()".
 
     return () => {
       cancelled = true;
-      authSub.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
   }, [router]);

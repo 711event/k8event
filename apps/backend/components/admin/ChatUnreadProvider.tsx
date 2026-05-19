@@ -127,21 +127,15 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
 
     void subscribe();
 
-    // Re-subscribe when the admin signs in fresh or their token is refreshed,
-    // so the channel re-opens with the new JWT instead of the stale one.
-    const {
-      data: { subscription: authSub },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (channel) supabase.removeChannel(channel);
-        retries = 0;
-        void subscribe();
-      }
-    });
+    // NOTE: we used to re-subscribe on SIGNED_IN / TOKEN_REFRESHED here, but
+    // supabase-js already calls realtime.setAuth(newToken) on TOKEN_REFRESHED
+    // and that updates the existing channel's auth in-place — so we don't need
+    // to tear it down. Re-creating the channel after .subscribe() also
+    // throws "cannot add postgres_changes callbacks after subscribe()" when the
+    // listener fires before removeChannel() has actually settled (it's async).
 
     return () => {
       cancelled = true;
-      authSub.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
