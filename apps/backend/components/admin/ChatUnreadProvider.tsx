@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 
 type Ctx = { unreadCount: number };
@@ -58,6 +59,8 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
   // Initial count + realtime subscription. Runs once.
   useEffect(() => {
     let cancelled = false;
+    let retries = 0;
+    let channel: RealtimeChannel | null = null;
     const supabase = createSupabaseBrowserClient();
 
     const lastSeen = (() => {
@@ -80,27 +83,67 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
       if (!onChatPageRef.current) setUnreadCount(count ?? 0);
     })();
 
-    const channel = supabase
-      .channel("bo:chat-unread")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: "sender=eq.guest",
-        },
-        () => {
-          if (onChatPageRef.current) return;
-          setUnreadCount((c) => c + 1);
-          playDing(audioPrimedRef.current);
-        },
-      )
-      .subscribe();
+    async function subscribe() {
+      // KEY: hydrate the session BEFORE opening the channel. createBrowserClient
+      // pulls the JWT from cookies asynchronously; subscribing first means the
+      // channel opens unauthenticated and silently receives zero events even
+      // after setAuth() updates the connection later.
+      await supabase.auth.getSession();
+      if (cancelled) return;
+
+      channel = supabase
+        .channel("bo:chat-unread")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "chat_messages",
+            filter: "sender=eq.guest",
+          },
+          () => {
+            if (onChatPageRef.current) return;
+            setUnreadCount((c) => c + 1);
+            playDing(audioPrimedRef.current);
+          },
+        )
+        .subscribe((status, err) => {
+          if (process.env.NODE_ENV !== "production") {
+            // eslint-disable-next-line no-console
+            console.log("[ChatUnread] channel", status, err ?? "");
+          }
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            if (cancelled || retries >= 5) return;
+            retries += 1;
+            setTimeout(() => {
+              if (cancelled) return;
+              if (channel) supabase.removeChannel(channel);
+              void subscribe();
+            }, 2000);
+          } else if (status === "SUBSCRIBED") {
+            retries = 0;
+          }
+        });
+    }
+
+    void subscribe();
+
+    // Re-subscribe when the admin signs in fresh or their token is refreshed,
+    // so the channel re-opens with the new JWT instead of the stale one.
+    const {
+      data: { subscription: authSub },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (channel) supabase.removeChannel(channel);
+        retries = 0;
+        void subscribe();
+      }
+    });
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      authSub.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import { MessageList, type ChatMessageView } from "@k8event/shared/components/chat/MessageList";
 import { InputBar } from "@k8event/shared/components/chat/InputBar";
@@ -49,22 +50,65 @@ export function AgentChat({
   const senderCtx: SenderContext = { sender: "agent", userId };
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`agent-thread:${threadId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `thread_id=eq.${threadId}`,
-        },
-        (payload) => mergeNewRow(payload.new),
-      )
-      .subscribe();
+    let cancelled = false;
+    let retries = 0;
+    let channel: RealtimeChannel | null = null;
+
+    // Hydrate session BEFORE subscribing so Supabase Realtime attaches the
+    // admin's JWT to the channel; subscribing first means the channel opens
+    // unauthenticated and never receives any postgres_changes events (silent
+    // CHANNEL_ERROR). See plan P11.
+    async function subscribe() {
+      await supabase.auth.getSession();
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`agent-thread:${threadId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "chat_messages",
+            filter: `thread_id=eq.${threadId}`,
+          },
+          (payload) => mergeNewRow(payload.new),
+        )
+        .subscribe((status, err) => {
+          if (process.env.NODE_ENV !== "production") {
+            // eslint-disable-next-line no-console
+            console.log("[AgentChat] channel", status, err ?? "");
+          }
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            if (cancelled || retries >= 5) return;
+            retries += 1;
+            setTimeout(() => {
+              if (cancelled) return;
+              if (channel) supabase.removeChannel(channel);
+              void subscribe();
+            }, 2000);
+          } else if (status === "SUBSCRIBED") {
+            retries = 0;
+          }
+        });
+    }
+
+    void subscribe();
+
+    const {
+      data: { subscription: authSub },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (channel) supabase.removeChannel(channel);
+        retries = 0;
+        void subscribe();
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      authSub.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, [supabase, threadId]);
 
