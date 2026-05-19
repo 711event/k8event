@@ -25,10 +25,10 @@ export default async function RechargePage(props: {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <h1 className="text-2xl font-semibold">Daily recharge import</h1>
+      <h1 className="text-2xl font-semibold">每日充值导入</h1>
 
       <section className="rounded-lg border border-zinc-200 p-5 space-y-2">
-        <h2 className="text-lg font-medium">Import CSV / Excel</h2>
+        <h2 className="text-lg font-medium">导入 CSV / Excel</h2>
         <p className="text-sm text-zinc-500">
           支持两种格式：
         </p>
@@ -41,29 +41,29 @@ export default async function RechargePage(props: {
           </li>
         </ul>
         <p className="text-sm text-zinc-500">
-          日期均以 GMT+8 解析。同一 (玩家, 日期) 已有记录将被覆盖。
+          日期均以 GMT+8 解析。同一（玩家，日期）已有记录将被覆盖。
         </p>
         <RechargeImporter />
       </section>
 
       <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200">
-          <h2 className="text-lg font-medium">Recharges for {date}</h2>
+          <h2 className="text-lg font-medium">{date} 充值记录</h2>
           <span className="text-sm text-zinc-500">
-            {todays?.length ?? 0} rows · {eligibleCount} eligible (≥ 500)
+            共 {todays?.length ?? 0} 条 · {eligibleCount} 条达标（≥ 500）
           </span>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Player</th>
-              <th className="px-4 py-3 font-medium text-right">Amount</th>
-              <th className="px-4 py-3 font-medium">Eligible?</th>
+              <th className="px-4 py-3 font-medium">玩家</th>
+              <th className="px-4 py-3 font-medium text-right">金额</th>
+              <th className="px-4 py-3 font-medium">是否达标</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!todays?.length ? (
-              <tr><td colSpan={3} className="px-4 py-6 text-zinc-500">No recharges for this date.</td></tr>
+              <tr><td colSpan={3} className="px-4 py-6 text-zinc-500">该日期暂无充值记录。</td></tr>
             ) : (
               todays.map((r, i) => {
                 const player = Array.isArray(r.player) ? r.player[0] : r.player;
@@ -84,7 +84,7 @@ export default async function RechargePage(props: {
                             : "bg-zinc-500/15 text-zinc-500")
                         }
                       >
-                        {eligible ? "yes" : "no"}
+                        {eligible ? "达标" : "未达标"}
                       </span>
                     </td>
                   </tr>

@@ -25,16 +25,16 @@ function parseCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
     if (i === 0 && /^date$/i.test(c0) && /^username$/i.test(c1)) continue;
 
     if (!c0 || !c1 || !c2) {
-      errors.push(`Row ${i + 1}: missing fields`);
+      errors.push(`第 ${i + 1} 行：缺少字段`);
       continue;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(c0)) {
-      errors.push(`Row ${i + 1}: bad date "${c0}" (need YYYY-MM-DD)`);
+      errors.push(`第 ${i + 1} 行：日期格式错误 "${c0}"（需要 YYYY-MM-DD）`);
       continue;
     }
     const amt = Number(c2);
     if (!Number.isFinite(amt) || amt < 0) {
-      errors.push(`Row ${i + 1}: bad amount "${c2}"`);
+      errors.push(`第 ${i + 1} 行：金额无效 "${c2}"`);
       continue;
     }
     out.push({ date: c0, username: c1, amount: amt });
@@ -128,6 +128,38 @@ async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; err
   return { rows, errors };
 }
 
+// ─── Sample file downloads ────────────────────────────────────────────────────
+function downloadCsvSample() {
+  const content = "date,username,amount\n2026-06-01,player001,1000\n2026-06-01,player002,500\n2026-06-01,player003,250\n";
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sample-recharge.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadExcelSample() {
+  const { utils, writeFile } = await import("xlsx");
+  const data = [
+    { Date: "2026-06-01", Superid: "player001", In: 1000 },
+    { Date: "2026-06-01", Superid: "player002", In: 500 },
+    { Date: "2026-06-01", Superid: "player003", In: 250 },
+  ];
+  const ws = utils.json_to_sheet(data);
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, "Recharge");
+  writeFile(wb, "sample-recharge.xlsx");
+}
+
+const GROUP_LABELS: Record<string, string> = {
+  new: "新增",
+  overwrite: "覆盖",
+  unchanged: "无变化",
+  unknown_user: "用户不存在",
+};
+
 export function RechargeImporter() {
   const [text, setText] = useState("");
   const [parseErrors, setParseErrors] = useState<string[]>([]);
@@ -202,7 +234,7 @@ export function RechargeImporter() {
       .filter((r) => (r.status === "ok" || r.status === "overwrite") && r.playerId)
       .map((r) => ({ date: r.date, amount: r.amount, playerId: r.playerId as string }));
     if (!toSend.length) {
-      toast.error("Nothing to import");
+      toast.error("没有可导入的数据");
       return;
     }
     startTransition(async () => {
@@ -211,7 +243,7 @@ export function RechargeImporter() {
         toast.error(r.error);
         return;
       }
-      toast.success(`Imported ${r.inserted} rows`);
+      toast.success(`已成功导入 ${r.inserted} 条记录`);
       setText("");
       setPreview(null);
       setSummary(null);
@@ -231,6 +263,31 @@ export function RechargeImporter() {
 
   return (
     <div className="space-y-4">
+      {/* Sample download links */}
+      <div className="flex items-center gap-3 text-xs text-zinc-500">
+        <span>下载样本文件：</span>
+        <button
+          type="button"
+          onClick={downloadCsvSample}
+          className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          sample-recharge.csv
+        </button>
+        <button
+          type="button"
+          onClick={downloadExcelSample}
+          className="inline-flex items-center gap-1 text-green-600 hover:underline"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          sample-recharge.xlsx
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
         <textarea
           value={text}
@@ -241,7 +298,7 @@ export function RechargeImporter() {
         />
         <div className="flex flex-col gap-2">
           <label className="cursor-pointer">
-            <span className="block text-xs text-zinc-500 mb-1">Or upload file:</span>
+            <span className="block text-xs text-zinc-500 mb-1">或上传文件：</span>
             <div className="flex items-center gap-2 h-10 px-4 rounded-md border border-dashed border-zinc-400 dark:border-zinc-600 hover:border-zinc-600 dark:hover:border-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-sm font-medium whitespace-nowrap">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-zinc-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -261,17 +318,17 @@ export function RechargeImporter() {
             disabled={pending || !text.trim()}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            {pending ? "Working…" : "Preview"}
+            {pending ? "处理中…" : "预览"}
           </button>
         </div>
       </div>
 
       {parseErrors.length > 0 && (
         <div className="text-sm text-amber-600 dark:text-amber-400">
-          {parseErrors.length} parse warning{parseErrors.length === 1 ? "" : "s"}:
+          共 {parseErrors.length} 条解析警告：
           <ul className="list-disc list-inside mt-1">
             {parseErrors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
-            {parseErrors.length > 5 && <li>… and {parseErrors.length - 5} more</li>}
+            {parseErrors.length > 5 && <li>… 还有 {parseErrors.length - 5} 条</li>}
           </ul>
         </div>
       )}
@@ -279,10 +336,10 @@ export function RechargeImporter() {
       {grouped && summary && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-3 text-sm">
-            <Chip color="green" label={`${summary.ok} new`} />
-            <Chip color="amber" label={`${summary.overwrite} overwrite`} />
-            <Chip color="zinc" label={`${summary.unchanged} unchanged`} />
-            <Chip color="red" label={`${summary.unknown_user} unknown user`} />
+            <Chip color="green" label={`${summary.ok} 条新增`} />
+            <Chip color="amber" label={`${summary.overwrite} 条覆盖`} />
+            <Chip color="zinc" label={`${summary.unchanged} 条无变化`} />
+            <Chip color="red" label={`${summary.unknown_user} 条用户不存在`} />
           </div>
 
           <PreviewTable group="new" rows={grouped.ok} />
@@ -296,7 +353,7 @@ export function RechargeImporter() {
             disabled={pending || (summary.ok + summary.overwrite === 0)}
             className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
-            {pending ? "Importing…" : `Import ${summary.ok + summary.overwrite} rows`}
+            {pending ? "导入中…" : `导入 ${summary.ok + summary.overwrite} 条记录`}
           </button>
         </div>
       )}
@@ -316,18 +373,19 @@ function Chip({ color, label }: { color: "green" | "amber" | "zinc" | "red"; lab
 
 function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
   if (!rows.length) return null;
+  const label = GROUP_LABELS[group] ?? group;
   return (
     <details className="rounded-md border border-zinc-200">
-      <summary className="px-3 py-2 cursor-pointer text-sm font-medium capitalize">
-        {group.replace("_", " ")} ({rows.length})
+      <summary className="px-3 py-2 cursor-pointer text-sm font-medium">
+        {label}（{rows.length} 条）
       </summary>
       <table className="w-full text-sm">
         <thead className="bg-zinc-50 text-left">
           <tr>
-            <th className="px-3 py-2 font-medium">Date</th>
-            <th className="px-3 py-2 font-medium">Username</th>
-            <th className="px-3 py-2 font-medium text-right">Amount</th>
-            <th className="px-3 py-2 font-medium text-right">Existing</th>
+            <th className="px-3 py-2 font-medium">日期</th>
+            <th className="px-3 py-2 font-medium">用户名</th>
+            <th className="px-3 py-2 font-medium text-right">金额</th>
+            <th className="px-3 py-2 font-medium text-right">现有金额</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200">
@@ -342,7 +400,7 @@ function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
             </tr>
           ))}
           {rows.length > 50 && (
-            <tr><td colSpan={4} className="px-3 py-2 text-zinc-500">… and {rows.length - 50} more</td></tr>
+            <tr><td colSpan={4} className="px-3 py-2 text-zinc-500">… 还有 {rows.length - 50} 条</td></tr>
           )}
         </tbody>
       </table>
