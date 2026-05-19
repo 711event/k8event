@@ -36,7 +36,8 @@ export function AttachMenu({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-12 left-0 z-20 w-44 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] shadow-[var(--shadow-card)] overflow-hidden">
+          {/* bottom offset must clear the QuickReply chip row + (optional) ThumbStrip sitting above the input row. */}
+          <div className="absolute bottom-[7rem] left-0 z-20 w-44 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] shadow-[var(--shadow-card)] overflow-hidden">
             <MenuItem
               icon={<Camera size={16} />}
               label="拍照"

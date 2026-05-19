@@ -19,8 +19,10 @@ import {
   closeThreadAction,
   unclaimThreadAction,
 } from "./actions";
+import { TemplatePicker } from "@/components/admin/TemplatePicker";
 
 type QuickReply = { id: string; title: string; body: string };
+const isButtonReply = (q: QuickReply) => q.title.trim().startsWith("++");
 const uuid = () => crypto.randomUUID();
 
 export function AgentChat({
@@ -257,18 +259,22 @@ export function AgentChat({
           <>
             <ThumbStrip onPick={(img) => sendImage(img.id)} />
             {quickReplies.length > 0 && (
-              <div className="px-3 py-2 border-b border-zinc-200 flex gap-2 overflow-x-auto">
-                {quickReplies.map((q) => (
+              <div className="px-3 py-2 border-b border-zinc-200 flex gap-2 overflow-x-auto items-center">
+                {quickReplies.filter(isButtonReply).map((q) => (
                   <button
                     key={q.id}
                     type="button"
                     onClick={() => setPrefill(q.body)}
-                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-zinc-100 hover:bg-foreground/[0.12] text-xs font-medium"
+                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 flex-shrink-0"
                     title={q.body.slice(0, 80)}
                   >
                     {q.title}
                   </button>
                 ))}
+                <TemplatePicker
+                  templates={quickReplies.filter((q) => !isButtonReply(q))}
+                  onPick={(body) => setPrefill(body)}
+                />
               </div>
             )}
           </>
