@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { CreateMatchForm } from "./CreateMatchForm";
 import { StatusBadge } from "./StatusBadge";
+import { SeedMatchesButton } from "./SeedMatchesButton";
 
 export const metadata = { title: "比赛 · 管理后台" };
 
@@ -15,7 +16,7 @@ export default async function MatchesPage() {
     supabase
       .from("matches")
       .select(
-        "id, kickoff_at, token_reward, status, result, home_team_id, away_team_id, home:teams!matches_home_team_id_fkey(name, short_code), away:teams!matches_away_team_id_fkey(name, short_code)",
+        "id, kickoff_at, token_reward, status, result, home_team_id, away_team_id, home:teams!matches_home_team_id_fkey(name, short_code, logo_url), away:teams!matches_away_team_id_fkey(name, short_code, logo_url)",
       )
       .order("kickoff_at", { ascending: false })
       .limit(200),
@@ -30,6 +31,11 @@ export default async function MatchesPage() {
       </div>
 
       <section className="rounded-lg border border-zinc-200 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-medium">Generate matches</h2>
+          <SeedMatchesButton />
+        </div>
+        <div className="border-t border-zinc-200 pt-4">
         <h2 className="text-lg font-medium mb-3">Create match</h2>
         {(!teams || teams.length < 2) ? (
           <p className="text-sm text-zinc-500">
@@ -39,6 +45,7 @@ export default async function MatchesPage() {
         ) : (
           <CreateMatchForm teams={teams} />
         )}
+        </div>
       </section>
 
       <section className="rounded-lg border border-zinc-200 overflow-x-auto">
@@ -65,9 +72,21 @@ export default async function MatchesPage() {
                       {formatMalaysia(m.kickoff_at)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-medium">{home?.name ?? "?"}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        {home?.logo_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={home.logo_url} alt="" className="h-4 w-4 rounded-sm object-contain flex-shrink-0" />
+                        )}
+                        <span className="font-medium">{home?.name ?? "?"}</span>
+                      </span>
                       <span className="text-zinc-500 mx-2">vs</span>
-                      <span className="font-medium">{away?.name ?? "?"}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        {away?.logo_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={away.logo_url} alt="" className="h-4 w-4 rounded-sm object-contain flex-shrink-0" />
+                        )}
+                        <span className="font-medium">{away?.name ?? "?"}</span>
+                      </span>
                     </td>
                     <td className="px-4 py-3 tabular-nums">{m.token_reward}</td>
                     <td className="px-4 py-3"><StatusBadge status={m.status} result={m.result} /></td>
