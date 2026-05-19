@@ -13,6 +13,14 @@ import type {
   UserRole,
 } from "./types";
 
+type ActivityType =
+  | "worldcup_prediction"
+  | "daily_checkin"
+  | "lucky_draw"
+  | "spin_wheel"
+  | "deposit_mission"
+  | "referral_mission";
+
 type Timestamp = string;
 
 export type Database = {
@@ -270,6 +278,64 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["quick_replies"]["Insert"]>;
         Relationships: [];
       };
+      activities: {
+        Row: {
+          id: string;
+          type: ActivityType;
+          name: string;
+          slug: string | null;
+          description: string | null;
+          banner_url: string | null;
+          rules: string | null;
+          start_at: Timestamp | null;
+          end_at: Timestamp | null;
+          is_active: boolean;
+          is_visible: boolean;
+          sort_order: number;
+          settings: Record<string, unknown>;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          type: ActivityType;
+          name: string;
+          slug?: string | null;
+          description?: string | null;
+          banner_url?: string | null;
+          rules?: string | null;
+          start_at?: Timestamp | null;
+          end_at?: Timestamp | null;
+          is_active?: boolean;
+          is_visible?: boolean;
+          sort_order?: number;
+          settings?: Record<string, unknown>;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["activities"]["Insert"]>;
+        Relationships: [];
+      };
+      player_checkins: {
+        Row: {
+          id: string;
+          player_id: string;
+          activity_id: string;
+          checkin_date: string;
+          streak_day: number;
+          tokens_awarded: number;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          activity_id: string;
+          checkin_date: string;
+          streak_day?: number;
+          tokens_awarded?: number;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["player_checkins"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: {
       token_balances: {
@@ -293,8 +359,13 @@ export type Database = {
         Args: { p_id: string; p_status: RedemptionStatus };
         Returns: undefined;
       };
+      perform_checkin: {
+        Args: { p_activity_id: string };
+        Returns: { streak_day: number; tokens_awarded: number };
+      };
     };
     Enums: {
+      activity_type: ActivityType;
       user_role: UserRole;
       match_status: MatchStatus;
       match_winner: MatchWinner;
