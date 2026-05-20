@@ -35,5 +35,5 @@ export async function signInAction(_prev: LoginState, formData: FormData): Promi
     await supabase.auth.signOut();
     return { error: "此账号无法在会员端登录,请前往管理后台域名。" };
   }
-  redirect("/event");
+  redirect("/activities/checkin");
 }
