@@ -68,7 +68,7 @@ function getRowBg(
     const ageMin =
       (Date.now() - new Date(t.last_message_at).getTime()) / 60_000;
     if (ageMin >= criticalMin) return "bg-red-100";
-    if (ageMin >= warnMin) return "bg-red-50";
+    if (ageMin >= warnMin) return "bg-yellow-50";
   }
 
   return "";

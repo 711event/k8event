@@ -131,10 +131,10 @@ export function RetentionForm({ defaults }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="w-4 h-4 rounded-sm bg-red-50 border border-red-200 shrink-0" />
+          <span className="w-4 h-4 rounded-sm bg-yellow-50 border border-yellow-200 shrink-0" />
           <NumberInput
-            label="浅红色预警"
-            hint="超过此时间显示浅红"
+            label="浅黄色预警"
+            hint="超过此时间显示浅黄"
             value={warnMin}
             onChange={setWarnMin}
             unit="分钟"

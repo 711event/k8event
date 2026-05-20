@@ -74,7 +74,7 @@ export default async function ChatInboxPage(props: {
           有客服正在查看
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-red-50 border border-red-200 inline-block" />
+          <span className="w-3 h-3 rounded-sm bg-yellow-50 border border-yellow-200 inline-block" />
           等待超过 5 分钟
         </span>
         <span className="flex items-center gap-1.5">
