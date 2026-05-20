@@ -109,8 +109,17 @@ export default async function CheckinPage() {
       <Link
         href="/event"
         className="fixed bottom-20 left-4 z-40 flex flex-col items-center gap-1 bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-2xl px-3 py-2.5 shadow-lg hover:border-[var(--gold-500)]/60 transition group"
-        style={{ backdropFilter: "blur(8px)" }}
+        style={{
+          backdropFilter: "blur(8px)",
+          animation: "wc-float 2.8s ease-in-out infinite",
+        }}
       >
+        <style>{`
+          @keyframes wc-float {
+            0%, 100% { transform: translateY(0px); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+            50%       { transform: translateY(-7px); box-shadow: 0 14px 28px rgba(0,0,0,0.22); }
+          }
+        `}</style>
         <span className="text-2xl">⚽</span>
         <span className="text-[10px] font-semibold text-[var(--gold-300)] group-hover:text-[var(--gold-200)] whitespace-nowrap">世界杯</span>
       </Link>
