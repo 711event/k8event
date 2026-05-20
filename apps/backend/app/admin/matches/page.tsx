@@ -36,7 +36,17 @@ export default async function MatchesPage() {
           <SeedMatchesButton />
         </div>
         <div className="border-t border-zinc-200 pt-4">
-        <h2 className="text-lg font-medium mb-3">创建比赛</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-medium">创建比赛</h2>
+          <a
+            href="https://worldcupkickofftimes.com/schedule/sgt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+          >
+            🌐 世界杯完整赛程表 →
+          </a>
+        </div>
         {(!teams || teams.length < 2) ? (
           <p className="text-sm text-zinc-500">
             请先在{" "}
