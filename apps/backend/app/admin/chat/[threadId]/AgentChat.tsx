@@ -260,13 +260,20 @@ export function AgentChat({
     try {
       const { createSupabaseBrowserClient } = await import("@k8event/shared/supabase/client");
       const sb = createSupabaseBrowserClient();
-      const path = `agent/${userId}/files/${uuid()}_${file.name}`;
+      // Sanitize: strip path separators and Android UUID prefixes
+      const rawName = (file.name || "file").split(/[/\\]/).pop() ?? "file";
+      const cleanName = rawName.replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i, "");
+      const path = `agent/${userId}/files/${uuid()}_${cleanName}`;
       const { error } = await sb.storage.from("chat-images").upload(path, file, { upsert: false });
       if (error) throw error;
       const { data } = sb.storage.from("chat-images").getPublicUrl(path);
-      const body = `📎 ${file.name}\n${data.publicUrl}`;
+      const body = `📎 ${cleanName}\n${data.publicUrl}`;
       const r = await agentSendMessageAction({ threadId, body, clientId });
       if (r && "error" in r) throw new Error(r.error);
+      // Immediately show file card (don't wait for polling)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === clientId ? { ...m, body, pending: false } : m)),
+      );
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "文件上传失败");
       setMessages((prev) => prev.filter((m) => m.id !== clientId));

@@ -34,7 +34,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "file_too_large" }, { status: 413 });
   }
 
-  const ext = file.name.split(".").pop() ?? "bin";
+  // Sanitize filename: strip path separators and Android UUID prefixes
+  const rawName = (file.name || "file").split(/[/\\]/).pop() ?? "file";
+  const cleanName = rawName.replace(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]/i,
+    "",
+  );
+
+  const ext = cleanName.split(".").pop() ?? "bin";
   const path = `guest/${thread.id}/${crypto.randomUUID()}.${ext}`;
   const arrayBuffer = await file.arrayBuffer();
 
@@ -47,5 +54,5 @@ export async function POST(req: Request) {
   }
 
   const { data } = supabase.storage.from("chat-images").getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl, filename: file.name });
+  return NextResponse.json({ url: data.publicUrl, filename: cleanName });
 }

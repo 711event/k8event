@@ -289,6 +289,10 @@ export function ChatRoom() {
         body: JSON.stringify({ body, clientId }),
       });
       if (!sendRes.ok) throw new Error("send_failed");
+      // Immediately update optimistic message so it shows the file card (don't wait for polling)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === clientId ? { ...m, body, pending: false } : m)),
+      );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "文件上传失败");
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
