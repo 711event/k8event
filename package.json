@@ -13,5 +13,8 @@
     "build:backend": "npm run build --workspace=apps/backend",
     "build:all": "npm run build:frontend && npm run build:backend",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "dependencies": {
+    "pg": "^8.21.0"
   }
 }

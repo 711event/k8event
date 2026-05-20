@@ -20,7 +20,7 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success("Team created");
+      toast.success("队伍已创建");
       formRef.current?.reset();
     } else if (state && "error" in state) {
       toast.error(state.error);
@@ -30,17 +30,17 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
   return (
     <>
       <section className="rounded-lg border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium mb-3">Add team</h2>
+        <h2 className="text-lg font-medium mb-3">添加队伍</h2>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-          <Field name="name" label="Name" placeholder="e.g. Argentina" />
-          <Field name="shortCode" label="Short code" placeholder="ARG" required={false} />
-          <Field name="logoUrl" label="Logo URL" placeholder="https://..." required={false} />
+          <Field name="name" label="名称" placeholder="例如：阿根廷" />
+          <Field name="shortCode" label="简称" placeholder="ARG" required={false} />
+          <Field name="logoUrl" label="队徽 URL" placeholder="https://..." required={false} />
           <button
             type="submit"
             disabled={pending}
             className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Add"}
+            {pending ? "保存中…" : "添加"}
           </button>
         </form>
       </section>
@@ -49,15 +49,15 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Logo</th>
+              <th className="px-4 py-3 font-medium">名称</th>
+              <th className="px-4 py-3 font-medium">简称</th>
+              <th className="px-4 py-3 font-medium">队徽</th>
               <th className="px-4 py-3 font-medium w-24"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {teams.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">No teams yet.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">暂无队伍</td></tr>
             ) : (
               teams.map((t) => <TeamRow key={t.id} team={t} />)
             )}
@@ -87,16 +87,16 @@ function TeamRow({ team }: { team: Team }) {
           type="button"
           disabled={pending}
           onClick={() => {
-            if (!confirm(`Delete team "${team.name}"?`)) return;
+            if (!confirm(`确认删除"${team.name}"？`)) return;
             startTransition(async () => {
               const r = await deleteTeamAction(team.id);
               if (r && "error" in r) toast.error(r.error);
-              else toast.success("Deleted");
+              else toast.success("已删除");
             });
           }}
           className="text-sm text-red-600 hover:underline disabled:opacity-50"
         >
-          Delete
+          删除
         </button>
       </td>
     </tr>

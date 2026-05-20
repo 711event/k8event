@@ -32,7 +32,7 @@ export function SeedTeamsButton() {
       title="一键插入 48 支 World Cup 2026 参赛队（含国旗）"
       className="h-9 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
     >
-      {pending ? "插入中…" : "🌍 Seed World Cup Teams"}
+      {pending ? "插入中…" : "🌍 一键导入世界杯球队"}
     </button>
   );
 }

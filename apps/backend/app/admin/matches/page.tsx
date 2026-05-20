@@ -26,21 +26,21 @@ export default async function MatchesPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Matches</h1>
-        <span className="text-sm text-zinc-500">{matches?.length ?? 0} total</span>
+        <h1 className="text-2xl font-semibold">比赛管理</h1>
+        <span className="text-sm text-zinc-500">共 {matches?.length ?? 0} 场比赛</span>
       </div>
 
       <section className="rounded-lg border border-zinc-200 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-medium">Generate matches</h2>
+          <h2 className="text-lg font-medium">生成赛程</h2>
           <SeedMatchesButton />
         </div>
         <div className="border-t border-zinc-200 pt-4">
-        <h2 className="text-lg font-medium mb-3">Create match</h2>
+        <h2 className="text-lg font-medium mb-3">创建比赛</h2>
         {(!teams || teams.length < 2) ? (
           <p className="text-sm text-zinc-500">
-            Add at least 2 teams first on the{" "}
-            <Link href="/admin/teams" className="underline">Teams</Link> page.
+            请先在{" "}
+            <Link href="/admin/teams" className="underline">球队管理</Link> 页面添加至少 2 支队伍。
           </p>
         ) : (
           <CreateMatchForm teams={teams} />
@@ -52,16 +52,16 @@ export default async function MatchesPage() {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Kickoff (GMT+8)</th>
-              <th className="px-4 py-3 font-medium">Match</th>
-              <th className="px-4 py-3 font-medium">Reward</th>
-              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">开赛时间 (GMT+8)</th>
+              <th className="px-4 py-3 font-medium">比赛</th>
+              <th className="px-4 py-3 font-medium">奖励</th>
+              <th className="px-4 py-3 font-medium">状态</th>
               <th className="px-4 py-3 font-medium w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!matches?.length ? (
-              <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">No matches yet.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">暂无比赛记录</td></tr>
             ) : (
               matches.map((m) => {
                 const home = Array.isArray(m.home) ? m.home[0] : m.home;
@@ -92,7 +92,7 @@ export default async function MatchesPage() {
                     <td className="px-4 py-3"><StatusBadge status={m.status} result={m.result} /></td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/admin/matches/${m.id}`} className="text-sm underline">
-                        Open
+                        查看
                       </Link>
                     </td>
                   </tr>

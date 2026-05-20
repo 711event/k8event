@@ -16,9 +16,9 @@ export default async function TeamsPage() {
   return (
     <div className="space-y-8 max-w-4xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Teams</h1>
+        <h1 className="text-2xl font-semibold">球队管理</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-500">{teams?.length ?? 0} total</span>
+          <span className="text-sm text-zinc-500">共 {teams?.length ?? 0} 支队伍</span>
           <SeedTeamsButton />
         </div>
       </div>

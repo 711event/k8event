@@ -36,46 +36,46 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
     <div className="space-y-8 max-w-4xl">
       <div>
         <Link href="/admin/matches" className="text-sm text-zinc-500 hover:underline">
-          ← All matches
+          ← 所有比赛
         </Link>
         <h1 className="text-2xl font-semibold mt-2">
           {home?.name ?? "?"} <span className="text-zinc-500 mx-2">vs</span> {away?.name ?? "?"}
         </h1>
         <div className="mt-2 flex items-center gap-3 text-sm text-zinc-500">
-          <span>Kickoff: {formatMalaysia(match.kickoff_at)} (GMT+8)</span>
+          <span>开赛时间：{formatMalaysia(match.kickoff_at)} (GMT+8)</span>
           <span>·</span>
-          <span>Reward: {match.token_reward} tokens</span>
+          <span>Token 奖励：{match.token_reward}</span>
           <span>·</span>
           <StatusBadge status={match.status} result={match.result} />
         </div>
       </div>
 
       <section className="rounded-lg border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium mb-3">Controls</h2>
+        <h2 className="text-lg font-medium mb-3">操作</h2>
         <MatchControls
           id={match.id}
           status={match.status}
-          homeName={home?.name ?? "Home"}
-          awayName={away?.name ?? "Away"}
+          homeName={home?.name ?? "主队"}
+          awayName={away?.name ?? "客队"}
         />
       </section>
 
       <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <h2 className="px-5 py-3 text-lg font-medium border-b border-zinc-200">
-          Predictions ({predictions?.length ?? 0})
+          竞猜记录（{predictions?.length ?? 0} 条）
         </h2>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Player</th>
-              <th className="px-4 py-3 font-medium">Pick</th>
-              <th className="px-4 py-3 font-medium">Result</th>
-              <th className="px-4 py-3 font-medium">Awarded</th>
+              <th className="px-4 py-3 font-medium">玩家</th>
+              <th className="px-4 py-3 font-medium">竞猜选择</th>
+              <th className="px-4 py-3 font-medium">结果</th>
+              <th className="px-4 py-3 font-medium">已发奖励</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!predictions?.length ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">No predictions yet.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">暂无竞猜记录</td></tr>
             ) : (
               predictions.map((p, i) => {
                 const player = Array.isArray(p.player) ? p.player[0] : p.player;
@@ -84,7 +84,7 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
                     <td className="px-4 py-3">{player?.display_name ?? "?"} <span className="text-zinc-500">({player?.username})</span></td>
                     <td className="px-4 py-3 font-mono">{p.pick}</td>
                     <td className="px-4 py-3">
-                      {p.is_correct === null ? "—" : p.is_correct ? "✓ correct" : "✗ wrong"}
+                      {p.is_correct === null ? "—" : p.is_correct ? "✓ 正确" : "✗ 错误"}
                     </td>
                     <td className="px-4 py-3 tabular-nums">{p.awarded ?? 0}</td>
                   </tr>

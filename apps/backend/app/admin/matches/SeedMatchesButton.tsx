@@ -47,7 +47,7 @@ export function SeedMatchesButton() {
         title="生成 72 场 WC 2026 小组赛（12 组循环赛，需先 Seed Teams）"
         className="h-9 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {seedPending ? "生成中…" : "⚽ Generate World Cup Matches"}
+        {seedPending ? "生成中…" : "⚽ 一键生成世界杯赛程"}
       </button>
       <button
         type="button"
@@ -56,7 +56,7 @@ export function SeedMatchesButton() {
         title="删除所有 scheduled 比赛（方便重新 Seed）"
         className="h-9 px-4 rounded-md border border-red-500/30 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {resetPending ? "清除中…" : "🗑 Clear Scheduled Matches"}
+        {resetPending ? "清除中…" : "🗑 清除已排期比赛"}
       </button>
     </div>
   );

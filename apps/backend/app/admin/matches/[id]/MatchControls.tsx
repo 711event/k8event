@@ -30,7 +30,7 @@ export function MatchControls({
   function run(fn: () => Promise<{ error?: string } | { ok: true } | undefined>, ok: string) {
     startTransition(async () => {
       const r = await fn();
-      if (r && "error" in r) toast.error(r.error ?? "Failed");
+      if (r && "error" in r) toast.error(r.error ?? "操作失败");
       else toast.success(ok);
     });
   }
@@ -44,71 +44,71 @@ export function MatchControls({
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "locked"), "Match locked")}
+            onClick={() => run(() => setMatchStatusAction(id, "locked"), "已锁定竞猜")}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            Lock predictions
+            锁定竞猜
           </button>
         )}
         {status === "locked" && (
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "scheduled"), "Match unlocked")}
+            onClick={() => run(() => setMatchStatusAction(id, "scheduled"), "已解锁竞猜")}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            Unlock
+            解锁竞猜
           </button>
         )}
         {settleable && (
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "cancelled"), "Match cancelled")}
+            onClick={() => run(() => setMatchStatusAction(id, "cancelled"), "比赛已取消")}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            Cancel match
+            取消比赛
           </button>
         )}
         <button
           type="button"
           disabled={pending}
           onClick={() => {
-            if (!confirm("Delete this match? Predictions will be deleted too.")) return;
+            if (!confirm("确认删除此比赛？相关竞猜记录也将一并删除。")) return;
             startTransition(async () => {
               const r = await deleteMatchAction(id);
-              if (r && "error" in r) toast.error(r.error ?? "Failed");
+              if (r && "error" in r) toast.error(r.error ?? "操作失败");
               else {
-                toast.success("Match deleted");
+                toast.success("比赛已删除");
                 router.push("/admin/matches");
               }
             });
           }}
           className="h-10 px-4 rounded-md border border-red-500/30 text-sm font-medium text-red-600 disabled:opacity-60"
         >
-          Delete
+          删除比赛
         </button>
       </div>
 
       {settleable && (
         <div className="rounded-md border border-zinc-200 p-4 space-y-3">
-          <div className="text-sm font-medium">Enter result and settle</div>
+          <div className="text-sm font-medium">选择结果并结算</div>
           <div className="flex flex-wrap gap-2">
-            <ResultChoice value="home" current={chosen} onPick={setChosen} label={`Home: ${homeName}`} />
-            <ResultChoice value="away" current={chosen} onPick={setChosen} label={`Away: ${awayName}`} />
-            <ResultChoice value="draw" current={chosen} onPick={setChosen} label="Draw (no awards)" />
+            <ResultChoice value="home" current={chosen} onPick={setChosen} label={`主队胜：${homeName}`} />
+            <ResultChoice value="away" current={chosen} onPick={setChosen} label={`客队胜：${awayName}`} />
+            <ResultChoice value="draw" current={chosen} onPick={setChosen} label="平局（不发放奖励）" />
           </div>
           <button
             type="button"
             disabled={pending || !chosen}
             onClick={() => {
               if (!chosen) return;
-              if (!confirm(`Settle match with result "${chosen}"? This awards tokens to winning predictions and cannot be undone.`)) return;
-              run(() => settleMatchAction(id, chosen as Result), "Match settled");
+              if (!confirm(`确认以"${chosen === "home" ? "主队胜" : chosen === "away" ? "客队胜" : "平局"}"结算此比赛？Token 将发放给预测正确的玩家，此操作不可撤销。`)) return;
+              run(() => settleMatchAction(id, chosen as Result), "比赛已结算");
             }}
             className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium disabled:opacity-60"
           >
-            {pending ? "Settling…" : "Settle match"}
+            {pending ? "结算中…" : "确认结算"}
           </button>
         </div>
       )}
