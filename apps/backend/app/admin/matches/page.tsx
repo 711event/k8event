@@ -16,7 +16,7 @@ export default async function MatchesPage() {
     supabase
       .from("matches")
       .select(
-        "id, kickoff_at, token_reward, status, result, home_team_id, away_team_id, home:teams!matches_home_team_id_fkey(name, short_code, logo_url), away:teams!matches_away_team_id_fkey(name, short_code, logo_url)",
+        "id, kickoff_at, token_reward, status, result, stage, home_team_id, away_team_id, home:teams!matches_home_team_id_fkey(name, short_code, logo_url), away:teams!matches_away_team_id_fkey(name, short_code, logo_url)",
       )
       .order("kickoff_at", { ascending: false })
       .limit(200),
@@ -63,6 +63,7 @@ export default async function MatchesPage() {
           <thead className="bg-zinc-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">开赛时间 (GMT+8)</th>
+              <th className="px-4 py-3 font-medium">赛阶</th>
               <th className="px-4 py-3 font-medium">比赛</th>
               <th className="px-4 py-3 font-medium">奖励</th>
               <th className="px-4 py-3 font-medium">状态</th>
@@ -71,7 +72,7 @@ export default async function MatchesPage() {
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!matches?.length ? (
-              <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">暂无比赛记录</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">暂无比赛记录</td></tr>
             ) : (
               matches.map((m) => {
                 const home = Array.isArray(m.home) ? m.home[0] : m.home;
@@ -80,6 +81,9 @@ export default async function MatchesPage() {
                   <tr key={m.id}>
                     <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">
                       {formatMalaysia(m.kickoff_at)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
+                      {m.stage ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5">

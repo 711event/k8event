@@ -277,6 +277,7 @@ export async function seedMatchesAction(): Promise<SeedResult> {
     kickoff_at: malaysiaToUtc(kickoff).toISOString(),
     token_reward: 10,
     status: "scheduled" as const,
+    stage: "Group Stage",
   }));
 
   const { error } = await supabase.from("matches").insert(rows);
@@ -365,12 +366,13 @@ export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
   }
 
   // Build rows
-  const rows = KNOCKOUT_SCHEDULE.map(({ kickoff }) => ({
+  const rows = KNOCKOUT_SCHEDULE.map(({ label, kickoff }) => ({
     home_team_id: tbdHomeId,
     away_team_id: tbdAwayId,
     kickoff_at: malaysiaToUtc(kickoff).toISOString(),
     token_reward: 10,
     status: "scheduled" as const,
+    stage: label,
   }));
 
   const { error } = await supabase.from("matches").insert(rows);
