@@ -52,15 +52,30 @@ export function AgentChat({
     void getChatDb().images.clear();
   }, []);
 
-  // ESC key → back to inbox
+  // ESC key → back to inbox; Ctrl+V → paste image
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
         router.push("/admin/chat");
       }
     }
+    async function onPaste(e: ClipboardEvent) {
+      const files = Array.from(e.clipboardData?.items ?? [])
+        .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+        .map((i) => i.getAsFile())
+        .filter((f): f is File => f !== null);
+      if (files.length) {
+        e.preventDefault();
+        await handleFiles(files);
+      }
+    }
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("paste", onPaste);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("paste", onPaste);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   // Track the latest message's created_at so polling fetches only newer rows.
