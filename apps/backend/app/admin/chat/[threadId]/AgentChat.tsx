@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import { MessageList, type ChatMessageView } from "@k8event/shared/components/chat/MessageList";
@@ -37,12 +38,24 @@ export function AgentChat({
   initialMessages: ChatMessageView[];
   quickReplies: QuickReply[];
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessageView[]>(initialMessages);
   const [prefill, setPrefill] = useState<string>("");
   const [pending, startTransition] = useTransition();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const canType = status !== "closed";
   const senderCtx: SenderContext = { sender: "agent", userId };
+
+  // ESC key → back to inbox
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        router.push("/admin/chat");
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [router]);
 
   // Track the latest message's created_at so polling fetches only newer rows.
   const lastCreatedAtRef = useRef<string>(
