@@ -301,6 +301,7 @@ export type Database = {
           body: string;
           sort_order: number;
           is_active: boolean;
+          image_url: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -309,6 +310,7 @@ export type Database = {
           body: string;
           sort_order?: number;
           is_active?: boolean;
+          image_url?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["quick_replies"]["Insert"]>;
