@@ -267,10 +267,43 @@ export function ChatRoom() {
     setPendingFiles((prev) => [...prev, ...files]);
   }
 
+  async function sendFileLink(file: File) {
+    const clientId = uuid();
+    setMessages((prev) => [
+      ...prev,
+      { id: clientId, sender: "guest", kind: "text", body: `📎 ${file.name}（上传中…）`, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
+    ]);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/chat/upload-file", { method: "POST", body: form });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "upload_failed");
+      }
+      const { url, filename } = await res.json();
+      const body = `📎 ${filename}\n${url}`;
+      const sendRes = await fetch("/api/chat/send", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body, clientId }),
+      });
+      if (!sendRes.ok) throw new Error("send_failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "文件上传失败");
+      setMessages((prev) => prev.filter((m) => m.id !== clientId));
+    }
+  }
+
   async function sendPendingFiles(files: File[]) {
     if (!senderCtx) return;
-    const ids = await ingestFiles(files, senderCtx);
-    for (const id of ids) await sendImage(id);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const others = files.filter((f) => !f.type.startsWith("image/"));
+    if (images.length) {
+      const ids = await ingestFiles(images, senderCtx);
+      for (const id of ids) await sendImage(id);
+    }
+    for (const f of others) await sendFileLink(f);
     setPendingFiles([]);
   }
 
