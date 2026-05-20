@@ -28,20 +28,17 @@ export default async function RechargePage(props: {
       <h1 className="text-2xl font-semibold">每日充值导入</h1>
 
       <section className="rounded-lg border border-zinc-200 p-5 space-y-2">
-        <h2 className="text-lg font-medium">导入 CSV / Excel</h2>
-        <p className="text-sm text-zinc-500">
-          支持两种格式：
-        </p>
+        <h2 className="text-lg font-medium">导入充值记录</h2>
         <ul className="text-sm text-zinc-500 list-disc list-inside space-y-0.5">
           <li>
-            <strong>Excel (.xlsx)</strong>：列名需含 <code>Date</code>、<code>Superid</code>、<code>In</code>（其余列自动忽略）
+            <strong>快速输入</strong>：从 Excel 直接选中三列（日期、用户名、金额）复制，粘贴到下方文本框即可
           </li>
           <li>
-            <strong>CSV</strong>：列顺序 <code>date, username, amount</code>（header 行可选）
+            <strong>上传文件 (.xlsx)</strong>：列名需含 <code>Date</code>、<code>Superid</code>、<code>In</code>（其余列自动忽略）
           </li>
         </ul>
         <p className="text-sm text-zinc-500">
-          日期均以 GMT+8 解析。同一（玩家，日期）已有记录将被覆盖。
+          日期格式：<code>YYYY-MM-DD</code>（如 <code>2026-05-20</code>）。同一（玩家，日期）已有记录将被覆盖。
         </p>
         <RechargeImporter />
       </section>

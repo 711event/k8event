@@ -130,7 +130,8 @@ async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; err
 
 // ─── Sample file downloads ────────────────────────────────────────────────────
 function downloadCsvSample() {
-  const content = "date,username,amount\n2026-06-01,player001,1000\n2026-06-01,player002,500\n2026-06-01,player003,250\n";
+  const today = new Date().toISOString().slice(0, 10);
+  const content = `date,username,amount\n${today},player001,1000\n${today},player002,500\n${today},player003,250\n`;
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -142,10 +143,11 @@ function downloadCsvSample() {
 
 async function downloadExcelSample() {
   const { utils, writeFile } = await import("xlsx");
+  const today = new Date().toISOString().slice(0, 10);
   const data = [
-    { Date: "2026-06-01", Superid: "player001", In: 1000 },
-    { Date: "2026-06-01", Superid: "player002", In: 500 },
-    { Date: "2026-06-01", Superid: "player003", In: 250 },
+    { Date: today, Superid: "player001", In: 1000 },
+    { Date: today, Superid: "player002", In: 500 },
+    { Date: today, Superid: "player003", In: 250 },
   ];
   const ws = utils.json_to_sheet(data);
   const wb = utils.book_new();
@@ -292,7 +294,7 @@ export function RechargeImporter() {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={"date,username,amount\n2026-05-18,player_test_1,600\n2026-05-18,player_test_2,250"}
+          placeholder={"从 Excel 直接复制粘贴（Tab 分隔）：\n2026-05-20\tplayer001\t1000\n2026-05-20\tplayer002\t500\n2026-05-20\tplayer003\t250"}
           rows={6}
           className="w-full px-3 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent font-mono text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
         />
