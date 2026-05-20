@@ -42,6 +42,7 @@ export function AgentChat({
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessageView[]>(initialMessages);
   const [prefill, setPrefill] = useState<string>("");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pending, startTransition] = useTransition();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const canType = status !== "closed";
@@ -59,14 +60,14 @@ export function AgentChat({
         router.push("/admin/chat");
       }
     }
-    async function onPaste(e: ClipboardEvent) {
+    function onPaste(e: ClipboardEvent) {
       const files = Array.from(e.clipboardData?.items ?? [])
         .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
         .map((i) => i.getAsFile())
         .filter((f): f is File => f !== null);
       if (files.length) {
         e.preventDefault();
-        await handleFiles(files);
+        handleFiles(files);
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -245,12 +246,20 @@ export function AgentChat({
     }
   }
 
-  async function handleFiles(files: File[]) {
+  function handleFiles(files: File[]) {
+    // Add to pending preview — user clicks send to actually send
+    setPendingFiles((prev) => [...prev, ...files]);
+  }
+
+  async function sendPendingFiles(files: File[]) {
     const ids = await ingestFiles(files, senderCtx);
-    // Auto-send immediately — no need to click the thumbnail
-    for (const id of ids) {
-      await sendImage(id);
-    }
+    for (const id of ids) await sendImage(id);
+    setPendingFiles([]);
+  }
+
+  async function handleSend(text: string, files: File[]) {
+    if (text) await sendText(text);
+    if (files.length) await sendPendingFiles(files);
   }
 
   async function sendImage(localId: string) {
@@ -328,9 +337,11 @@ export function AgentChat({
       <MessageList messages={messages} perspective="agent" />
 
       <InputBar
-        onSendText={sendText}
+        onSend={handleSend}
         disabled={!canType}
         prefill={prefill}
+        pendingFiles={pendingFiles}
+        onRemoveFile={(idx) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
         topSlot={
           <>
             {quickReplies.length > 0 && (

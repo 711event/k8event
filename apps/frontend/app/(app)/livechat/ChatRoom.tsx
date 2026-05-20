@@ -45,6 +45,7 @@ export function ChatRoom() {
   const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<ChatMessageView[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   // oldest created_at we've loaded — used as cursor for loading older messages
@@ -142,23 +143,22 @@ export function ChatRoom() {
     void getChatDb().images.clear();
   }, []);
 
-  // Ctrl+V / paste image support
+  // Ctrl+V / paste image support → add to pending preview
   useEffect(() => {
-    async function onPaste(e: ClipboardEvent) {
-      if (!senderCtx) return;
+    function onPaste(e: ClipboardEvent) {
       const files = Array.from(e.clipboardData?.items ?? [])
         .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
         .map((i) => i.getAsFile())
         .filter((f): f is File => f !== null);
       if (files.length) {
         e.preventDefault();
-        await handleFiles(files);
+        handleFiles(files);
       }
     }
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [senderCtx]);
+  }, []);
 
   // Load older messages (cursor-based, called when user scrolls to top)
   async function loadOlderMessages() {
@@ -262,13 +262,21 @@ export function ChatRoom() {
     });
   }
 
-  async function handleFiles(files: File[]) {
+  function handleFiles(files: File[]) {
+    // Add to pending preview — user clicks send to actually send
+    setPendingFiles((prev) => [...prev, ...files]);
+  }
+
+  async function sendPendingFiles(files: File[]) {
     if (!senderCtx) return;
     const ids = await ingestFiles(files, senderCtx);
-    // Auto-send immediately
-    for (const id of ids) {
-      await sendImage(id);
-    }
+    for (const id of ids) await sendImage(id);
+    setPendingFiles([]);
+  }
+
+  async function handleSend(text: string, files: File[]) {
+    if (text) await sendText(text);
+    if (files.length) await sendPendingFiles(files);
   }
 
   async function sendImage(localId: string) {
@@ -378,8 +386,10 @@ export function ChatRoom() {
       )}
 
       <InputBar
-        onSendText={sendText}
+        onSend={handleSend}
         disabled={!session}
+        pendingFiles={pendingFiles}
+        onRemoveFile={(idx) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
         leftSlot={<AttachMenu onFiles={handleFiles} disabled={!session} />}
       />
     </>
