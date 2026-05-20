@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, X } from "lucide-react";
+import { Send, X, FileText } from "lucide-react";
 
 export function InputBar({
   onSend,
@@ -36,15 +36,17 @@ export function InputBar({
     });
   }, [prefill]);
 
-  // Generate preview URLs for pending image files
+  // Generate preview URLs for pending image files (non-images get empty string)
   useEffect(() => {
     if (!pendingFiles || pendingFiles.length === 0) {
       setPreviewUrls([]);
       return;
     }
-    const urls = pendingFiles.map((f) => URL.createObjectURL(f));
+    const urls = pendingFiles.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+    );
     setPreviewUrls(urls);
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    return () => urls.forEach((u) => { if (u) URL.revokeObjectURL(u); });
   }, [pendingFiles]);
 
   const hasPending = (pendingFiles?.length ?? 0) > 0;
@@ -67,10 +69,19 @@ export function InputBar({
           {previewUrls.map((url, i) => (
             <div
               key={i}
-              className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--border-strong)] shadow-sm"
+              className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--border-strong)] shadow-sm bg-[var(--bg-raised)] flex items-center justify-center"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="h-full w-full object-cover" />
+              {url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-0.5 px-1 text-center">
+                  <FileText size={20} className="text-[var(--text-mid)]" />
+                  <span className="text-[9px] text-[var(--text-lo)] leading-tight truncate w-full text-center">
+                    {pendingFiles?.[i]?.name ?? "file"}
+                  </span>
+                </div>
+              )}
               {onRemoveFile && (
                 <button
                   type="button"

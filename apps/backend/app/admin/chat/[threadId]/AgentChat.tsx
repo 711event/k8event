@@ -247,8 +247,34 @@ export function AgentChat({
   }
 
   function handleFiles(files: File[]) {
-    // Add to pending preview — user clicks send to actually send
-    setPendingFiles((prev) => [...prev, ...files]);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const others = files.filter((f) => !f.type.startsWith("image/"));
+    // Images → pending preview, confirmed by send button
+    if (images.length) setPendingFiles((prev) => [...prev, ...images]);
+    // Non-image files → upload immediately and send as download link
+    for (const f of others) void sendFileLink(f);
+  }
+
+  async function sendFileLink(file: File) {
+    const clientId = uuid();
+    setMessages((prev) => [
+      ...prev,
+      { id: clientId, sender: "agent", kind: "text", body: `📎 ${file.name}（上传中…）`, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
+    ]);
+    try {
+      const { createSupabaseBrowserClient } = await import("@k8event/shared/supabase/client");
+      const sb = createSupabaseBrowserClient();
+      const path = `agent/${userId}/files/${uuid()}_${file.name}`;
+      const { error } = await sb.storage.from("chat-images").upload(path, file, { upsert: false });
+      if (error) throw error;
+      const { data } = sb.storage.from("chat-images").getPublicUrl(path);
+      const body = `📎 ${file.name}\n${data.publicUrl}`;
+      const r = await agentSendMessageAction({ threadId, body, clientId });
+      if (r && "error" in r) throw new Error(r.error);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "文件上传失败");
+      setMessages((prev) => prev.filter((m) => m.id !== clientId));
+    }
   }
 
   async function sendPendingFiles(files: File[]) {
