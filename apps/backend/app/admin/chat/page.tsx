@@ -122,10 +122,10 @@ export default async function ChatInboxPage(props: {
               <li key={t.id}>
                 <Link
                   href={`/admin/chat/${t.id}`}
-                  className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-zinc-50"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-zinc-50"
                 >
+                  {/* Left: name + preview (2 rows) */}
                   <div className="flex-1 min-w-0">
-                    {/* Row 1: name + id */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium truncate">
                         {t.guest_name ?? "访客"}
@@ -134,8 +134,6 @@ export default async function ChatInboxPage(props: {
                         {t.id.slice(0, 8)}
                       </span>
                     </div>
-
-                    {/* Row 2: last message preview */}
                     <div className="text-sm text-zinc-500 truncate mt-0.5">
                       <MessagePreview
                         kind={t.last_message_kind}
@@ -143,27 +141,26 @@ export default async function ChatInboxPage(props: {
                         sender={t.last_message_sender}
                       />
                     </div>
-
-                    {/* Row 3: timestamp */}
-                    <div className="text-xs text-zinc-400 mt-0.5">
-                      {t.last_message_at
-                        ? formatMalaysia(t.last_message_at)
-                        : `创建于 ${formatMalaysia(t.created_at)}`}
-                    </div>
                   </div>
 
-                  <span
-                    className={
-                      "shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
-                      (t.status === "open"
-                        ? "bg-amber-500/15 text-amber-700"
-                        : t.status === "claimed"
-                          ? "bg-blue-500/15 text-blue-700"
+                  {/* Right: status badge + timestamp stacked */}
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    <span
+                      className={
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
+                        (t.status === "open" || t.status === "claimed"
+                          ? "bg-amber-500/15 text-amber-700"
                           : "bg-zinc-500/15 text-zinc-600")
-                    }
-                  >
-                    {STATUS_LABEL[t.status as ChatThreadStatus]}
-                  </span>
+                      }
+                    >
+                      {STATUS_LABEL[t.status as ChatThreadStatus]}
+                    </span>
+                    <span className="text-xs text-zinc-400 whitespace-nowrap">
+                      {t.last_message_at
+                        ? formatMalaysia(t.last_message_at)
+                        : formatMalaysia(t.created_at)}
+                    </span>
+                  </div>
                 </Link>
               </li>
             );
