@@ -35,6 +35,7 @@ const migrations = [
   "0006_token_sources.sql",
   "0007_checkin.sql",
   "0008_chat_player.sql",
+  "0009_chat_thread_preview.sql",
 ];
 
 console.log(`Connecting to Supabase project ${projectRef}...`);
@@ -42,7 +43,7 @@ await client.connect();
 console.log("Connected.\n");
 
 // Files with dollar-quoted function bodies — run as a single query
-const SINGLE_QUERY_FILES = new Set(["0007_checkin.sql"]);
+const SINGLE_QUERY_FILES = new Set(["0007_checkin.sql", "0009_chat_thread_preview.sql"]);
 
 for (const file of migrations) {
   const sql = readFileSync(join(__dirname, "../supabase/migrations", file), "utf8");

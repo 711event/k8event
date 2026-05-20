@@ -215,6 +215,9 @@ export type Database = {
           status: ChatThreadStatus;
           claimed_by: string | null;
           last_message_at: Timestamp | null;
+          last_message_body: string | null;
+          last_message_kind: ChatKind | null;
+          last_message_sender: ChatSender | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -225,6 +228,9 @@ export type Database = {
           status?: ChatThreadStatus;
           claimed_by?: string | null;
           last_message_at?: Timestamp | null;
+          last_message_body?: string | null;
+          last_message_kind?: ChatKind | null;
+          last_message_sender?: ChatSender | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["chat_threads"]["Insert"]>;

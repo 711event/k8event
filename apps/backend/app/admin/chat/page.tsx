@@ -21,6 +21,42 @@ const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
   { key: "all", label: "全部" },
 ];
 
+/** Render the last-message preview snippet */
+function MessagePreview({
+  kind,
+  body,
+  sender,
+}: {
+  kind: "text" | "image" | null;
+  body: string | null;
+  sender: "guest" | "agent" | "system" | null;
+}) {
+  if (!kind) return <span className="italic">暂无消息</span>;
+
+  const prefix =
+    sender === "agent" ? "客服: " : sender === "system" ? "" : "";
+
+  if (kind === "image") {
+    return (
+      <span>
+        {prefix}
+        <span className="inline-flex items-center gap-1">
+          <span>📷</span> 图片
+        </span>
+      </span>
+    );
+  }
+
+  const text = body ?? "";
+  const truncated = text.length > 60 ? text.slice(0, 60) + "…" : text;
+  return (
+    <span>
+      {prefix}
+      {truncated}
+    </span>
+  );
+}
+
 export default async function ChatInboxPage(props: {
   searchParams: Promise<{ status?: string }>;
 }) {
@@ -29,10 +65,11 @@ export default async function ChatInboxPage(props: {
   const active = (tabs.find((t) => t.key === sp.status)?.key ?? "open") as ChatThreadStatus | "all";
 
   const supabase = await createSupabaseServerClient();
-  let query = supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
     .from("chat_threads")
     .select(
-      "id, guest_name, status, last_message_at, created_at, claimed_by:profiles!chat_threads_claimed_by_fkey(display_name)",
+      "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at, claimed_by:profiles!chat_threads_claimed_by_fkey(display_name)",
     )
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .limit(200);
@@ -80,7 +117,8 @@ export default async function ChatInboxPage(props: {
         {!threads?.length ? (
           <li className="px-4 py-8 text-center text-zinc-500 text-sm">暂无会话</li>
         ) : (
-          threads.map((t) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          threads.map((t: any) => {
             const claimed = Array.isArray(t.claimed_by) ? t.claimed_by[0] : t.claimed_by;
             return (
               <li key={t.id}>
@@ -89,20 +127,37 @@ export default async function ChatInboxPage(props: {
                   className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-zinc-50"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">
-                      {t.guest_name ?? "访客"}{" "}
-                      <span className="text-xs text-zinc-500 font-mono">{t.id.slice(0, 8)}</span>
+                    {/* Row 1: name + id */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">
+                        {t.guest_name ?? "访客"}
+                      </span>
+                      <span className="text-xs text-zinc-400 font-mono shrink-0">
+                        {t.id.slice(0, 8)}
+                      </span>
                     </div>
-                    <div className="text-xs text-zinc-500 mt-0.5">
+
+                    {/* Row 2: last message preview */}
+                    <div className="text-sm text-zinc-500 truncate mt-0.5">
+                      <MessagePreview
+                        kind={t.last_message_kind}
+                        body={t.last_message_body}
+                        sender={t.last_message_sender}
+                      />
+                    </div>
+
+                    {/* Row 3: timestamp + claimed-by */}
+                    <div className="text-xs text-zinc-400 mt-0.5">
                       {t.last_message_at
-                        ? `最新活动 ${formatMalaysia(t.last_message_at)}`
-                        : `创建于 ${formatMalaysia(t.created_at)} (暂无消息)`}
-                      {claimed && ` · 由 ${claimed.display_name} 认领`}
+                        ? formatMalaysia(t.last_message_at)
+                        : `创建于 ${formatMalaysia(t.created_at)}`}
+                      {claimed && ` · ${claimed.display_name} 认领中`}
                     </div>
                   </div>
+
                   <span
                     className={
-                      "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
+                      "shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
                       (t.status === "open"
                         ? "bg-amber-500/15 text-amber-700"
                         : t.status === "claimed"
