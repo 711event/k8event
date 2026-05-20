@@ -23,6 +23,7 @@ export interface ThreadRow {
 const STATUS_LABEL: Record<ChatThreadStatus, string> = {
   open: "未处理",
   claimed: "未处理",
+  pending: "跟进中",
   closed: "已关闭",
 };
 
@@ -136,6 +137,8 @@ export function ThreadListClient({
                     "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
                     (t.status === "closed"
                       ? "bg-zinc-500/15 text-zinc-600"
+                      : t.status === "pending"
+                      ? "bg-blue-500/15 text-blue-700"
                       : "bg-amber-500/15 text-amber-700")
                   }
                 >

@@ -18,6 +18,8 @@ import { getChatDb } from "@k8event/shared/chat/dexie";
 import {
   agentSendMessageAction,
   closeThreadAction,
+  markPendingAction,
+  resolveThreadAction,
 } from "./actions";
 import { TemplatePicker } from "@/components/admin/TemplatePicker";
 import { PRESENCE_CHANNEL } from "../ChatPresenceContext";
@@ -365,25 +367,65 @@ export function AgentChat({
   }
 
   function doClose() {
-    if (!confirm("确认结束此会话?\n\n结束后此会话进入“已关闭”列表,客服无法继续回复。如果之后再有新消息进来,系统会自动重新打开。"))
+    if (!confirm(“确认结束此会话?\n\n结束后此会话进入”已关闭”列表,客服无法继续回复。如果之后再有新消息进来,系统会自动重新打开。”))
       return;
     startTransition(async () => {
       const r = await closeThreadAction(threadId);
-      if (r && "error" in r) toast.error(r.error);
-      else toast.success("会话已结束");
+      if (r && “error” in r) toast.error(r.error);
+      else toast.success(“会话已结束”);
+    });
+  }
+
+  function doMarkPending() {
+    if (!confirm(“确认转为「跟进中」?\n\n此会话将移至跟进中列表，会员新消息不会重置状态。”)) return;
+    startTransition(async () => {
+      const r = await markPendingAction(threadId);
+      if (r && “error” in r) toast.error(r.error);
+      else toast.success(“已转为跟进中”);
+    });
+  }
+
+  function doResolve() {
+    if (!confirm(“确认标记为「已解决」?\n\n此会话将进入已关闭列表。”)) return;
+    startTransition(async () => {
+      const r = await resolveThreadAction(threadId);
+      if (r && “error” in r) toast.error(r.error);
+      else toast.success(“已解决，会话已关闭”);
     });
   }
 
   return (
     <>
-      <div className="px-4 py-2 border-b border-zinc-200 flex flex-wrap items-center gap-2">
-        {status !== "closed" && (
+      <div className=”px-4 py-2 border-b border-zinc-200 flex flex-wrap items-center gap-2”>
+        {(status === “open” || status === “claimed”) && (
           <button
-            type="button"
+            type=”button”
+            disabled={pending}
+            onClick={doMarkPending}
+            title=”需要时间跟进 · 转至跟进中列表”
+            className=”h-8 px-3 rounded-md border border-amber-400/40 text-amber-700 hover:bg-amber-50 text-xs font-medium disabled:opacity-60”
+          >
+            转跟进
+          </button>
+        )}
+        {status === “pending” && (
+          <button
+            type=”button”
+            disabled={pending}
+            onClick={doResolve}
+            title=”问题已处理完毕 · 关闭此会话”
+            className=”h-8 px-3 rounded-md border border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 text-xs font-medium disabled:opacity-60”
+          >
+            ✓ 已解决
+          </button>
+        )}
+        {status !== “closed” && (
+          <button
+            type=”button”
             disabled={pending}
             onClick={doClose}
-            title="问题已解决 · 结束此会话并归档"
-            className="h-8 px-3 rounded-md border border-red-500/30 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60"
+            title=”问题已解决 · 结束此会话并归档”
+            className=”h-8 px-3 rounded-md border border-red-500/30 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60”
           >
             结束会话
           </button>

@@ -4,12 +4,13 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 
-type Ctx = { unreadCount: number };
-const ChatUnreadContext = createContext<Ctx>({ unreadCount: 0 });
+type Ctx = { unreadCount: number; pendingHasNew: boolean; clearPendingNew: () => void };
+const ChatUnreadContext = createContext<Ctx>({ unreadCount: 0, pendingHasNew: false, clearPendingNew: () => {} });
 
 export const useChatUnread = () => useContext(ChatUnreadContext);
 
 const STORAGE_KEY = "bo_chat_last_seen_at";
+const PENDING_STORAGE_KEY = "bo_chat_pending_seen_at";
 const POLL_INTERVAL_MS = 5000;
 
 /**
@@ -32,10 +33,16 @@ const POLL_INTERVAL_MS = 5000;
  */
 export function ChatUnreadProvider({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingHasNew, setPendingHasNew] = useState(false);
   const pathname = usePathname();
   const onChatPageRef = useRef(false);
   const audioPrimedRef = useRef(false);
   const lastCountRef = useRef(0);
+
+  function clearPendingNew() {
+    setPendingHasNew(false);
+    try { localStorage.setItem(PENDING_STORAGE_KEY, new Date().toISOString()); } catch { /* */ }
+  }
 
   // Only mark as "read" (reset last_seen_at) when on a specific thread page,
   // NOT on the inbox list — the operator hasn't read messages just by being on
@@ -85,26 +92,49 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
+    function readPendingLastSeen(): string {
+      try {
+        return localStorage.getItem(PENDING_STORAGE_KEY) ?? new Date(0).toISOString();
+      } catch {
+        return new Date(0).toISOString();
+      }
+    }
+
     async function pollOnce() {
       if (cancelled) return;
       try {
         const lastSeen = readLastSeen();
-        const { count, error } = await supabase
-          .from("chat_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("sender", "guest")
-          .gt("created_at", lastSeen);
+        const pendingLastSeen = readPendingLastSeen();
+
+        const [{ count, error }, { count: pendingCount }] = await Promise.all([
+          // All new guest messages (for unread badge + sound)
+          supabase
+            .from("chat_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("sender", "guest")
+            .gt("created_at", lastSeen),
+          // New guest messages on pending threads (for flash indicator)
+          // Uses last_message_at + last_message_sender on chat_threads (no join needed)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase as any)
+            .from("chat_threads")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending")
+            .eq("last_message_sender", "guest")
+            .gt("last_message_at", pendingLastSeen),
+        ]);
+
         if (cancelled) return;
-        if (error) {
-          // Silent fail; just retry on next tick.
-        } else {
+        if (!error) {
           const next = count ?? 0;
-          // Ding only when the count grows (new message arrived between polls).
           if (next > lastCountRef.current) {
             playDing(audioPrimedRef.current);
           }
           lastCountRef.current = next;
           setUnreadCount(next);
+        }
+        if ((pendingCount ?? 0) > 0) {
+          setPendingHasNew(true);
         }
       } catch {
         /* network blip — retry next tick */
@@ -150,7 +180,9 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <ChatUnreadContext.Provider value={{ unreadCount }}>{children}</ChatUnreadContext.Provider>
+    <ChatUnreadContext.Provider value={{ unreadCount, pendingHasNew, clearPendingNew }}>
+      {children}
+    </ChatUnreadContext.Provider>
   );
 }
 

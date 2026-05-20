@@ -8,6 +8,6 @@ export type MatchWinner = "home" | "away" | "draw";
 export type PredictionPick = "home" | "away";
 export type TokenReason = "match_win" | "redeem" | "admin_adjust" | "daily_checkin";
 export type RedemptionStatus = "pending" | "approved" | "fulfilled" | "rejected";
-export type ChatThreadStatus = "open" | "claimed" | "closed";
+export type ChatThreadStatus = "open" | "claimed" | "pending" | "closed";
 export type ChatSender = "guest" | "agent" | "system";
 export type ChatKind = "text" | "image";

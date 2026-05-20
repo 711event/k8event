@@ -77,3 +77,29 @@ export async function closeThreadAction(threadId: string): Promise<ChatActionSta
   revalidatePath(`/admin/chat/${threadId}`);
   return { ok: true };
 }
+
+export async function markPendingAction(threadId: string): Promise<ChatActionState> {
+  await requireRole(["admin", "agent"]);
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("chat_threads")
+    .update({ status: "pending" })
+    .eq("id", threadId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/chat");
+  revalidatePath(`/admin/chat/${threadId}`);
+  return { ok: true };
+}
+
+export async function resolveThreadAction(threadId: string): Promise<ChatActionState> {
+  await requireRole(["admin", "agent"]);
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("chat_threads")
+    .update({ status: "closed" })
+    .eq("id", threadId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/chat");
+  revalidatePath(`/admin/chat/${threadId}`);
+  return { ok: true };
+}
