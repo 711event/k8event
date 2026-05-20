@@ -121,8 +121,8 @@ export async function POST() {
       .insert(insertPayload)
       .select("id, status, guest_name")
       .single();
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error || !created) {
+      return NextResponse.json({ error: error?.message ?? "insert_failed" }, { status: 500 });
     }
     thread = created;
   } else {
@@ -143,6 +143,10 @@ export async function POST() {
         .single();
       if (updated) thread = updated;
     }
+  }
+
+  if (!thread) {
+    return NextResponse.json({ error: "thread_unavailable" }, { status: 500 });
   }
 
   return NextResponse.json({

@@ -46,7 +46,8 @@ export async function POST(req: Request) {
   if (thread.status === "closed") patch.status = "open";
   if (parsed.data.guestName) patch.guest_name = parsed.data.guestName;
   if (Object.keys(patch).length > 0) {
-    await admin.from("chat_threads").update(patch).eq("id", thread.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin as any).from("chat_threads").update(patch).eq("id", thread.id);
   }
 
   const isImage = !!parsed.data.imageUrl;
