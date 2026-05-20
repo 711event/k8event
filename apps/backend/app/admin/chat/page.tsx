@@ -25,7 +25,7 @@ export default async function ChatInboxPage(props: {
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: threads }, { data: urgencySettings }] = await Promise.all([
+  const [{ data: threads }, { data: urgencySettings }, { count: openCount }] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +44,11 @@ export default async function ChatInboxPage(props: {
       .select("warn_after_minutes, critical_after_minutes")
       .limit(1)
       .maybeSingle(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("chat_threads")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "open"),
   ]);
 
   const warnAfterMinutes = urgencySettings?.warn_after_minutes ?? 5;
@@ -89,13 +94,18 @@ export default async function ChatInboxPage(props: {
             key={t.key}
             href={`/admin/chat?status=${t.key}`}
             className={
-              "px-4 py-2 text-sm font-medium -mb-px border-b-2 transition " +
+              "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium -mb-px border-b-2 transition " +
               (active === t.key
                 ? "border-zinc-900 text-zinc-900"
                 : "border-transparent text-zinc-500 hover:text-zinc-900")
             }
           >
             {t.label}
+            {t.key === "open" && (openCount ?? 0) > 0 && (
+              <span className="inline-flex items-center justify-center h-4.5 min-w-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                {openCount}
+              </span>
+            )}
           </Link>
         ))}
       </div>

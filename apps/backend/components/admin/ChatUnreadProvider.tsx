@@ -37,11 +37,14 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
   const audioPrimedRef = useRef(false);
   const lastCountRef = useRef(0);
 
-  // Whenever route changes, decide if we're on a chat page.
+  // Only mark as "read" (reset last_seen_at) when on a specific thread page,
+  // NOT on the inbox list — the operator hasn't read messages just by being on
+  // the list. Sound should fire on any page.
   useEffect(() => {
-    const onChat = pathname?.startsWith("/admin/chat") ?? false;
-    onChatPageRef.current = onChat;
-    if (onChat) {
+    // Match /admin/chat/<uuid> (thread detail page)
+    const onThreadDetail = /^\/admin\/chat\/[0-9a-f-]{36}/.test(pathname ?? "");
+    onChatPageRef.current = false; // never suppress polling
+    if (onThreadDetail) {
       try {
         localStorage.setItem(STORAGE_KEY, new Date().toISOString());
       } catch {
@@ -84,11 +87,6 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
 
     async function pollOnce() {
       if (cancelled) return;
-      // If we're on the chat page, don't accumulate; just keep the badge at 0.
-      if (onChatPageRef.current) {
-        scheduleNext();
-        return;
-      }
       try {
         const lastSeen = readLastSeen();
         const { count, error } = await supabase
