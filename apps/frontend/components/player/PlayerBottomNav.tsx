@@ -4,45 +4,49 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Gift, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@k8event/shared/utils";
-
-const tabs = [
-  {
-    key: "activities",
-    label: "活动",
-    href: "/activities/checkin",
-    icon: Sparkles,
-    match: (p: string) =>
-      p === "/activities" ||
-      p.startsWith("/activities/") ||
-      p === "/event" ||
-      p.startsWith("/event/") ||
-      p === "/matches" ||
-      p.startsWith("/matches/") ||
-      p === "/leaderboard" ||
-      p === "/history",
-  },
-  {
-    key: "livechat",
-    label: "客服",
-    href: "/livechat",
-    icon: MessageSquare,
-    match: (p: string) => p === "/livechat" || p.startsWith("/livechat/"),
-  },
-  {
-    key: "reward",
-    label: "奖励",
-    href: "/reward",
-    icon: Gift,
-    match: (p: string) =>
-      p === "/reward" ||
-      p.startsWith("/reward/") ||
-      p === "/redemptions" ||
-      p === "/tokens",
-  },
-];
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 export function PlayerBottomNav() {
-  const pathname = usePathname() ?? "/event";
+  const pathname = usePathname() ?? "/activities/checkin";
+  const { locale } = useFeLang();
+
+  const tabs = [
+    {
+      key: "activities",
+      label: tFe(locale, "nav_activities"),
+      href: "/activities/checkin",
+      icon: Sparkles,
+      match: (p: string) =>
+        p === "/activities" ||
+        p.startsWith("/activities/") ||
+        p === "/event" ||
+        p.startsWith("/event/") ||
+        p === "/matches" ||
+        p.startsWith("/matches/") ||
+        p === "/leaderboard" ||
+        p === "/history",
+    },
+    {
+      key: "livechat",
+      label: tFe(locale, "nav_livechat"),
+      href: "/livechat",
+      icon: MessageSquare,
+      match: (p: string) => p === "/livechat" || p.startsWith("/livechat/"),
+    },
+    {
+      key: "reward",
+      label: tFe(locale, "nav_reward"),
+      href: "/reward",
+      icon: Gift,
+      match: (p: string) =>
+        p === "/reward" ||
+        p.startsWith("/reward/") ||
+        p === "/redemptions" ||
+        p === "/tokens",
+    },
+  ];
+
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-30 border-t border-[var(--border-subtle)] bg-[var(--bg-base)]/90 backdrop-blur-md"

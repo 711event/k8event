@@ -5,12 +5,16 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "奖励中心 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function RewardPage() {
   const user = await getCurrentUser();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
   const supabase = await createSupabaseServerClient();
 
   const [{ data: items }, balanceRes] = await Promise.all([
@@ -29,13 +33,13 @@ export default async function RewardPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <SectionHeader title="奖励中心" hint="用 Token 兑换豪礼" />
+        <SectionHeader title={t("reward_title")} hint={t("reward_subtitle")} />
         {user ? (
           <Link
             href="/redemptions"
             className="inline-flex items-center gap-1 text-xs text-[var(--text-mid)] hover:text-[var(--gold-300)] transition whitespace-nowrap"
           >
-            兑换记录 →
+            {t("reward_history")}
           </Link>
         ) : null}
       </div>
@@ -43,7 +47,7 @@ export default async function RewardPage() {
       {user ? (
         <div className="rounded-[var(--radius-md)] border border-[var(--gold-500)]/30 bg-gradient-to-br from-[var(--bg-elevated)] to-[#1A1410] p-4 flex items-center justify-between">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-lo)]">我的 Token</div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--text-lo)]">{t("reward_my_tokens")}</div>
             <div className="font-[family-name:var(--font-display)] text-3xl font-bold text-[var(--gold-300)] tabular-nums mt-0.5">
               {myBalance.toLocaleString()}
             </div>
@@ -56,13 +60,13 @@ export default async function RewardPage() {
             <div className="h-9 w-9 rounded-full bg-[var(--bg-raised)] flex items-center justify-center text-[var(--text-mid)] flex-shrink-0">
               <Lock size={16} />
             </div>
-            <p className="text-xs text-[var(--text-mid)] truncate">登录后可查看 Token 余额并兑换</p>
+            <p className="text-xs text-[var(--text-mid)] truncate">{t("reward_login_prompt")}</p>
           </div>
           <Link
             href="/login"
             className="h-8 px-3 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-xs font-semibold hover:brightness-110 transition flex-shrink-0"
           >
-            登录
+            {t("reward_login_btn")}
           </Link>
         </div>
       )}
@@ -70,8 +74,8 @@ export default async function RewardPage() {
       {!items?.length ? (
         <EmptyState
           icon={<Gift size={28} />}
-          title="暂未上架奖品"
-          body="活动期间会陆续上架新奖励,请稍后再来看看。"
+          title={t("reward_empty_title")}
+          body={t("reward_empty_body")}
         />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -100,7 +104,7 @@ export default async function RewardPage() {
                   <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
                   {outOfStock && (
                     <div className="absolute top-2 right-2">
-                      <Chip variant="neutral">已售罄</Chip>
+                      <Chip variant="neutral">{t("reward_sold_out")}</Chip>
                     </div>
                   )}
                 </div>
@@ -112,9 +116,9 @@ export default async function RewardPage() {
                       <span className="tabular-nums">{it.cost.toLocaleString()}</span>
                     </div>
                     {!user ? null : outOfStock ? null : !affordable ? (
-                      <Chip variant="crimson">不足</Chip>
+                      <Chip variant="crimson">{t("reward_insufficient")}</Chip>
                     ) : (
-                      <Chip variant="pitch">可兑</Chip>
+                      <Chip variant="pitch">{t("reward_redeemable")}</Chip>
                     )}
                   </div>
                 </div>

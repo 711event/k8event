@@ -12,6 +12,8 @@ import { LeaderboardPreview, type PodiumEntry } from "@/components/player/Leader
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { CheckinCard } from "@/components/player/CheckinCard";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "赛事 · 711event" };
 // Remove force-dynamic — unstable_cache handles freshness for public data;
@@ -67,6 +69,8 @@ const getPublicEventData = unstable_cache(
 export default async function EventHomePage() {
   const user = await getCurrentUser();
   const today = malaysiaDateString();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
 
   const DEFAULT_CHECKIN_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
@@ -157,12 +161,12 @@ export default async function EventHomePage() {
       )}
 
       <section className="space-y-3">
-        <SectionHeader title="今日比赛" hint="开赛前可提交一次预测" href="/matches" />
+        <SectionHeader title={t("event_today")} hint={t("event_today_hint")} href="/matches" />
         {todayList.length === 0 ? (
           <EmptyState
             icon={<CalendarX2 size={28} />}
-            title="今天暂无安排"
-            body="管理员录入新场次后会在这里出现。"
+            title={t("event_empty_title")}
+            body={t("event_empty_body")}
           />
         ) : (
           <div className="grid gap-3">

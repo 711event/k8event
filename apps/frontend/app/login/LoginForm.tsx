@@ -2,15 +2,21 @@
 
 import { useActionState } from "react";
 import { signInAction } from "./actions";
+import { tFe, type FeLocale } from "@/lib/i18n";
 
-export function LoginForm() {
+interface Props {
+  locale: FeLocale;
+}
+
+export function LoginForm({ locale }: Props) {
   const [state, formAction, pending] = useActionState(signInAction, undefined);
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
 
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="username" className="text-xs uppercase tracking-wider text-[var(--text-lo)]">
-          用户名
+          {t("login_username")}
         </label>
         <input
           id="username"
@@ -24,7 +30,7 @@ export function LoginForm() {
       </div>
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-xs uppercase tracking-wider text-[var(--text-lo)]">
-          密码
+          {t("login_password")}
         </label>
         <input
           id="password"
@@ -37,10 +43,11 @@ export function LoginForm() {
       </div>
       {state?.error && (
         <p className="text-sm text-[var(--crimson-400)]" role="alert">
-          {state.error === "Invalid username or password."
-            ? "用户名或密码错误。"
+          {state.error === "Invalid username or password." ||
+          state.error === "Invalid login credentials."
+            ? t("login_error_generic")
             : state.error === "Please enter both username and password."
-              ? "请输入用户名和密码。"
+              ? t("login_error_generic")
               : state.error}
         </p>
       )}
@@ -49,7 +56,7 @@ export function LoginForm() {
         disabled={pending}
         className="w-full h-11 rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] font-semibold disabled:opacity-60 hover:brightness-110 active:scale-[0.99] transition"
       >
-        {pending ? "登录中…" : "登录"}
+        {pending ? t("login_submit") + "…" : t("login_submit")}
       </button>
     </form>
   );

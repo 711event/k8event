@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useChatUnread } from "@/components/admin/ChatUnreadProvider";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
 type TabKey = "open" | "pending" | "closed" | "all";
 
@@ -17,6 +19,7 @@ export function InboxTabsClient({
   pendingCount: number;
 }) {
   const { pendingHasNew, clearPendingNew } = useChatUnread();
+  const { locale } = useLang();
   const pathname = usePathname();
 
   // Clear pending flash when user is on the pending tab
@@ -25,11 +28,13 @@ export function InboxTabsClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
+
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "open", label: "未处理" },
-    { key: "pending", label: "跟进中" },
-    { key: "closed", label: "已关闭" },
-    { key: "all", label: "全部" },
+    { key: "open",    label: t("tab_open")    },
+    { key: "pending", label: t("tab_pending") },
+    { key: "closed",  label: t("tab_closed")  },
+    { key: "all",     label: t("tab_all")     },
   ];
 
   return (

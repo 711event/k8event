@@ -8,6 +8,8 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { EmptyState } from "@/components/player/EmptyState";
 import { CheckinButton } from "./CheckinButton";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "每日签到 · 711event" };
 export const dynamic = "force-dynamic";
@@ -35,6 +37,8 @@ const getCheckinActivity = unstable_cache(
 
 export default async function CheckinPage() {
   const user = await getCurrentUser();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
 
   // Load the daily_checkin activity (cached)
   const activity = await getCheckinActivity();
@@ -44,8 +48,8 @@ export default async function CheckinPage() {
       <div className="space-y-5">
         <EmptyState
           icon={<CalendarCheck size={28} />}
-          title="签到活动暂未开启"
-          body="管理员开启后可以在这里每日签到。"
+          title={t("checkin_not_open_title")}
+          body={t("checkin_not_open_body")}
         />
       </div>
     );
@@ -121,7 +125,7 @@ export default async function CheckinPage() {
           }
         `}</style>
         <span className="text-2xl">⚽</span>
-        <span className="text-[10px] font-semibold text-[var(--gold-300)] group-hover:text-[var(--gold-200)] whitespace-nowrap">世界杯</span>
+        <span className="text-[10px] font-semibold text-[var(--gold-300)] group-hover:text-[var(--gold-200)] whitespace-nowrap">{t("event_wc_btn")}</span>
       </Link>
 
       <div className="text-center space-y-1">
@@ -136,22 +140,17 @@ export default async function CheckinPage() {
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl">🔥</span>
           <span className="text-xl font-bold text-orange-400">
-            连续签到 {currentStreak} 天
+            {t("checkin_streak", { n: currentStreak })}
           </span>
         </div>
       )}
 
       {/* 7-day reward bar */}
       <div className="rounded-2xl border border-white/10 bg-[var(--bg-elevated)] p-4">
-        <div className="text-xs text-zinc-500 mb-3 text-center uppercase tracking-wider">7天签到奖励</div>
+        <div className="text-xs text-zinc-500 mb-3 text-center uppercase tracking-wider">{t("checkin_rewards_title")}</div>
         <div className="grid grid-cols-7 gap-1.5">
           {dayRewards.slice(0, 7).map((tokens, i) => {
             const day = i + 1;
-            // Check if this day is in recent checkins
-            const isCompleted = recentCheckins.some((c) => c.streak_day === day && (
-              // Check if this was checked in recently (within last 7 days for visual purposes)
-              checkinMap.size > 0
-            ));
             const isToday = !checkedInToday && day === nextStreakDay;
             const isPast = checkedInToday && day <= currentStreak;
             const isActive = isToday;
@@ -172,7 +171,7 @@ export default async function CheckinPage() {
                   "text-[10px] font-medium " +
                   (isPast ? "text-emerald-400" : isActive ? "text-amber-300" : "text-zinc-500")
                 }>
-                  第{day}天
+                  {t("checkin_day", { day })}
                 </span>
                 <span className={
                   "text-sm font-bold tabular-nums " +
@@ -189,12 +188,12 @@ export default async function CheckinPage() {
       {/* CTA */}
       {!user ? (
         <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-zinc-400 text-center">登录后参与每日签到</p>
+          <p className="text-sm text-zinc-400 text-center">{t("checkin_login_prompt")}</p>
           <Link
             href="/login"
             className="h-12 px-8 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-bold inline-flex items-center"
           >
-            去登录
+            {t("checkin_login_btn")}
           </Link>
         </div>
       ) : (
@@ -210,12 +209,12 @@ export default async function CheckinPage() {
       {/* Recent check-ins */}
       {user && recentCheckins.length > 0 && (
         <div className="rounded-2xl border border-white/10 bg-[var(--bg-elevated)] p-4">
-          <div className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">近期签到</div>
+          <div className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">{t("checkin_recent")}</div>
           <div className="space-y-2">
             {recentCheckins.slice(0, 7).map((c) => (
               <div key={c.checkin_date} className="flex items-center justify-between text-sm">
                 <span className="text-zinc-400">{c.checkin_date}</span>
-                <span className="text-zinc-500">第 {c.streak_day} 天</span>
+                <span className="text-zinc-500">{t("checkin_day", { day: c.streak_day })}</span>
                 <span className="text-emerald-400 font-medium tabular-nums">+{c.tokens_awarded}</span>
               </div>
             ))}
@@ -227,7 +226,7 @@ export default async function CheckinPage() {
       {activity.rules && (
         <details className="rounded-xl border border-white/10">
           <summary className="px-4 py-3 cursor-pointer text-sm text-zinc-400 hover:text-zinc-300">
-            活动规则
+            {t("checkin_rules")}
           </summary>
           <div className="px-4 pb-4 text-sm text-zinc-500 whitespace-pre-wrap leading-relaxed">
             {activity.rules}
