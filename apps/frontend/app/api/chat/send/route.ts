@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   // If the thread was closed by an agent and the guest sends a new message,
   // reopen it so it appears in the admin inbox under "未处理".
   const patch: Record<string, unknown> = {};
-  if (thread.status === "closed") patch.status = "pending";
+  if (thread.status === "closed") patch.status = "open";
   if (parsed.data.guestName) patch.guest_name = parsed.data.guestName;
   if (Object.keys(patch).length > 0) {
     await admin.from("chat_threads").update(patch).eq("id", thread.id);
