@@ -62,7 +62,7 @@ export function AgentChat({
     }
     function onPaste(e: ClipboardEvent) {
       const files = Array.from(e.clipboardData?.items ?? [])
-        .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+        .filter((i) => i.kind === "file")
         .map((i) => i.getAsFile())
         .filter((f): f is File => f !== null);
       if (files.length) {
@@ -247,12 +247,8 @@ export function AgentChat({
   }
 
   function handleFiles(files: File[]) {
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    const others = files.filter((f) => !f.type.startsWith("image/"));
-    // Images → pending preview, confirmed by send button
-    if (images.length) setPendingFiles((prev) => [...prev, ...images]);
-    // Non-image files → upload immediately and send as download link
-    for (const f of others) void sendFileLink(f);
+    // All files → pending preview first, send on button click
+    setPendingFiles((prev) => [...prev, ...files]);
   }
 
   async function sendFileLink(file: File) {
@@ -278,8 +274,13 @@ export function AgentChat({
   }
 
   async function sendPendingFiles(files: File[]) {
-    const ids = await ingestFiles(files, senderCtx);
-    for (const id of ids) await sendImage(id);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const others = files.filter((f) => !f.type.startsWith("image/"));
+    if (images.length) {
+      const ids = await ingestFiles(images, senderCtx);
+      for (const id of ids) await sendImage(id);
+    }
+    for (const f of others) await sendFileLink(f);
     setPendingFiles([]);
   }
 

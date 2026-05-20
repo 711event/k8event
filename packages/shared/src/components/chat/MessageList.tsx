@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, FileDown } from "lucide-react";
 import { formatMalaysia } from "../../time/malaysia";
 
 export type ChatMessageView = {
@@ -153,6 +153,8 @@ function MessageBubble({
             height={message.height ?? undefined}
             className="rounded-lg max-w-[260px] max-h-[260px] object-cover"
           />
+        ) : isFileMessage(message.body) ? (
+          <FileMessageBubble body={message.body!} />
         ) : (
           message.body
         )}
@@ -162,6 +164,36 @@ function MessageBubble({
         {message.pending && " · 发送中…"}
       </div>
     </div>
+  );
+}
+
+// Detect file messages: "📎 filename\nhttps://..."
+function isFileMessage(body: string | null): boolean {
+  if (!body) return false;
+  const lines = body.split("\n");
+  return lines.length === 2 && lines[0].startsWith("📎 ") && lines[1].startsWith("https://");
+}
+
+function FileMessageBubble({ body }: { body: string }) {
+  const [nameLine, url] = body.split("\n");
+  const filename = nameLine.replace("📎 ", "").replace(" (上传中…)", "");
+  const uploading = nameLine.includes("（上传中…）") || nameLine.includes("(上传中…)");
+  return (
+    <a
+      href={uploading ? undefined : url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={"flex items-center gap-2.5 min-w-[160px] " + (uploading ? "cursor-default" : "hover:opacity-80")}
+      onClick={(e) => { if (uploading) e.preventDefault(); }}
+    >
+      <span className="h-9 w-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+        <FileDown size={18} />
+      </span>
+      <div className="flex flex-col min-w-0">
+        <span className="text-sm font-medium truncate">{filename}</span>
+        <span className="text-[10px] opacity-70">{uploading ? "上传中…" : "点击下载"}</span>
+      </div>
+    </a>
   );
 }
 
