@@ -10,13 +10,12 @@ export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<ChatThreadStatus, string> = {
   open: "未处理",
-  claimed: "已认领",
+  claimed: "未处理",
   closed: "已关闭",
 };
 
 const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
   { key: "open", label: "未处理" },
-  { key: "claimed", label: "已认领" },
   { key: "closed", label: "已关闭" },
   { key: "all", label: "全部" },
 ];
@@ -69,7 +68,7 @@ export default async function ChatInboxPage(props: {
   let query = (supabase as any)
     .from("chat_threads")
     .select(
-      "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at, claimed_by:profiles!chat_threads_claimed_by_fkey(display_name)",
+      "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
     )
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .limit(200);
@@ -85,7 +84,7 @@ export default async function ChatInboxPage(props: {
         <div>
           <h1 className="text-2xl font-semibold">客服会话</h1>
           <p className="text-sm text-zinc-500 mt-1">
-            新消息会自动到达 · 点会话进入对话页 · 多客服时记得"认领"避免重复回复
+            新消息实时到达 · 点会话进入对话页 · 问题解决后请点「结束会话」，让收件箱保持清晰
           </p>
         </div>
         <Link
@@ -119,7 +118,6 @@ export default async function ChatInboxPage(props: {
         ) : (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           threads.map((t: any) => {
-            const claimed = Array.isArray(t.claimed_by) ? t.claimed_by[0] : t.claimed_by;
             return (
               <li key={t.id}>
                 <Link
@@ -146,12 +144,11 @@ export default async function ChatInboxPage(props: {
                       />
                     </div>
 
-                    {/* Row 3: timestamp + claimed-by */}
+                    {/* Row 3: timestamp */}
                     <div className="text-xs text-zinc-400 mt-0.5">
                       {t.last_message_at
                         ? formatMalaysia(t.last_message_at)
                         : `创建于 ${formatMalaysia(t.created_at)}`}
-                      {claimed && ` · ${claimed.display_name} 认领中`}
                     </div>
                   </div>
 

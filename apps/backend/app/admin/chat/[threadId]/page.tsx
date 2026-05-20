@@ -9,7 +9,7 @@ export const metadata = { title: "会话 · 管理后台" };
 
 const STATUS_LABEL = {
   open: "未处理",
-  claimed: "已认领",
+  claimed: "未处理",
   closed: "已关闭",
 } as const;
 
@@ -21,9 +21,7 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
   const [{ data: thread }, { data: messages }, { data: quickReplies }] = await Promise.all([
     supabase
       .from("chat_threads")
-      .select(
-        "id, guest_name, status, claimed_by, created_at, last_message_at, claimer:profiles!chat_threads_claimed_by_fkey(display_name)",
-      )
+      .select("id, guest_name, status, created_at, last_message_at")
       .eq("id", threadId)
       .maybeSingle(),
     supabase
@@ -45,8 +43,6 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
 
   if (!thread) notFound();
 
-  const claimer = Array.isArray(thread.claimer) ? thread.claimer[0] : thread.claimer;
-
   return (
     <div className="flex flex-col h-[calc(100vh-56px-2rem)] max-w-3xl w-full mx-auto bg-white rounded-lg border border-zinc-200 overflow-hidden">
       <header className="border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
@@ -60,7 +56,6 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
           </h1>
           <p className="text-xs text-zinc-500">
             创建于 {formatMalaysia(thread.created_at)} · 状态 {STATUS_LABEL[thread.status]}
-            {claimer && ` · 由 ${claimer.display_name} 认领`}
           </p>
         </div>
       </header>
@@ -68,7 +63,6 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       <AgentChat
         threadId={thread.id}
         status={thread.status}
-        claimedBy={thread.claimed_by}
         userId={user.id}
         initialMessages={(messages ?? []).map((r) => ({
           id: r.id,
