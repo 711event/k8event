@@ -18,6 +18,7 @@ import {
   closeThreadAction,
 } from "./actions";
 import { TemplatePicker } from "@/components/admin/TemplatePicker";
+import { PRESENCE_CHANNEL } from "../ChatPresenceContext";
 
 type QuickReply = { id: string; title: string; body: string };
 const isButtonReply = (q: QuickReply) => q.title.trim().startsWith("++");
@@ -119,6 +120,26 @@ export function AgentChat({
   useEffect(() => {
     pruneOldImages().catch(() => undefined);
   }, []);
+
+  // Broadcast presence so the inbox can highlight this thread in cyan.
+  // We await getSession() first to ensure auth is hydrated before joining.
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    async function trackPresence() {
+      await supabase.auth.getSession();
+      channel = supabase.channel(PRESENCE_CHANNEL);
+      channel.subscribe(async (status) => {
+        if (status === "SUBSCRIBED" && channel) {
+          await channel.track({ threadId, userId });
+        }
+      });
+    }
+    void trackPresence();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId, userId]);
 
   function mergeNewRow(raw: unknown) {
     const r = raw as {

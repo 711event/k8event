@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
-import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import type { ChatThreadStatus } from "@k8event/shared/supabase/types";
 import { ChatInboxAutoRefresh } from "./ChatInboxAutoRefresh";
+import { ThreadListClient } from "./ThreadListClient";
 
 export const metadata = { title: "客服会话 · 管理后台" };
 export const dynamic = "force-dynamic";
-
-const STATUS_LABEL: Record<ChatThreadStatus, string> = {
-  open: "未处理",
-  claimed: "未处理",
-  closed: "已关闭",
-};
 
 const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
   { key: "open", label: "未处理" },
@@ -20,48 +14,14 @@ const tabs: { key: ChatThreadStatus | "all"; label: string }[] = [
   { key: "all", label: "全部" },
 ];
 
-/** Render the last-message preview snippet */
-function MessagePreview({
-  kind,
-  body,
-  sender,
-}: {
-  kind: "text" | "image" | null;
-  body: string | null;
-  sender: "guest" | "agent" | "system" | null;
-}) {
-  if (!kind) return <span className="italic">暂无消息</span>;
-
-  const prefix =
-    sender === "agent" ? "客服: " : sender === "system" ? "" : "";
-
-  if (kind === "image") {
-    return (
-      <span>
-        {prefix}
-        <span className="inline-flex items-center gap-1">
-          <span>📷</span> 图片
-        </span>
-      </span>
-    );
-  }
-
-  const text = body ?? "";
-  const truncated = text.length > 60 ? text.slice(0, 60) + "…" : text;
-  return (
-    <span>
-      {prefix}
-      {truncated}
-    </span>
-  );
-}
-
 export default async function ChatInboxPage(props: {
   searchParams: Promise<{ status?: string }>;
 }) {
   await requireRole(["admin", "agent"]);
   const sp = await props.searchParams;
-  const active = (tabs.find((t) => t.key === sp.status)?.key ?? "open") as ChatThreadStatus | "all";
+  const active = (tabs.find((t) => t.key === sp.status)?.key ?? "open") as
+    | ChatThreadStatus
+    | "all";
 
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +55,22 @@ export default async function ChatInboxPage(props: {
         </Link>
       </div>
 
+      {/* Colour legend */}
+      <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm bg-cyan-100 border border-cyan-200 inline-block" />
+          有客服正在查看
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm bg-red-50 border border-red-200 inline-block" />
+          等待超过 5 分钟
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm bg-red-100 border border-red-300 inline-block" />
+          等待超过 8 分钟
+        </span>
+      </div>
+
       <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
           <Link
@@ -112,60 +88,8 @@ export default async function ChatInboxPage(props: {
         ))}
       </div>
 
-      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
-        {!threads?.length ? (
-          <li className="px-4 py-8 text-center text-zinc-500 text-sm">暂无会话</li>
-        ) : (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          threads.map((t: any) => {
-            return (
-              <li key={t.id}>
-                <Link
-                  href={`/admin/chat/${t.id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-zinc-50"
-                >
-                  {/* Left: name + preview (2 rows) */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">
-                        {t.guest_name ?? "访客"}
-                      </span>
-                      <span className="text-xs text-zinc-400 font-mono shrink-0">
-                        {t.id.slice(0, 8)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-zinc-500 truncate mt-0.5">
-                      <MessagePreview
-                        kind={t.last_message_kind}
-                        body={t.last_message_body}
-                        sender={t.last_message_sender}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right: status badge + timestamp stacked */}
-                  <div className="shrink-0 flex flex-col items-end gap-1">
-                    <span
-                      className={
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
-                        (t.status === "open" || t.status === "claimed"
-                          ? "bg-amber-500/15 text-amber-700"
-                          : "bg-zinc-500/15 text-zinc-600")
-                      }
-                    >
-                      {STATUS_LABEL[t.status as ChatThreadStatus]}
-                    </span>
-                    <span className="text-xs text-zinc-400 whitespace-nowrap">
-                      {t.last_message_at
-                        ? formatMalaysia(t.last_message_at)
-                        : formatMalaysia(t.created_at)}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            );
-          })
-        )}
+      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden">
+        <ThreadListClient threads={threads ?? []} />
       </ul>
     </div>
   );
