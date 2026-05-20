@@ -142,6 +142,24 @@ export function ChatRoom() {
     void getChatDb().images.clear();
   }, []);
 
+  // Ctrl+V / paste image support
+  useEffect(() => {
+    async function onPaste(e: ClipboardEvent) {
+      if (!senderCtx) return;
+      const files = Array.from(e.clipboardData?.items ?? [])
+        .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+        .map((i) => i.getAsFile())
+        .filter((f): f is File => f !== null);
+      if (files.length) {
+        e.preventDefault();
+        await handleFiles(files);
+      }
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [senderCtx]);
+
   // Load older messages (cursor-based, called when user scrolls to top)
   async function loadOlderMessages() {
     if (!supabase || !session || !hasMore || loadingMore || !oldestAt.current) return;
