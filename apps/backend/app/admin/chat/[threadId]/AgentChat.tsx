@@ -292,8 +292,8 @@ export function AgentChat({
   }
 
   async function handleSend(text: string, files: File[]) {
-    if (text) await sendText(text);
     if (files.length) await sendPendingFiles(files);
+    if (text) await sendText(text);
   }
 
   /** Handles picking a quick reply (button chip or template).
