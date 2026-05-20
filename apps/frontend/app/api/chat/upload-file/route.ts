@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const { data: thread } = await supabase
     .from("chat_threads")
     .select("id")
-    .eq("guest_token", token)
+    .eq("guest_session", token)
     .maybeSingle();
   if (!thread) {
     return NextResponse.json({ error: "invalid_session" }, { status: 401 });
