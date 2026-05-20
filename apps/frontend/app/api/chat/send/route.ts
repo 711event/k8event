@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   const admin = getSupabaseAdmin();
   const { data: thread } = await admin
     .from("chat_threads")
-    .select("id")
+    .select("id, status")
     .eq("guest_session", token)
     .maybeSingle();
 
@@ -40,11 +40,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "thread_not_found" }, { status: 404 });
   }
 
-  if (parsed.data.guestName) {
-    await admin
-      .from("chat_threads")
-      .update({ guest_name: parsed.data.guestName })
-      .eq("id", thread.id);
+  // If the thread was closed by an agent and the guest sends a new message,
+  // reopen it so it appears in the admin inbox under "未处理".
+  const patch: Record<string, unknown> = {};
+  if (thread.status === "closed") patch.status = "pending";
+  if (parsed.data.guestName) patch.guest_name = parsed.data.guestName;
+  if (Object.keys(patch).length > 0) {
+    await admin.from("chat_threads").update(patch).eq("id", thread.id);
   }
 
   const isImage = !!parsed.data.imageUrl;

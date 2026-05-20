@@ -51,8 +51,10 @@ export async function POST() {
   //    This is the persistence key — survives cookie loss and device changes.
   // -----------------------------------------------------------------------
   if (authUserId) {
+    // Prefer the most recent non-closed thread; fall back to the most recent
+    // closed thread so conversation history is preserved across devices (cookie loss).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: playerThread } = await (admin as any)
+    let { data: playerThread } = await (admin as any)
       .from("chat_threads")
       .select("id, status, guest_name")
       .eq("player_id", authUserId)
@@ -60,6 +62,19 @@ export async function POST() {
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
+
+    if (!playerThread) {
+      // No open thread — try most recent closed thread (device change scenario)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ({ data: playerThread } = await (admin as any)
+        .from("chat_threads")
+        .select("id, status, guest_name")
+        .eq("player_id", authUserId)
+        .eq("status", "closed")
+        .order("last_message_at", { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle());
+    }
 
     if (playerThread) {
       // Re-anchor cookie so RLS guest policies still work on this device,
