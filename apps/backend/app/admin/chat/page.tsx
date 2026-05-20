@@ -24,18 +24,30 @@ export default async function ChatInboxPage(props: {
     | "all";
 
   const supabase = await createSupabaseServerClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
-    .from("chat_threads")
-    .select(
-      "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
-    )
-    .order("last_message_at", { ascending: false, nullsFirst: false })
-    .limit(200);
 
-  if (active !== "all") query = query.eq("status", active);
+  const [{ data: threads }, { data: urgencySettings }] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (supabase as any)
+        .from("chat_threads")
+        .select(
+          "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
+        )
+        .order("last_message_at", { ascending: false, nullsFirst: false })
+        .limit(200);
+      if (active !== "all") q = q.eq("status", active);
+      return q;
+    })(),
+    supabase
+      .from("chat_retention_settings")
+      .select("warn_after_minutes, critical_after_minutes")
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-  const { data: threads } = await query;
+  const warnAfterMinutes = urgencySettings?.warn_after_minutes ?? 5;
+  const criticalAfterMinutes = urgencySettings?.critical_after_minutes ?? 8;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -89,7 +101,11 @@ export default async function ChatInboxPage(props: {
       </div>
 
       <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden">
-        <ThreadListClient threads={threads ?? []} />
+        <ThreadListClient
+          threads={threads ?? []}
+          warnAfterMinutes={warnAfterMinutes}
+          criticalAfterMinutes={criticalAfterMinutes}
+        />
       </ul>
     </div>
   );

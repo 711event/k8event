@@ -48,11 +48,16 @@ function MessagePreview({
  *
  * Priority (highest → lowest):
  *  1. Cyan   — another admin is actively viewing this thread right now
- *  2. Red-2  — guest's last message is ≥ 8 min old and no reply yet
- *  3. Red-1  — guest's last message is ≥ 5 min old and no reply yet
+ *  2. Red-2  — guest's last message is ≥ criticalAfterMinutes old and no reply yet
+ *  3. Red-1  — guest's last message is ≥ warnAfterMinutes old and no reply yet
  *  4. White  — default
  */
-function getRowBg(t: ThreadRow, viewedIds: Set<string>): string {
+function getRowBg(
+  t: ThreadRow,
+  viewedIds: Set<string>,
+  warnMin: number,
+  criticalMin: number,
+): string {
   if (viewedIds.has(t.id)) return "bg-cyan-50";
 
   if (
@@ -62,14 +67,22 @@ function getRowBg(t: ThreadRow, viewedIds: Set<string>): string {
   ) {
     const ageMin =
       (Date.now() - new Date(t.last_message_at).getTime()) / 60_000;
-    if (ageMin >= 8) return "bg-red-100";
-    if (ageMin >= 5) return "bg-red-50";
+    if (ageMin >= criticalMin) return "bg-red-100";
+    if (ageMin >= warnMin) return "bg-red-50";
   }
 
   return "";
 }
 
-export function ThreadListClient({ threads }: { threads: ThreadRow[] }) {
+export function ThreadListClient({
+  threads,
+  warnAfterMinutes = 5,
+  criticalAfterMinutes = 8,
+}: {
+  threads: ThreadRow[];
+  warnAfterMinutes?: number;
+  criticalAfterMinutes?: number;
+}) {
   const viewedIds = useViewedThreadIds();
   // Force a re-render every 30 s so the time-based colours update
   // without waiting for the next server refresh (router.refresh every 8 s
@@ -90,7 +103,7 @@ export function ThreadListClient({ threads }: { threads: ThreadRow[] }) {
   return (
     <>
       {threads.map((t) => {
-        const rowBg = getRowBg(t, viewedIds);
+        const rowBg = getRowBg(t, viewedIds, warnAfterMinutes, criticalAfterMinutes);
         return (
           <li key={t.id} className={rowBg ? `${rowBg} transition-colors` : "transition-colors"}>
             <Link

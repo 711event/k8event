@@ -38,6 +38,7 @@ const migrations = [
   "0009_chat_thread_preview.sql",
   "0010_fix_chat_rls.sql",
   "0011_fix_auth_role_secdef.sql",
+  "0012_chat_urgency_thresholds.sql",
 ];
 
 console.log(`Connecting to Supabase project ${projectRef}...`);

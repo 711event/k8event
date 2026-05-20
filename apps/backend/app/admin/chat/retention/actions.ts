@@ -9,6 +9,8 @@ export interface RetentionFormData {
   message_retention_days: number;
   media_retention_days: number;
   archive_closed_threads_after_days: number;
+  warn_after_minutes: number;
+  critical_after_minutes: number;
 }
 
 export async function updateRetentionSettingsAction(data: RetentionFormData) {
@@ -23,28 +25,30 @@ export async function updateRetentionSettingsAction(data: RetentionFormData) {
     .limit(1)
     .maybeSingle();
 
+  const payload = {
+    message_retention_days: data.message_retention_days,
+    media_retention_days: data.media_retention_days,
+    archive_closed_threads_after_days: data.archive_closed_threads_after_days,
+    warn_after_minutes: data.warn_after_minutes,
+    critical_after_minutes: data.critical_after_minutes,
+    updated_by: user?.id ?? null,
+    updated_at: new Date().toISOString(),
+  };
+
   if (existing) {
     const { error } = await supabase
       .from("chat_retention_settings")
-      .update({
-        message_retention_days: data.message_retention_days,
-        media_retention_days: data.media_retention_days,
-        archive_closed_threads_after_days: data.archive_closed_threads_after_days,
-        updated_by: user?.id ?? null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq("id", existing.id);
     if (error) return { error: error.message };
   } else {
-    const { error } = await supabase.from("chat_retention_settings").insert({
-      message_retention_days: data.message_retention_days,
-      media_retention_days: data.media_retention_days,
-      archive_closed_threads_after_days: data.archive_closed_threads_after_days,
-      updated_by: user?.id ?? null,
-    });
+    const { error } = await supabase
+      .from("chat_retention_settings")
+      .insert(payload);
     if (error) return { error: error.message };
   }
 
   revalidatePath("/admin/chat/retention");
+  revalidatePath("/admin/chat");
   return { ok: true };
 }

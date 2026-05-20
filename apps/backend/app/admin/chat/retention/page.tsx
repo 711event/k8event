@@ -20,6 +20,8 @@ export default async function ChatRetentionPage() {
     message_retention_days: settings?.message_retention_days ?? 90,
     media_retention_days: settings?.media_retention_days ?? 30,
     archive_closed_threads_after_days: settings?.archive_closed_threads_after_days ?? 7,
+    warn_after_minutes: settings?.warn_after_minutes ?? 5,
+    critical_after_minutes: settings?.critical_after_minutes ?? 8,
   };
 
   return (
@@ -30,7 +32,7 @@ export default async function ChatRetentionPage() {
         </Link>
         <h1 className="text-2xl font-semibold mt-2">聊天保留策略</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          设置聊天记录和媒体文件的保留天数。目前仅保存设置，自动清理功能将在后续版本中启用。
+          设置聊天记录保留天数和收件箱颜色预警阈值。
         </p>
       </div>
 
@@ -40,7 +42,7 @@ export default async function ChatRetentionPage() {
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 space-y-1">
         <p className="font-medium">⚠ 注意</p>
-        <p>自动清理任务尚未启用，以上设置仅供记录与规划用途。实际数据不会被自动删除。</p>
+        <p>自动清理任务尚未启用，保留天数设置仅供记录与规划用途。实际数据不会被自动删除。</p>
       </div>
     </div>
   );

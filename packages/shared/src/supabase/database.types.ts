@@ -274,6 +274,8 @@ export type Database = {
           message_retention_days: number;
           media_retention_days: number;
           archive_closed_threads_after_days: number;
+          warn_after_minutes: number;
+          critical_after_minutes: number;
           updated_by: string | null;
           updated_at: Timestamp;
         };
@@ -282,6 +284,8 @@ export type Database = {
           message_retention_days?: number;
           media_retention_days?: number;
           archive_closed_threads_after_days?: number;
+          warn_after_minutes?: number;
+          critical_after_minutes?: number;
           updated_by?: string | null;
           updated_at?: Timestamp;
         };
