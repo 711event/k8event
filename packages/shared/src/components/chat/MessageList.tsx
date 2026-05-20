@@ -34,6 +34,11 @@ export function MessageList({
   const prevLengthRef = useRef(messages.length);
   const prevScrollHeightRef = useRef(0);
 
+  // Scroll to bottom on initial mount.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
+  }, []);
+
   // Scroll to bottom only when NEW messages are appended (not when older ones are prepended).
   useEffect(() => {
     const prev = prevLengthRef.current;
