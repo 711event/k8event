@@ -2,6 +2,7 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { CreatePlayerForm } from "./CreatePlayerForm";
+import { PlayerRow } from "./PlayerRow";
 
 export const metadata = { title: "玩家管理 · 管理后台" };
 
@@ -35,20 +36,23 @@ export default async function PlayersPage() {
               <th className="px-4 py-3 font-medium">用户名</th>
               <th className="px-4 py-3 font-medium">显示名称</th>
               <th className="px-4 py-3 font-medium">创建时间 (GMT+8)</th>
+              <th className="px-4 py-3 font-medium"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {error ? (
-              <tr><td colSpan={3} className="px-4 py-6 text-red-500">{error.message}</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-red-500">{error.message}</td></tr>
             ) : !players?.length ? (
-              <tr><td colSpan={3} className="px-4 py-6 text-zinc-500">暂无玩家</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">暂无玩家</td></tr>
             ) : (
               players.map((p) => (
-                <tr key={p.user_id}>
-                  <td className="px-4 py-3 font-mono">{p.username}</td>
-                  <td className="px-4 py-3">{p.display_name}</td>
-                  <td className="px-4 py-3 text-zinc-500">{formatMalaysia(p.created_at)}</td>
-                </tr>
+                <PlayerRow
+                  key={p.user_id}
+                  userId={p.user_id}
+                  username={p.username ?? ""}
+                  displayName={p.display_name}
+                  createdAt={formatMalaysia(p.created_at)}
+                />
               ))
             )}
           </tbody>

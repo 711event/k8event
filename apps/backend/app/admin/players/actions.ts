@@ -13,12 +13,18 @@ const usernameSchema = z
 
 const createPlayerSchema = z.object({
   username: usernameSchema,
-  password: z.string().min(8, "Password must be at least 8 characters"),
   displayName: z.string().trim().max(60).optional(),
 });
 
+function generatePassword(): string {
+  const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let pw = "";
+  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  return pw;
+}
+
 export type CreatePlayerState =
-  | { ok: true; username: string }
+  | { ok: true; username: string; password: string }
   | { error: string }
   | undefined;
 
@@ -30,7 +36,6 @@ export async function createPlayerAction(
 
   const parsed = createPlayerSchema.safeParse({
     username: formData.get("username"),
-    password: formData.get("password"),
     displayName: formData.get("displayName") || undefined,
   });
 
@@ -38,7 +43,8 @@ export async function createPlayerAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { username, password, displayName } = parsed.data;
+  const { username, displayName } = parsed.data;
+  const password = generatePassword();
   const email = `${username}@k8event.local`;
   const admin = getSupabaseAdmin();
 
@@ -67,7 +73,19 @@ export async function createPlayerAction(
   }
 
   revalidatePath("/admin/players");
-  return { ok: true, username };
+  return { ok: true, username, password };
+}
+
+export async function changePasswordAction(
+  userId: string,
+  newPassword: string,
+): Promise<{ error?: string }> {
+  await requireRole("admin");
+  if (newPassword.length < 8) return { error: "密码至少 8 位" };
+  const admin = getSupabaseAdmin();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+  if (error) return { error: error.message };
+  return {};
 }
 
 export async function deletePlayerAction(userId: string): Promise<void> {
