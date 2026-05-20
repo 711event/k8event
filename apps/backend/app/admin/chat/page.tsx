@@ -165,7 +165,7 @@ export default async function ChatInboxPage(props: {
                           : "bg-zinc-500/15 text-zinc-600")
                     }
                   >
-                    {STATUS_LABEL[t.status]}
+                    {STATUS_LABEL[t.status as ChatThreadStatus]}
                   </span>
                 </Link>
               </li>
