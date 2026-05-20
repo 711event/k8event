@@ -22,7 +22,7 @@ import {
 import { TemplatePicker } from "@/components/admin/TemplatePicker";
 import { PRESENCE_CHANNEL } from "../ChatPresenceContext";
 
-type QuickReply = { id: string; title: string; body: string };
+type QuickReply = { id: string; title: string; body: string; image_url?: string | null };
 const isButtonReply = (q: QuickReply) => q.title.trim().startsWith("++");
 const uuid = () => crypto.randomUUID();
 
@@ -296,6 +296,36 @@ export function AgentChat({
     if (files.length) await sendPendingFiles(files);
   }
 
+  /** Called when a quick reply with an attached image is picked. Sends the
+   *  stored image URL directly as an image message (no re-upload needed). */
+  async function sendQuickReplyImage(imageUrl: string) {
+    const clientId = uuid();
+    setMessages((prev) => [
+      ...prev,
+      { id: clientId, sender: "agent", kind: "image", body: null, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
+    ]);
+    try {
+      const r = await agentSendMessageAction({ threadId, imageUrl, clientId });
+      if (r && "error" in r) {
+        toast.error(r.error);
+        setMessages((prev) => prev.filter((m) => m.id !== clientId));
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((m) => m.id === clientId ? { ...m, imageUrl, pending: false } : m),
+      );
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== clientId));
+    }
+  }
+
+  /** Handles picking a quick reply (button chip or template). Sends image first
+   *  (if any), then fills the composer with the text body. */
+  function pickQuickReply(body: string, imageUrl?: string | null) {
+    if (imageUrl) void sendQuickReplyImage(imageUrl);
+    setPrefill(body);
+  }
+
   async function sendImage(localId: string) {
     const clientId = uuid();
     setMessages((prev) => [
@@ -384,16 +414,17 @@ export function AgentChat({
                   <button
                     key={q.id}
                     type="button"
-                    onClick={() => setPrefill(q.body)}
+                    onClick={() => pickQuickReply(q.body, q.image_url)}
                     className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 flex-shrink-0"
                     title={q.body.slice(0, 80)}
                   >
                     {q.title}
+                    {q.image_url && <span className="ml-1 opacity-60">📷</span>}
                   </button>
                 ))}
                 <TemplatePicker
                   templates={quickReplies.filter((q) => !isButtonReply(q))}
-                  onPick={(body) => setPrefill(body)}
+                  onPick={(body, imageUrl) => pickQuickReply(body, imageUrl)}
                 />
               </div>
             )}

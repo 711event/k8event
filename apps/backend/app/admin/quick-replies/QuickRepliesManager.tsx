@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { Eye, EyeOff, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import {
   createQuickReplyAction,
   deleteQuickReplyAction,
@@ -17,6 +18,7 @@ type QR = {
   body: string;
   sort_order: number;
   is_active: boolean;
+  image_url?: string | null;
 };
 
 const isButton = (title: string) => title.trim().startsWith("++");
@@ -94,6 +96,14 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
         <div className="text-sm text-zinc-600 mt-0.5 whitespace-pre-wrap break-words line-clamp-3">
           {qr.body}
         </div>
+        {qr.image_url && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={qr.image_url}
+            alt="附图"
+            className="mt-1.5 h-12 w-12 rounded object-cover border border-zinc-200"
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -164,6 +174,9 @@ function QRModal({
 
   const [state, formAction, pending] = useActionState<QRState, FormData>(boundAction, undefined);
   const [isActive, setIsActive] = useState(qr?.is_active ?? true);
+  const [imageUrl, setImageUrl] = useState<string | null>(qr?.image_url ?? null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
@@ -174,6 +187,23 @@ function QRModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  async function handleImageFile(file: File) {
+    setImageUploading(true);
+    try {
+      const sb = createSupabaseBrowserClient();
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `quick-replies/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from("chat-images").upload(path, file, { upsert: false });
+      if (error) throw error;
+      const { data } = sb.storage.from("chat-images").getPublicUrl(path);
+      setImageUrl(data.publicUrl);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "图片上传失败");
+    } finally {
+      setImageUploading(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -214,6 +244,62 @@ function QRModal({
               className="mt-1.5 w-full px-3 py-2 rounded-md border border-zinc-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             />
           </label>
+
+          {/* Image attachment */}
+          <div>
+            <span className="text-sm font-medium text-zinc-700">
+              附图 <span className="text-xs font-normal text-zinc-400">（可选 · 发送时图片先于文字发出）</span>
+            </span>
+            <div className="mt-1.5 flex items-start gap-2">
+              {imageUrl ? (
+                <div className="relative flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageUrl}
+                    alt="附图预览"
+                    className="h-20 w-20 rounded-lg object-cover border border-zinc-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl(null)}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-zinc-900 text-white flex items-center justify-center shadow"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                  className="h-20 w-20 rounded-lg border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:border-blue-400 hover:text-blue-500 transition disabled:opacity-60"
+                >
+                  {imageUploading ? (
+                    <span className="text-[10px]">上传中…</span>
+                  ) : (
+                    <>
+                      <ImagePlus size={18} />
+                      <span className="text-[10px]">添加图片</span>
+                    </>
+                  )}
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleImageFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            {/* Pass image_url as hidden field so the server action receives it */}
+            <input type="hidden" name="image_url" value={imageUrl ?? ""} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3 items-end">
             <label className="block">
               <span className="text-sm font-medium text-zinc-700">排序</span>
@@ -248,7 +334,7 @@ function QRModal({
             </button>
             <button
               type="submit"
-              disabled={pending}
+              disabled={pending || imageUploading}
               className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
             >
               {pending ? "保存中…" : "保存"}

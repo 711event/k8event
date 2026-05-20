@@ -10,7 +10,7 @@ export default async function QuickRepliesPage() {
   const supabase = await createSupabaseServerClient();
   const { data: replies } = await supabase
     .from("quick_replies")
-    .select("id, title, body, sort_order, is_active")
+    .select("id, title, body, sort_order, is_active, image_url")
     .order("sort_order")
     .order("title");
 

@@ -35,7 +35,7 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
     //   - others → available via 模板 picker dropdown
     supabase
       .from("quick_replies")
-      .select("id, title, body")
+      .select("id, title, body, image_url")
       .eq("is_active", true)
       .order("sort_order")
       .order("title"),

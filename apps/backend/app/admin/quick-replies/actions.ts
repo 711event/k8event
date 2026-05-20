@@ -10,17 +10,22 @@ const qrSchema = z.object({
   body: z.string().min(1, "请填写内容").max(2000, "内容最多 2000 字"),
   sort_order: z.coerce.number().int().min(-9999).max(9999).default(0),
   is_active: z.coerce.boolean().default(true),
+  image_url: z.string().url().nullable().optional(),
 });
 
 export type QRState = { ok: true } | { error: string } | undefined;
 
 function parseForm(formData: FormData) {
+  const rawImageUrl = formData.get("image_url");
   return qrSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),
     sort_order: formData.get("sort_order") ?? 0,
     // checkbox value: "on" when checked, absent otherwise → coerce to boolean via presence
     is_active: formData.get("is_active") === null ? false : true,
+    image_url: rawImageUrl && typeof rawImageUrl === "string" && rawImageUrl.startsWith("http")
+      ? rawImageUrl
+      : null,
   });
 }
 
@@ -38,6 +43,7 @@ export async function createQuickReplyAction(
     body: parsed.data.body,
     sort_order: parsed.data.sort_order,
     is_active: parsed.data.is_active,
+    image_url: parsed.data.image_url ?? null,
   });
   if (error) {
     if (/duplicate|unique/i.test(error.message)) return { error: "标题已存在" };
@@ -64,6 +70,7 @@ export async function updateQuickReplyAction(
       body: parsed.data.body,
       sort_order: parsed.data.sort_order,
       is_active: parsed.data.is_active,
+      image_url: parsed.data.image_url ?? null,
     })
     .eq("id", id);
   if (error) {

@@ -3,14 +3,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FileText, ChevronDown, Search, X } from "lucide-react";
 
-type Template = { id: string; title: string; body: string };
+type Template = { id: string; title: string; body: string; image_url?: string | null };
 
 export function TemplatePicker({
   templates,
   onPick,
 }: {
   templates: Template[];
-  onPick: (body: string) => void;
+  onPick: (body: string, imageUrl?: string | null) => void;
 }) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -160,16 +160,28 @@ export function TemplatePicker({
                       <button
                         type="button"
                         onClick={() => {
-                          onPick(t.body);
+                          onPick(t.body, t.image_url);
                           setOpen(false);
                         }}
                         className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 transition"
                       >
-                        <div className="text-xs font-semibold text-zinc-900 truncate">
-                          <Highlight text={t.title} query={query} />
-                        </div>
-                        <div className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2 whitespace-pre-wrap break-words">
-                          <Highlight text={t.body} query={query} />
+                        <div className="flex items-start gap-2">
+                          {t.image_url && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={t.image_url}
+                              alt=""
+                              className="h-10 w-10 rounded object-cover border border-zinc-200 flex-shrink-0 mt-0.5"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold text-zinc-900 truncate">
+                              <Highlight text={t.title} query={query} />
+                            </div>
+                            <div className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2 whitespace-pre-wrap break-words">
+                              <Highlight text={t.body} query={query} />
+                            </div>
+                          </div>
                         </div>
                       </button>
                     </li>
