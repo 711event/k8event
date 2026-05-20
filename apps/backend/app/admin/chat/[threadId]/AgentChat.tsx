@@ -296,33 +296,25 @@ export function AgentChat({
     if (files.length) await sendPendingFiles(files);
   }
 
-  /** Called when a quick reply with an attached image is picked. Sends the
-   *  stored image URL directly as an image message (no re-upload needed). */
-  async function sendQuickReplyImage(imageUrl: string) {
-    const clientId = uuid();
-    setMessages((prev) => [
-      ...prev,
-      { id: clientId, sender: "agent", kind: "image", body: null, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
-    ]);
-    try {
-      const r = await agentSendMessageAction({ threadId, imageUrl, clientId });
-      if (r && "error" in r) {
-        toast.error(r.error);
-        setMessages((prev) => prev.filter((m) => m.id !== clientId));
-        return;
-      }
-      setMessages((prev) =>
-        prev.map((m) => m.id === clientId ? { ...m, imageUrl, pending: false } : m),
-      );
-    } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== clientId));
-    }
-  }
-
-  /** Handles picking a quick reply (button chip or template). Sends image first
-   *  (if any), then fills the composer with the text body. */
+  /** Handles picking a quick reply (button chip or template).
+   *  If it has an image, fetch it as a File so it shows in the pending preview
+   *  area — user then clicks Send to dispatch image + text together. */
   function pickQuickReply(body: string, imageUrl?: string | null) {
-    if (imageUrl) void sendQuickReplyImage(imageUrl);
+    if (imageUrl) {
+      // Fetch the stored image and add as a pending file so it shows in the
+      // input bar preview and is sent together with the text on Send.
+      void (async () => {
+        try {
+          const res = await fetch(imageUrl);
+          const blob = await res.blob();
+          const ext = (blob.type.split("/")[1] ?? "jpg").replace("jpeg", "jpg");
+          const file = new File([blob], `quick-reply.${ext}`, { type: blob.type });
+          setPendingFiles((prev) => [...prev, file]);
+        } catch {
+          toast.error("图片加载失败");
+        }
+      })();
+    }
     setPrefill(body);
   }
 
