@@ -12,6 +12,7 @@ import {
   pruneOldImages,
   type SenderContext,
 } from "@k8event/shared/chat/uploadImage";
+import { getChatDb } from "@k8event/shared/chat/dexie";
 
 const PAGE_SIZE = 50;
 const uuid = () => crypto.randomUUID();
@@ -136,9 +137,9 @@ export function ChatRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, session?.threadId]);
 
-  // Keep local image cache bounded
+  // Clear stale Dexie images on mount (ThumbStrip removed; auto-send on pick)
   useEffect(() => {
-    pruneOldImages().catch(() => undefined);
+    void getChatDb().images.clear();
   }, []);
 
   // Load older messages (cursor-based, called when user scrolls to top)
@@ -245,7 +246,11 @@ export function ChatRoom() {
 
   async function handleFiles(files: File[]) {
     if (!senderCtx) return;
-    await ingestFiles(files, senderCtx);
+    const ids = await ingestFiles(files, senderCtx);
+    // Auto-send immediately
+    for (const id of ids) {
+      await sendImage(id);
+    }
   }
 
   async function sendImage(localId: string) {
@@ -300,6 +305,8 @@ export function ChatRoom() {
             : m,
         ),
       );
+      // Remove from local Dexie cache so thumbnail strip stays clean
+      await getChatDb().images.delete(localId);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "upload_failed";
       setError(msg === "timeout" ? "网络较慢,图片可能尚未送达,请刷新页面确认。" : msg);
@@ -355,7 +362,6 @@ export function ChatRoom() {
       <InputBar
         onSendText={sendText}
         disabled={!session}
-        topSlot={<ThumbStrip onPick={(img) => sendImage(img.id)} />}
         leftSlot={<AttachMenu onFiles={handleFiles} disabled={!session} />}
       />
     </>
