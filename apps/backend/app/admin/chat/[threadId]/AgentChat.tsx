@@ -14,6 +14,7 @@ import {
   pruneOldImages,
   type SenderContext,
 } from "@k8event/shared/chat/uploadImage";
+import { getChatDb } from "@k8event/shared/chat/dexie";
 import {
   agentSendMessageAction,
   closeThreadAction,
@@ -225,7 +226,11 @@ export function AgentChat({
   }
 
   async function handleFiles(files: File[]) {
-    await ingestFiles(files, senderCtx);
+    const ids = await ingestFiles(files, senderCtx);
+    // Auto-send immediately — no need to click the thumbnail
+    for (const id of ids) {
+      await sendImage(id);
+    }
   }
 
   async function sendImage(localId: string) {
@@ -265,6 +270,8 @@ export function AgentChat({
             : m,
         ),
       );
+      // Remove from local Dexie cache so thumbnail strip stays clean
+      await getChatDb().images.delete(localId);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "upload_failed";
       toast.error(msg);
@@ -306,7 +313,6 @@ export function AgentChat({
         prefill={prefill}
         topSlot={
           <>
-            <ThumbStrip onPick={(img) => sendImage(img.id)} />
             {quickReplies.length > 0 && (
               <div className="px-3 py-2 border-b border-zinc-200 flex gap-2 overflow-x-auto items-center">
                 {quickReplies.filter(isButtonReply).map((q) => (
