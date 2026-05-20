@@ -31,10 +31,10 @@ export default async function RechargePage(props: {
         <h2 className="text-lg font-medium">导入充值记录</h2>
         <ul className="text-sm text-zinc-500 list-disc list-inside space-y-0.5">
           <li>
-            <strong>快速输入</strong>：从 Excel 直接选中三列（日期、用户名、金额）复制，粘贴到下方文本框即可
+            <strong>快速输入</strong>：从 Excel 直接选中三列（日期、用户名、金额），复制后粘贴到下方文本框
           </li>
           <li>
-            <strong>上传文件 (.xlsx)</strong>：列名需含 <code>Date</code>、<code>Superid</code>、<code>In</code>（其余列自动忽略）
+            <strong>上传 Excel (.xlsx)</strong>：列名需含 <code>Date</code>、<code>Superid</code>、<code>In</code>（其余列自动忽略）
           </li>
         </ul>
         <p className="text-sm text-zinc-500">

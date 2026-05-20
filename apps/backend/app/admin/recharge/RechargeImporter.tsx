@@ -270,16 +270,6 @@ export function RechargeImporter() {
         <span>下载样本文件：</span>
         <button
           type="button"
-          onClick={downloadCsvSample}
-          className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          sample-recharge.csv
-        </button>
-        <button
-          type="button"
           onClick={downloadExcelSample}
           className="inline-flex items-center gap-1 text-green-600 hover:underline"
         >
@@ -305,11 +295,11 @@ export function RechargeImporter() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-zinc-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span>.xlsx / .csv</span>
+              <span>.xlsx</span>
             </div>
             <input
               type="file"
-              accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
               onChange={handleFile}
               className="sr-only"
             />
