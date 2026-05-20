@@ -105,12 +105,15 @@ export default async function CheckinPage() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/activities" className="text-sm text-zinc-500 hover:text-zinc-300">
-          ← 活动中心
-        </Link>
-      </div>
+      {/* Floating World Cup button */}
+      <Link
+        href="/event"
+        className="fixed bottom-20 left-4 z-40 flex flex-col items-center gap-1 bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-2xl px-3 py-2.5 shadow-lg hover:border-[var(--gold-500)]/60 transition group"
+        style={{ backdropFilter: "blur(8px)" }}
+      >
+        <span className="text-2xl">⚽</span>
+        <span className="text-[10px] font-semibold text-[var(--gold-300)] group-hover:text-[var(--gold-200)] whitespace-nowrap">世界杯</span>
+      </Link>
 
       <div className="text-center space-y-1">
         <h1 className="text-2xl font-bold text-white">{activity.name}</h1>
