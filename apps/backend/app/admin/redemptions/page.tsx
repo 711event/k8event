@@ -8,12 +8,26 @@ import type { RedemptionStatus } from "@k8event/shared/supabase/types";
 export const metadata = { title: "兑换审核 · 管理后台" };
 
 const tabs: { key: RedemptionStatus | "all"; label: string }[] = [
-  { key: "pending", label: "Pending" },
-  { key: "approved", label: "Approved" },
-  { key: "fulfilled", label: "Fulfilled" },
-  { key: "rejected", label: "Rejected" },
-  { key: "all", label: "All" },
+  { key: "pending",   label: "待处理" },
+  { key: "approved",  label: "已批准" },
+  { key: "fulfilled", label: "已发放" },
+  { key: "rejected",  label: "已拒绝" },
+  { key: "all",       label: "全部"   },
 ];
+
+const STATUS_LABEL: Record<RedemptionStatus, string> = {
+  pending:   "待处理",
+  approved:  "已批准",
+  fulfilled: "已发放",
+  rejected:  "已拒绝",
+};
+
+const STATUS_COLOR: Record<RedemptionStatus, string> = {
+  pending:   "bg-amber-500/15 text-amber-600",
+  approved:  "bg-blue-500/15 text-blue-600",
+  fulfilled: "bg-green-500/15 text-green-600",
+  rejected:  "bg-red-500/15 text-red-600",
+};
 
 export default async function RedemptionsPage(props: {
   searchParams: Promise<{ status?: string }>;
@@ -37,7 +51,7 @@ export default async function RedemptionsPage(props: {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold">Redemption requests</h1>
+      <h1 className="text-2xl font-semibold">兑换审核</h1>
 
       <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
@@ -60,17 +74,17 @@ export default async function RedemptionsPage(props: {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Requested (GMT+8)</th>
-              <th className="px-4 py-3 font-medium">Player</th>
-              <th className="px-4 py-3 font-medium">Item</th>
-              <th className="px-4 py-3 font-medium text-right">Cost</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium w-72">Action</th>
+              <th className="px-4 py-3 font-medium">申请时间 (GMT+8)</th>
+              <th className="px-4 py-3 font-medium">玩家</th>
+              <th className="px-4 py-3 font-medium">奖品</th>
+              <th className="px-4 py-3 font-medium text-right">费用</th>
+              <th className="px-4 py-3 font-medium">状态</th>
+              <th className="px-4 py-3 font-medium w-72">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!rows?.length ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">No redemptions.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">暂无兑换记录</td></tr>
             ) : (
               rows.map((r) => {
                 const item = Array.isArray(r.item) ? r.item[0] : r.item;
@@ -84,7 +98,11 @@ export default async function RedemptionsPage(props: {
                     </td>
                     <td className="px-4 py-3">{item?.name ?? "—"}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{r.cost_at_request}</td>
-                    <td className="px-4 py-3"><StatusChip status={r.status} /></td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[r.status]}`}>
+                        {STATUS_LABEL[r.status]}
+                      </span>
+                    </td>
                     <td className="px-4 py-3"><RedemptionActions id={r.id} status={r.status} /></td>
                   </tr>
                 );
@@ -94,19 +112,5 @@ export default async function RedemptionsPage(props: {
         </table>
       </section>
     </div>
-  );
-}
-
-function StatusChip({ status }: { status: RedemptionStatus }) {
-  const map: Record<RedemptionStatus, string> = {
-    pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-    approved: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-    fulfilled: "bg-green-500/15 text-green-600",
-    rejected: "bg-red-500/15 text-red-600",
-  };
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status]}`}>
-      {status}
-    </span>
   );
 }

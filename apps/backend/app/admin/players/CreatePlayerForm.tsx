@@ -13,22 +13,22 @@ export function CreatePlayerForm() {
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success(`Player "${state.username}" created`);
+      toast.success(`玩家 "${state.username}" 已创建`);
       formRef.current?.reset();
     }
   }, [state]);
 
   return (
     <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-      <Field name="username" label="Username" placeholder="alphanumeric_" />
-      <Field name="password" label="Password" type="password" placeholder="min 8 chars" />
-      <Field name="displayName" label="Display name" placeholder="(optional)" required={false} />
+      <Field name="username" label="用户名" placeholder="字母/数字/下划线" />
+      <Field name="password" label="密码" type="password" placeholder="最少 8 位" />
+      <Field name="displayName" label="显示名称" placeholder="（可选）" required={false} />
       <button
         type="submit"
         disabled={pending}
         className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
       >
-        {pending ? "Creating…" : "Create"}
+        {pending ? "创建中…" : "创建"}
       </button>
       {state && "error" in state && (
         <p className="sm:col-span-4 text-sm text-red-600">{state.error}</p>

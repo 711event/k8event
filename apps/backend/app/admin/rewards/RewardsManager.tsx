@@ -28,7 +28,7 @@ export function RewardsManager({ items }: { items: Item[] }) {
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success("Reward created");
+      toast.success("奖品已创建");
       formRef.current?.reset();
     } else if (state && "error" in state) {
       toast.error(state.error);
@@ -38,19 +38,19 @@ export function RewardsManager({ items }: { items: Item[] }) {
   return (
     <>
       <section className="rounded-lg border border-zinc-200 p-5 space-y-3">
-        <h2 className="text-lg font-medium">Add reward</h2>
+        <h2 className="text-lg font-medium">添加奖品</h2>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-          <Field name="name" label="Name" placeholder="e.g. Cash voucher" className="md:col-span-2" />
-          <Field name="cost" label="Cost (tokens)" type="number" placeholder="1000" />
-          <Field name="stock" label="Stock (-1 = unlimited)" type="number" placeholder="-1" />
-          <Field name="imageUrl" label="Image URL" placeholder="https://..." required={false} className="md:col-span-2" />
-          <Field name="description" label="Description" placeholder="(optional)" required={false} className="md:col-span-5" />
+          <Field name="name" label="名称" placeholder="例如：现金券" className="md:col-span-2" />
+          <Field name="cost" label="费用（Token）" type="number" placeholder="1000" />
+          <Field name="stock" label="库存（-1 = 无限）" type="number" placeholder="-1" />
+          <Field name="imageUrl" label="图片 URL" placeholder="https://..." required={false} className="md:col-span-2" />
+          <Field name="description" label="描述" placeholder="（可选）" required={false} className="md:col-span-5" />
           <button
             type="submit"
             disabled={pending}
             className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Create"}
+            {pending ? "保存中…" : "创建"}
           </button>
         </form>
       </section>
@@ -59,16 +59,16 @@ export function RewardsManager({ items }: { items: Item[] }) {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Item</th>
-              <th className="px-4 py-3 font-medium text-right">Cost</th>
-              <th className="px-4 py-3 font-medium text-right">Stock</th>
-              <th className="px-4 py-3 font-medium">Active</th>
+              <th className="px-4 py-3 font-medium">奖品</th>
+              <th className="px-4 py-3 font-medium text-right">费用</th>
+              <th className="px-4 py-3 font-medium text-right">库存</th>
+              <th className="px-4 py-3 font-medium">状态</th>
               <th className="px-4 py-3 font-medium w-32"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {items.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">No rewards yet.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-zinc-500">暂无奖品</td></tr>
             ) : (
               items.map((it) => <RewardRow key={it.id} item={it} />)
             )}
@@ -111,7 +111,7 @@ function RewardRow({ item }: { item: Item }) {
             startTransition(async () => {
               const r = await toggleRewardActiveAction(item.id, !item.is_active);
               if (r && "error" in r) toast.error(r.error);
-              else toast.success(item.is_active ? "Deactivated" : "Activated");
+              else toast.success(item.is_active ? "已停用" : "已启用");
             });
           }}
           className={
@@ -121,7 +121,7 @@ function RewardRow({ item }: { item: Item }) {
               : "bg-zinc-500/15 text-zinc-500")
           }
         >
-          {item.is_active ? "active" : "hidden"}
+          {item.is_active ? "启用" : "停用"}
         </button>
       </td>
       <td className="px-4 py-3 text-right">
@@ -129,16 +129,16 @@ function RewardRow({ item }: { item: Item }) {
           type="button"
           disabled={pending}
           onClick={() => {
-            if (!confirm(`Delete "${item.name}"?`)) return;
+            if (!confirm(`确认删除"${item.name}"？`)) return;
             startTransition(async () => {
               const r = await deleteRewardAction(item.id);
               if (r && "error" in r) toast.error(r.error);
-              else toast.success("Deleted");
+              else toast.success("已删除");
             });
           }}
           className="text-sm text-red-600 hover:underline disabled:opacity-50"
         >
-          Delete
+          删除
         </button>
       </td>
     </tr>

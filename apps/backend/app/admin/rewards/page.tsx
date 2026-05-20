@@ -2,7 +2,7 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { RewardsManager } from "./RewardsManager";
 
-export const metadata = { title: "奖品 · 管理后台" };
+export const metadata = { title: "奖品管理 · 管理后台" };
 
 export default async function RewardsPage() {
   await requireRole("admin");
@@ -15,8 +15,8 @@ export default async function RewardsPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Reward items</h1>
-        <span className="text-sm text-zinc-500">{items?.length ?? 0} total</span>
+        <h1 className="text-2xl font-semibold">奖品管理</h1>
+        <span className="text-sm text-zinc-500">共 {items?.length ?? 0} 件奖品</span>
       </div>
       <RewardsManager items={items ?? []} />
     </div>
