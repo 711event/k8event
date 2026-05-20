@@ -288,6 +288,95 @@ export async function seedMatchesAction(): Promise<SeedResult> {
 }
 
 // ─────────────────────────────────────────────
+// Knockout stage schedule (SGT = GMT+8)
+// Source: worldcupkickofftimes.com/schedule/sgt
+// QF/SF times are estimated (FIFA not yet announced)
+// ─────────────────────────────────────────────
+const KNOCKOUT_SCHEDULE: { label: string; kickoff: string }[] = [
+  // ── Round of 32 ─────────────────────────────
+  { label: "Round of 32",  kickoff: "2026-06-29T03:00" },
+  { label: "Round of 32",  kickoff: "2026-06-30T01:00" },
+  { label: "Round of 32",  kickoff: "2026-06-30T04:30" },
+  { label: "Round of 32",  kickoff: "2026-06-30T11:00" },
+  { label: "Round of 32",  kickoff: "2026-07-01T01:00" },
+  { label: "Round of 32",  kickoff: "2026-07-01T05:00" },
+  { label: "Round of 32",  kickoff: "2026-07-01T11:00" },
+  { label: "Round of 32",  kickoff: "2026-07-02T00:00" },
+  { label: "Round of 32",  kickoff: "2026-07-02T04:00" },
+  { label: "Round of 32",  kickoff: "2026-07-02T08:00" },
+  { label: "Round of 32",  kickoff: "2026-07-03T03:00" },
+  { label: "Round of 32",  kickoff: "2026-07-03T07:00" },
+  { label: "Round of 32",  kickoff: "2026-07-03T11:00" },
+  { label: "Round of 32",  kickoff: "2026-07-04T02:00" },
+  { label: "Round of 32",  kickoff: "2026-07-04T06:00" },
+  { label: "Round of 32",  kickoff: "2026-07-04T09:30" },
+  // ── Round of 16 ─────────────────────────────
+  { label: "Round of 16",  kickoff: "2026-07-05T01:00" },
+  { label: "Round of 16",  kickoff: "2026-07-05T05:00" },
+  { label: "Round of 16",  kickoff: "2026-07-06T04:00" },
+  { label: "Round of 16",  kickoff: "2026-07-06T10:00" },
+  { label: "Round of 16",  kickoff: "2026-07-07T03:00" },
+  { label: "Round of 16",  kickoff: "2026-07-07T08:00" },
+  { label: "Round of 16",  kickoff: "2026-07-08T00:00" },
+  { label: "Round of 16",  kickoff: "2026-07-08T04:00" },
+  // ── Quarter-finals (FIFA TBD — estimated dates) ──
+  { label: "Quarter-final", kickoff: "2026-07-09T05:00" },
+  { label: "Quarter-final", kickoff: "2026-07-09T09:00" },
+  { label: "Quarter-final", kickoff: "2026-07-11T05:00" },
+  { label: "Quarter-final", kickoff: "2026-07-11T09:00" },
+  // ── Semi-finals (FIFA TBD — estimated dates) ────
+  { label: "Semi-final",   kickoff: "2026-07-14T05:00" },
+  { label: "Semi-final",   kickoff: "2026-07-15T05:00" },
+  // ── Third-place play-off ─────────────────────
+  { label: "Third-place",  kickoff: "2026-07-19T05:00" },
+  // ── Final ────────────────────────────────────
+  { label: "Final",        kickoff: "2026-07-20T03:00" },
+];
+
+// ─────────────────────────────────────────────
+// Action 2b: Seed 32 knockout matches (待定 vs 待定)
+// ─────────────────────────────────────────────
+export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
+  await requireRole("admin");
+  const supabase = await createSupabaseServerClient();
+
+  // Ensure "待定" placeholder team exists
+  let { data: tbd } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("name", "待定")
+    .maybeSingle();
+
+  if (!tbd) {
+    const { data: created, error: teamErr } = await supabase
+      .from("teams")
+      .insert({ name: "待定", short_code: "TBD", logo_url: null })
+      .select("id")
+      .single();
+    if (teamErr || !created) return { error: teamErr?.message ?? "无法创建待定队伍" };
+    tbd = created;
+  }
+
+  const tbdId = tbd.id;
+
+  // Build rows
+  const rows = KNOCKOUT_SCHEDULE.map(({ kickoff }) => ({
+    home_team_id: tbdId,
+    away_team_id: tbdId,
+    kickoff_at: malaysiaToUtc(kickoff).toISOString(),
+    token_reward: 10,
+    status: "scheduled" as const,
+  }));
+
+  const { error } = await supabase.from("matches").insert(rows);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/matches");
+  revalidatePath("/matches");
+  return { ok: true, inserted: rows.length, skipped: 0 };
+}
+
+// ─────────────────────────────────────────────
 // Action 3: Clear all scheduled matches (reset)
 // ─────────────────────────────────────────────
 export async function resetSeedMatchesAction(): Promise<SeedResult> {

@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { StatusBadge } from "../StatusBadge";
 import { MatchControls } from "./MatchControls";
+import { EditMatchTeamsForm } from "./EditMatchTeamsForm";
 
 export const metadata = { title: "比赛详情 · 管理后台" };
 
@@ -13,13 +14,16 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
   const { id } = await props.params;
   const supabase = await createSupabaseServerClient();
 
-  const { data: match } = await supabase
-    .from("matches")
-    .select(
-      "id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)",
-    )
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: match }, { data: allTeams }] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(
+        "id, kickoff_at, token_reward, status, result, home_team_id, away_team_id, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)",
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    supabase.from("teams").select("id, name, logo_url").order("name"),
+  ]);
 
   if (!match) notFound();
 
@@ -50,8 +54,16 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
         </div>
       </div>
 
-      <section className="rounded-lg border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium mb-3">操作</h2>
+      <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
+        <h2 className="text-lg font-medium">操作</h2>
+        {match.status === "scheduled" && allTeams && allTeams.length >= 2 && (
+          <EditMatchTeamsForm
+            matchId={match.id}
+            currentHomeId={match.home_team_id}
+            currentAwayId={match.away_team_id}
+            teams={allTeams.map((t) => ({ id: t.id, name: t.name, logo_url: t.logo_url ?? null }))}
+          />
+        )}
         <MatchControls
           id={match.id}
           status={match.status}

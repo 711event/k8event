@@ -68,6 +68,26 @@ export async function setMatchStatusAction(
   return { ok: true };
 }
 
+export async function updateMatchTeamsAction(
+  id: string,
+  homeTeamId: string,
+  awayTeamId: string,
+): Promise<MatchFormState> {
+  await requireRole("admin");
+  if (homeTeamId === awayTeamId) return { error: "主队和客队不能相同" };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("matches")
+    .update({ home_team_id: homeTeamId, away_team_id: awayTeamId })
+    .eq("id", id)
+    .eq("status", "scheduled"); // only allow editing scheduled matches
+  if (error) return { error: error.message };
+  revalidatePath("/admin/matches");
+  revalidatePath(`/admin/matches/${id}`);
+  revalidatePath("/matches");
+  return { ok: true };
+}
+
 export async function deleteMatchAction(id: string): Promise<MatchFormState> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
