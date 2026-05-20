@@ -47,6 +47,11 @@ export function AgentChat({
   const canType = status !== "closed";
   const senderCtx: SenderContext = { sender: "agent", userId };
 
+  // Clear any stale Dexie images on mount (ThumbStrip is no longer used here)
+  useEffect(() => {
+    void getChatDb().images.clear();
+  }, []);
+
   // ESC key → back to inbox
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
