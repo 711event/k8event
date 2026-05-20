@@ -93,6 +93,7 @@ export type Database = {
           token_reward: number;
           status: MatchStatus;
           result: MatchWinner | null;
+          stage: string | null;
           settled_at: Timestamp | null;
           created_by: string | null;
           created_at: Timestamp;
@@ -105,6 +106,7 @@ export type Database = {
           token_reward: number;
           status?: MatchStatus;
           result?: MatchWinner | null;
+          stage?: string | null;
           settled_at?: Timestamp | null;
           created_by?: string | null;
           created_at?: Timestamp;
