@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { MessageCircle, FileDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MessageCircle, FileDown, X, ZoomIn } from "lucide-react";
 import { formatMalaysia } from "../../time/malaysia";
 
 export type ChatMessageView = {
@@ -112,6 +112,37 @@ export function MessageList({
   );
 }
 
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
+        aria-label="关闭"
+      >
+        <X size={20} />
+      </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt="图片"
+        className="max-w-[95vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
 function MessageBubble({
   message,
   perspective,
@@ -119,6 +150,7 @@ function MessageBubble({
   message: ChatMessageView;
   perspective: "guest" | "agent";
 }) {
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   if (message.sender === "system") {
     return (
       <div className="text-center text-[11px] text-[var(--text-lo)] italic py-1">
@@ -145,14 +177,23 @@ function MessageBubble({
         }
       >
         {message.kind === "image" && message.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={message.imageUrl}
-            alt="图片"
-            width={message.width ?? undefined}
-            height={message.height ?? undefined}
-            className="rounded-lg max-w-[260px] max-h-[260px] object-cover"
-          />
+          <button
+            type="button"
+            className="relative group block rounded-lg overflow-hidden"
+            onClick={() => setLightboxSrc(message.imageUrl!)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={message.imageUrl}
+              alt="图片"
+              width={message.width ?? undefined}
+              height={message.height ?? undefined}
+              className="max-w-[260px] max-h-[260px] object-cover"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
+              <ZoomIn size={24} className="text-white opacity-0 group-hover:opacity-100 transition drop-shadow" />
+            </div>
+          </button>
         ) : isFileMessage(message.body) ? (
           <FileMessageBubble body={message.body!} />
         ) : (
@@ -163,6 +204,7 @@ function MessageBubble({
         {formatMalaysia(message.createdAt, "HH:mm")}
         {message.pending && " · 发送中…"}
       </div>
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </div>
   );
 }
