@@ -6,6 +6,8 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { StadiumHero } from "@/components/player/StadiumHero";
 import { Chip } from "@/components/player/Chip";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 import { PredictionForm } from "./PredictionForm";
 
 export const metadata = { title: "比赛详情 · 711event" };
@@ -21,6 +23,8 @@ export default async function MatchDetailPage(props: {
 }) {
   const { id } = await props.params;
   const user = await getCurrentUser();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
   const supabase = await createSupabaseServerClient();
 
   const matchQ = supabase
@@ -71,7 +75,7 @@ export default async function MatchDetailPage(props: {
         href="/matches"
         className="text-xs text-[var(--text-lo)] hover:text-[var(--text-mid)] transition inline-flex items-center gap-1"
       >
-        ← 返回赛程
+        {t("match_back")}
       </Link>
 
       <StadiumHero
@@ -86,17 +90,22 @@ export default async function MatchDetailPage(props: {
       {/* Prediction zone */}
       {pred ? (
         <SubmittedCard
-          pickName={pred.pick === "home" ? home?.name ?? "主队" : away?.name ?? "客队"}
+          pickName={pred.pick === "home" ? home?.name ?? t("predict_home") : away?.name ?? t("predict_away")}
           isCorrect={pred.is_correct}
           awarded={pred.awarded ?? 0}
+          myPickLabel={t("match_my_pick")}
+          pendingLabel={t("match_pending")}
+          correctLabel={t("match_correct")}
+          wrongLabel={t("match_wrong")}
+          awardedLabel={t("match_awarded", { n: pred.awarded ?? 0 })}
         />
       ) : !user ? (
         <BlockedCard
           icon={<Lock size={18} />}
-          title="登录后即可预测"
-          body="登录账号后,确认今日充值已满 500 即可参与本场竞猜。"
-          actionHref={`/login`}
-          actionLabel="去登录"
+          title={t("match_blocked_login_title")}
+          body={t("match_blocked_login_body")}
+          actionHref="/login"
+          actionLabel={t("match_blocked_login_btn")}
         />
       ) : !canPredict ? (
         <BlockedCard
@@ -111,29 +120,30 @@ export default async function MatchDetailPage(props: {
           }
           title={
             match.status === "finished"
-              ? "本场已结束"
+              ? t("match_blocked_finished")
               : match.status === "cancelled"
-                ? "本场已取消"
+                ? t("match_blocked_cancelled")
                 : match.status === "locked"
-                  ? "本场已锁定竞猜"
+                  ? t("match_blocked_locked")
                   : !beforeKickoff
-                    ? "已超过开赛时间"
+                    ? t("match_blocked_past")
                     : !eligible
-                      ? "今日充值未达 500"
-                      : "暂不可竞猜"
+                      ? t("match_blocked_recharge")
+                      : t("match_blocked_default")
           }
           body={
             !eligible && match.status === "scheduled" && beforeKickoff
-              ? "完成今日 500 充值后即可参与竞猜。"
+              ? t("match_blocked_recharge_body")
               : undefined
           }
         />
       ) : (
         <PredictionForm
           matchId={match.id}
-          homeName={home?.name ?? "主队"}
-          awayName={away?.name ?? "客队"}
+          homeName={home?.name ?? t("predict_home")}
+          awayName={away?.name ?? t("predict_away")}
           tokenReward={match.token_reward}
+          locale={locale}
         />
       )}
     </div>
@@ -144,30 +154,40 @@ function SubmittedCard({
   pickName,
   isCorrect,
   awarded,
+  myPickLabel,
+  pendingLabel,
+  correctLabel,
+  wrongLabel,
+  awardedLabel,
 }: {
   pickName: string;
   isCorrect: boolean | null;
   awarded: number;
+  myPickLabel: string;
+  pendingLabel: string;
+  correctLabel: string;
+  wrongLabel: string;
+  awardedLabel: string;
 }) {
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">我的预测</div>
+        <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">{myPickLabel}</div>
         {isCorrect === null ? (
           <Chip variant="azure" className="inline-flex items-center gap-1">
             <span
               className="h-1.5 w-1.5 rounded-full bg-[var(--azure-500)]"
               style={{ animation: "pulse-dot 1.4s ease-in-out infinite" }}
             />
-            等待结算
+            {pendingLabel}
           </Chip>
         ) : isCorrect ? (
           <Chip variant="pitch" className="inline-flex items-center gap-1">
-            <CheckCircle2 size={11} /> 猜对了
+            <CheckCircle2 size={11} /> {correctLabel}
           </Chip>
         ) : (
           <Chip variant="crimson" className="inline-flex items-center gap-1">
-            <XCircle size={11} /> 猜错了
+            <XCircle size={11} /> {wrongLabel}
           </Chip>
         )}
       </div>
@@ -176,7 +196,7 @@ function SubmittedCard({
       </div>
       {isCorrect === true && awarded > 0 && (
         <div className="text-sm text-[var(--pitch-400)] font-semibold">
-          +{awarded} Token 已入账
+          {awardedLabel}
         </div>
       )}
     </div>

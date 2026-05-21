@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 function diff(target: number) {
   const now = Date.now();
@@ -25,6 +27,8 @@ export function Countdown({
 }) {
   const target = new Date(to).getTime();
   const [t, setT] = useState(() => diff(target));
+  const { locale } = useFeLang();
+  const tr = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
 
   useEffect(() => {
     setT(diff(target));
@@ -33,12 +37,12 @@ export function Countdown({
   }, [target]);
 
   if (t.done) {
-    return <span className={className}>已开赛</span>;
+    return <span className={className}>{tr("countdown_started")}</span>;
   }
 
   if (compact) {
     if (t.d > 0) {
-      return <span className={className}>{t.d}天 {pad(t.h)}:{pad(t.m)}:{pad(t.s)}</span>;
+      return <span className={className}>{t.d}{tr("countdown_day")} {pad(t.h)}:{pad(t.m)}:{pad(t.s)}</span>;
     }
     return <span className={className}>{pad(t.h)}:{pad(t.m)}:{pad(t.s)}</span>;
   }
@@ -47,15 +51,15 @@ export function Countdown({
     <span className={className}>
       {t.d > 0 && (
         <>
-          <Unit n={t.d} label="天" />
+          <Unit n={t.d} label={tr("countdown_day")} />
           <Sep />
         </>
       )}
-      <Unit n={t.h} label="时" />
+      <Unit n={t.h} label={tr("countdown_hour")} />
       <Sep />
-      <Unit n={t.m} label="分" />
+      <Unit n={t.m} label={tr("countdown_min")} />
       <Sep />
-      <Unit n={t.s} label="秒" />
+      <Unit n={t.s} label={tr("countdown_sec")} />
     </span>
   );
 }
