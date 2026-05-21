@@ -129,10 +129,8 @@ export default async function CheckinPage() {
       </Link>
 
       <div className="text-center space-y-1">
-        <h1 className="text-2xl font-bold text-white">{activity.name}</h1>
-        {activity.description && (
-          <p className="text-sm text-zinc-400">{activity.description}</p>
-        )}
+        <h1 className="text-2xl font-bold text-white">{t("checkin_activity_name")}</h1>
+        <p className="text-sm text-zinc-400">{t("checkin_activity_desc")}</p>
       </div>
 
       {/* Streak counter */}
