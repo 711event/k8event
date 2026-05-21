@@ -7,25 +7,31 @@ import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
 import type { RedemptionStatus } from "@k8event/shared/supabase/types";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
+import type { FeLocale } from "@/lib/i18n";
 
 export const metadata = { title: "兑换记录 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function MyRedemptionsPage() {
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+
   const user = await getCurrentUser();
   if (!user) {
     return (
       <div className="space-y-5">
-        <SectionHeader title="兑换记录" />
+        <SectionHeader title={t("redemptions_title")} />
         <EmptyState
           icon={<Gift size={28} />}
-          title="登录后查看兑换记录"
+          title={t("redemptions_login_prompt")}
           action={
             <Link
               href="/login"
               className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
             >
-              去登录
+              {t("checkin_login_btn")}
             </Link>
           }
         />
@@ -44,19 +50,19 @@ export default async function MyRedemptionsPage() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="兑换记录" hint="奖励由客服线下发放" />
+      <SectionHeader title={t("redemptions_title")} hint={t("redemptions_hint")} />
 
       {!rows?.length ? (
         <EmptyState
           icon={<Gift size={28} />}
-          title="还没有兑换记录"
-          body="去奖励中心看看心仪的奖品吧。"
+          title={t("redemptions_empty_title")}
+          body={t("redemptions_empty_body")}
           action={
             <Link
               href="/reward"
               className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
             >
-              去兑换
+              {t("redemptions_go_redeem")}
             </Link>
           }
         />
@@ -83,20 +89,20 @@ export default async function MyRedemptionsPage() {
                       <div className="font-semibold text-sm text-[var(--text-hi)] truncate">
                         {item?.name ?? "—"}
                       </div>
-                      <StatusBadge status={r.status} />
+                      <StatusBadge status={r.status} locale={locale} />
                     </div>
                     <div className="text-[11px] text-[var(--text-lo)] mt-0.5">
-                      {formatMalaysia(r.created_at, "yyyy-MM-dd HH:mm")} · 花费{" "}
+                      {formatMalaysia(r.created_at, "yyyy-MM-dd HH:mm")} · {t("redemptions_cost")}{" "}
                       <span className="text-[var(--gold-300)] tabular-nums">
                         {r.cost_at_request.toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </div>
-                <StatusTimeline status={r.status} />
+                <StatusTimeline status={r.status} locale={locale} />
                 {r.status === "rejected" && r.note && (
                   <div className="mt-2 text-xs text-[var(--text-mid)] bg-[var(--bg-raised)] rounded px-3 py-2">
-                    备注:{r.note}
+                    {t("redemptions_note")} {r.note}
                   </div>
                 )}
               </li>
@@ -108,12 +114,13 @@ export default async function MyRedemptionsPage() {
   );
 }
 
-function StatusBadge({ status }: { status: RedemptionStatus }) {
+function StatusBadge({ status, locale }: { status: RedemptionStatus; locale: FeLocale }) {
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
   if (status === "rejected") {
     return (
       <Chip variant="crimson" className="inline-flex items-center gap-1 flex-shrink-0">
         <XCircle size={11} />
-        已拒绝
+        {t("redemptions_rejected")}
       </Chip>
     );
   }
@@ -121,7 +128,7 @@ function StatusBadge({ status }: { status: RedemptionStatus }) {
     return (
       <Chip variant="pitch" className="inline-flex items-center gap-1 flex-shrink-0">
         <CheckCircle2 size={11} />
-        已发放
+        {t("redemptions_fulfilled")}
       </Chip>
     );
   }
@@ -129,30 +136,31 @@ function StatusBadge({ status }: { status: RedemptionStatus }) {
     return (
       <Chip variant="azure" className="inline-flex items-center gap-1 flex-shrink-0">
         <Truck size={11} />
-        已批准
+        {t("redemptions_approved")}
       </Chip>
     );
   }
   return (
     <Chip variant="gold" className="inline-flex items-center gap-1 flex-shrink-0">
       <Clock size={11} />
-      待审核
+      {t("redemptions_pending")}
     </Chip>
   );
 }
 
-function StatusTimeline({ status }: { status: RedemptionStatus }) {
+function StatusTimeline({ status, locale }: { status: RedemptionStatus; locale: FeLocale }) {
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
   if (status === "rejected") {
     return (
       <div className="mt-3 text-[11px] text-[var(--crimson-500)]">
-        Token 已自动退回到你的余额。
+        {t("redemptions_refunded")}
       </div>
     );
   }
   const steps: { key: RedemptionStatus; label: string }[] = [
-    { key: "pending", label: "待审核" },
-    { key: "approved", label: "已批准" },
-    { key: "fulfilled", label: "已发放" },
+    { key: "pending", label: t("redemptions_pending") },
+    { key: "approved", label: t("redemptions_approved") },
+    { key: "fulfilled", label: t("redemptions_fulfilled") },
   ];
   const reachedIdx = steps.findIndex((s) => s.key === status);
 

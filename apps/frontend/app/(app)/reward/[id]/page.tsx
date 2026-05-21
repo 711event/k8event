@@ -4,6 +4,8 @@ import { Coins, Gift, Package, Lock } from "lucide-react";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { RedeemButton } from "./RedeemButton";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "奖品详情 · 711event" };
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ export const dynamic = "force-dynamic";
 export default async function RewardItemPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const user = await getCurrentUser();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
   const supabase = await createSupabaseServerClient();
 
   const [{ data: item }, balanceRes] = await Promise.all([
@@ -37,7 +41,7 @@ export default async function RewardItemPage(props: { params: Promise<{ id: stri
         href="/reward"
         className="text-xs text-[var(--text-lo)] hover:text-[var(--text-mid)] transition inline-flex items-center gap-1"
       >
-        ← 返回奖励中心
+        {t("reward_detail_back")}
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -63,7 +67,7 @@ export default async function RewardItemPage(props: { params: Promise<{ id: stri
           <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-4 space-y-2.5">
             <Row
               icon={<Coins size={14} className="text-[var(--gold-300)]" />}
-              label="兑换价"
+              label={t("reward_detail_price")}
               value={
                 <span className="font-[family-name:var(--font-display)] text-lg font-bold text-[var(--gold-300)] tabular-nums">
                   {item.cost.toLocaleString()}
@@ -72,17 +76,21 @@ export default async function RewardItemPage(props: { params: Promise<{ id: stri
             />
             <Row
               icon={<Package size={14} className="text-[var(--text-lo)]" />}
-              label="库存"
+              label={t("reward_detail_stock")}
               value={
                 <span className="text-sm text-[var(--text-hi)]">
-                  {item.stock === -1 ? "无限" : item.stock === 0 ? "已售罄" : item.stock}
+                  {item.stock === -1
+                    ? t("reward_detail_unlimited")
+                    : item.stock === 0
+                    ? t("reward_detail_sold_out")
+                    : item.stock}
                 </span>
               }
             />
             {user && (
               <Row
                 icon={<Coins size={14} className="text-[var(--text-lo)]" />}
-                label="我的余额"
+                label={t("reward_detail_my_balance")}
                 value={
                   <span className="text-sm text-[var(--text-hi)] tabular-nums">
                     {myBalance.toLocaleString()}
@@ -98,24 +106,24 @@ export default async function RewardItemPage(props: { params: Promise<{ id: stri
               className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--gold-500)]/50 bg-[var(--bg-elevated)] text-[var(--gold-300)] text-sm font-semibold hover:bg-[var(--bg-raised)] transition"
             >
               <Lock size={14} />
-              登录后兑换
+              {t("reward_detail_login_btn")}
             </Link>
           ) : canRedeem ? (
-            <RedeemButton id={item.id} name={item.name} cost={item.cost} />
+            <RedeemButton id={item.id} name={item.name} cost={item.cost} locale={locale} />
           ) : (
             <div className="w-full h-12 inline-flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-lo)] text-sm">
               {outOfStock
-                ? "本商品已售罄"
-                : `还差 ${(item.cost - myBalance).toLocaleString()} Token`}
+                ? t("reward_detail_out_of_stock")
+                : t("reward_detail_need_more", { n: (item.cost - myBalance).toLocaleString() })}
             </div>
           )}
 
           <p className="text-[11px] text-[var(--text-lo)] leading-relaxed">
-            兑换后会立即扣减 Token,奖励由客服线下发放。可在{" "}
+            {t("reward_detail_note_pre")}
             <Link href="/redemptions" className="text-[var(--gold-300)] hover:underline">
-              兑换记录
+              {t("reward_detail_note_link")}
             </Link>
-            {" "}追踪状态。
+            {t("reward_detail_note_post")}
           </p>
         </div>
       </div>

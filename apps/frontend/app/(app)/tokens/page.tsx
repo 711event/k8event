@@ -7,25 +7,40 @@ import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { AnimatedNumber } from "@/components/player/AnimatedNumber";
 import type { TokenReason } from "@k8event/shared/supabase/types";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "Token 流水 · 711event" };
 export const dynamic = "force-dynamic";
 
 export default async function TokensPage() {
   const user = await getCurrentUser();
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+
+  function reasonLabel(reason: TokenReason): string {
+    switch (reason) {
+      case "match_win": return t("tokens_reason_match_win");
+      case "redeem": return t("tokens_reason_redeem");
+      case "admin_adjust": return t("tokens_reason_admin_adjust");
+      case "daily_checkin": return t("tokens_reason_checkin");
+      default: return reason;
+    }
+  }
+
   if (!user) {
     return (
       <div className="space-y-5">
-        <SectionHeader title="Token 流水" />
+        <SectionHeader title={t("tokens_title")} />
         <EmptyState
           icon={<Coins size={28} />}
-          title="登录后查看 Token 余额和流水"
+          title={t("tokens_login_prompt")}
           action={
             <Link
               href="/login"
               className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
             >
-              去登录
+              {t("checkin_login_btn")}
             </Link>
           }
         />
@@ -56,24 +71,24 @@ export default async function TokensPage() {
     d.setDate(d.getDate() - i);
     days.push({ date: malaysiaDateString(d), earned: 0 });
   }
-  for (const t of tx ?? []) {
-    if (t.delta <= 0) continue;
-    const day = malaysiaDateString(t.created_at);
+  for (const t2 of tx ?? []) {
+    if (t2.delta <= 0) continue;
+    const day = malaysiaDateString(t2.created_at);
     const slot = days.find((d) => d.date === day);
-    if (slot) slot.earned += t.delta;
+    if (slot) slot.earned += t2.delta;
   }
   const maxEarn = Math.max(1, ...days.map((d) => d.earned));
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Token 流水" hint="马来西亚时间 (GMT+8)" />
+      <SectionHeader title={t("tokens_title")} hint={t("tokens_hint")} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-[var(--radius-md)] border border-[var(--gold-500)]/30 bg-gradient-to-br from-[var(--bg-elevated)] to-[#1A1410] p-4">
           <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[var(--text-lo)] mb-2">
             <Coins size={12} className="text-[var(--gold-300)]" />
-            当前余额
+            {t("tokens_current_balance")}
           </div>
           <div className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-bold text-[var(--gold-300)] tabular-nums">
             <AnimatedNumber value={balance} />
@@ -82,7 +97,7 @@ export default async function TokensPage() {
         <div className="rounded-[var(--radius-md)] border border-[var(--azure-500)]/30 bg-gradient-to-br from-[var(--bg-elevated)] to-[#0F1626] p-4">
           <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[var(--text-lo)] mb-2">
             <TrendingUp size={12} className="text-[var(--azure-500)]" />
-            累计获得
+            {t("tokens_total_earned")}
           </div>
           <div className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-bold text-[var(--text-hi)] tabular-nums">
             <AnimatedNumber value={earned} />
@@ -93,9 +108,9 @@ export default async function TokensPage() {
       {/* 14-day chart */}
       <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-4">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">近 14 天收入</div>
+          <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">{t("tokens_chart_label")}</div>
           <div className="text-xs text-[var(--text-mid)] tabular-nums">
-            合计 +{days.reduce((s, d) => s + d.earned, 0).toLocaleString()}
+            {t("tokens_chart_total")} +{days.reduce((s, d) => s + d.earned, 0).toLocaleString()}
           </div>
         </div>
         <svg viewBox="0 0 280 80" className="w-full h-20 overflow-visible">
@@ -133,31 +148,31 @@ export default async function TokensPage() {
       {/* Transactions */}
       <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] overflow-hidden">
         <div className="px-4 py-3 border-b border-[var(--border-subtle)] text-xs uppercase tracking-wider text-[var(--text-lo)]">
-          全部流水
+          {t("tokens_all")}
         </div>
         {!tx?.length ? (
-          <div className="px-4 py-8 text-center text-sm text-[var(--text-lo)]">暂无流水</div>
+          <div className="px-4 py-8 text-center text-sm text-[var(--text-lo)]">{t("tokens_empty")}</div>
         ) : (
           <ul className="divide-y divide-[var(--border-subtle)]">
-            {tx.map((t) => (
-              <li key={t.id} className="px-4 py-3 flex items-center gap-3">
-                <ReasonIcon reason={t.reason} delta={t.delta} />
+            {tx.map((txn) => (
+              <li key={txn.id} className="px-4 py-3 flex items-center gap-3">
+                <ReasonIcon reason={txn.reason} delta={txn.delta} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[var(--text-hi)] font-medium">
-                    {reasonLabel(t.reason)}
+                    {reasonLabel(txn.reason)}
                   </div>
                   <div className="text-[11px] text-[var(--text-lo)] mt-0.5 truncate">
-                    {formatMalaysia(t.created_at)}
-                    {t.note ? <> · {t.note}</> : null}
+                    {formatMalaysia(txn.created_at)}
+                    {txn.note ? <> · {txn.note}</> : null}
                   </div>
                 </div>
                 <div
                   className={
                     "font-[family-name:var(--font-display)] text-sm font-bold tabular-nums whitespace-nowrap " +
-                    (t.delta >= 0 ? "text-[var(--gold-300)]" : "text-[var(--crimson-500)]")
+                    (txn.delta >= 0 ? "text-[var(--gold-300)]" : "text-[var(--crimson-500)]")
                   }
                 >
-                  {t.delta > 0 ? `+${t.delta}` : t.delta}
+                  {txn.delta > 0 ? `+${txn.delta}` : txn.delta}
                 </div>
               </li>
             ))}
@@ -189,19 +204,4 @@ function ReasonIcon({ reason, delta }: { reason: TokenReason; delta: number }) {
       )}
     </div>
   );
-}
-
-function reasonLabel(reason: TokenReason): string {
-  switch (reason) {
-    case "match_win":
-      return "比赛猜中奖励";
-    case "redeem":
-      return "兑换扣减";
-    case "admin_adjust":
-      return "管理员调整";
-    case "daily_checkin":
-      return "每日签到";
-    default:
-      return reason;
-  }
 }

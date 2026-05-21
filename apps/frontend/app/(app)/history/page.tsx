@@ -6,18 +6,13 @@ import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { Chip } from "@/components/player/Chip";
+import { getFeLocale } from "@/lib/get-locale";
+import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "我的预测 · 711event" };
 export const dynamic = "force-dynamic";
 
 type Filter = "all" | "won" | "lost" | "pending";
-
-const filters: { key: Filter; label: string }[] = [
-  { key: "all", label: "全部" },
-  { key: "won", label: "猜对" },
-  { key: "lost", label: "猜错" },
-  { key: "pending", label: "待结算" },
-];
 
 export default async function HistoryPage(props: {
   searchParams: Promise<{ filter?: string }>;
@@ -26,21 +21,31 @@ export default async function HistoryPage(props: {
   const active: Filter =
     sp.filter === "won" || sp.filter === "lost" || sp.filter === "pending" ? sp.filter : "all";
 
+  const locale = await getFeLocale();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+
+  const filters: { key: Filter; label: string }[] = [
+    { key: "all", label: t("history_filter_all") },
+    { key: "won", label: t("history_filter_won") },
+    { key: "lost", label: t("history_filter_lost") },
+    { key: "pending", label: t("history_filter_pending") },
+  ];
+
   const user = await getCurrentUser();
   if (!user) {
     return (
       <div className="space-y-5">
-        <SectionHeader title="我的预测" />
+        <SectionHeader title={t("history_title")} />
         <EmptyState
           icon={<Trophy size={28} />}
-          title="登录后查看预测记录"
-          body="登录账号即可查看你提交过的所有比赛预测和结算情况。"
+          title={t("history_login_prompt")}
+          body={t("history_login_body")}
           action={
             <Link
               href="/login"
               className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
             >
-              去登录
+              {t("checkin_login_btn")}
             </Link>
           }
         />
@@ -68,7 +73,7 @@ export default async function HistoryPage(props: {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="我的预测" hint="按提交时间倒序" />
+      <SectionHeader title={t("history_title")} hint={t("history_hint")} />
 
       <div className="inline-flex rounded-full bg-[var(--bg-raised)] p-1 border border-[var(--border-strong)] overflow-x-auto">
         {filters.map((f) => {
@@ -93,19 +98,15 @@ export default async function HistoryPage(props: {
       {items.length === 0 ? (
         <EmptyState
           icon={<Trophy size={28} />}
-          title="暂无记录"
-          body={
-            active === "all"
-              ? "去比赛页面提交你的第一个预测吧。"
-              : "切换其他筛选条件试试。"
-          }
+          title={t("history_empty_title")}
+          body={active === "all" ? t("history_empty_all") : t("history_empty_filter")}
           action={
             active === "all" ? (
               <Link
                 href="/matches"
                 className="h-9 px-5 inline-flex items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
               >
-                去预测
+                {t("history_go_predict")}
               </Link>
             ) : undefined
           }
@@ -117,7 +118,10 @@ export default async function HistoryPage(props: {
             if (!m) return null;
             const home = Array.isArray(m.home) ? m.home[0] : m.home;
             const away = Array.isArray(m.away) ? m.away[0] : m.away;
-            const pickedName = p.pick === "home" ? home?.name ?? "主队" : away?.name ?? "客队";
+            const pickedName =
+              p.pick === "home"
+                ? home?.name ?? t("history_home_fallback")
+                : away?.name ?? t("history_away_fallback");
             return (
               <li key={i}>
                 <Link
@@ -130,7 +134,7 @@ export default async function HistoryPage(props: {
                         {home?.name ?? "?"} <span className="text-[var(--gold-300)] mx-1">VS</span> {away?.name ?? "?"}
                       </div>
                       <div className="text-xs text-[var(--text-mid)] mt-1">
-                        我猜 · <span className="text-[var(--gold-300)] font-semibold">{pickedName}</span>
+                        {t("history_my_pick")}<span className="text-[var(--gold-300)] font-semibold">{pickedName}</span>
                       </div>
                       <div className="text-[11px] text-[var(--text-lo)] mt-1">
                         {formatMalaysia(m.kickoff_at, "MM-dd HH:mm")} (GMT+8)
@@ -140,13 +144,13 @@ export default async function HistoryPage(props: {
                       {p.is_correct === null ? (
                         <Chip variant="azure" className="inline-flex items-center gap-1">
                           <Clock size={11} />
-                          待结算
+                          {t("history_pending")}
                         </Chip>
                       ) : p.is_correct ? (
                         <div className="flex flex-col items-end gap-1">
                           <Chip variant="pitch" className="inline-flex items-center gap-1">
                             <CheckCircle2 size={11} />
-                            猜对
+                            {t("history_won")}
                           </Chip>
                           <span className="text-xs font-semibold text-[var(--gold-300)] tabular-nums">
                             +{p.awarded ?? 0}
@@ -155,7 +159,7 @@ export default async function HistoryPage(props: {
                       ) : (
                         <Chip variant="crimson" className="inline-flex items-center gap-1">
                           <XCircle size={11} />
-                          猜错
+                          {t("history_lost")}
                         </Chip>
                       )}
                     </div>
