@@ -367,7 +367,7 @@ export function AgentChat({
   }
 
   function doClose() {
-    if (!confirm(“确认结束此会话?\n\n结束后此会话进入”已关闭”列表,客服无法继续回复。如果之后再有新消息进来,系统会自动重新打开。”))
+    if (!confirm(“确认结束此会话?\n\n结束后此会话进入「已关闭」列表，客服无法继续回复。如果之后再有新消息进来，系统会自动重新打开。”))
       return;
     startTransition(async () => {
       const r = await closeThreadAction(threadId);
