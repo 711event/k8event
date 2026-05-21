@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Coins, TrendingUp, Wallet } from "lucide-react";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { RechargeProgress } from "./RechargeProgress";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 export function TokenWallet({
   balance,
@@ -16,6 +20,9 @@ export function TokenWallet({
   threshold?: number;
   guest?: boolean;
 }) {
+  const { locale } = useFeLang();
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
+
   return (
     <section className="relative overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
       {/* gold sheen */}
@@ -31,8 +38,8 @@ export function TokenWallet({
             <Wallet size={16} />
           </span>
           <div>
-            <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">我的 Token</div>
-            <div className="text-[11px] text-[var(--text-mid)]">活动累计 · 可用兑换</div>
+            <div className="text-xs uppercase tracking-wider text-[var(--text-lo)]">{t("wallet_title")}</div>
+            <div className="text-[11px] text-[var(--text-mid)]">{t("wallet_subtitle")}</div>
           </div>
         </div>
         {!guest && (
@@ -40,7 +47,7 @@ export function TokenWallet({
             href="/tokens"
             className="text-xs text-[var(--gold-300)] hover:text-[var(--gold-500)] transition"
           >
-            流水 →
+            {t("wallet_ledger")}
           </Link>
         )}
       </div>
@@ -51,13 +58,13 @@ export function TokenWallet({
             ——
           </div>
           <p className="mt-2 text-sm text-[var(--text-mid)]">
-            登录后查看你的 Token 余额和今日资格。
+            {t("wallet_login_prompt")}
           </p>
           <Link
             href="/login"
             className="mt-3 inline-flex h-9 px-4 items-center rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] text-sm font-semibold hover:brightness-110 transition"
           >
-            登录领取
+            {t("wallet_login_btn")}
           </Link>
         </div>
       ) : (
@@ -67,11 +74,11 @@ export function TokenWallet({
               <div className="font-[family-name:var(--font-display)] text-4xl font-bold text-[var(--gold-300)] tabular-nums leading-none">
                 <AnimatedNumber value={balance} />
               </div>
-              <div className="text-[11px] text-[var(--text-lo)] mt-1.5">当前余额</div>
+              <div className="text-[11px] text-[var(--text-lo)] mt-1.5">{t("wallet_current_balance")}</div>
             </div>
             <div className="flex items-center gap-1 text-xs text-[var(--pitch-400)] mb-1 ml-auto">
               <TrendingUp size={12} />
-              累计 <AnimatedNumber value={earned} className="tabular-nums" />
+              {t("wallet_total_earned")} <AnimatedNumber value={earned} className="tabular-nums" />
               <Coins size={12} />
             </div>
           </div>

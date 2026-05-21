@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Coins, Timer } from "lucide-react";
 import { TeamBadge } from "./TeamBadge";
 import { Countdown } from "./Countdown";
 import { Chip } from "./Chip";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 import type { MatchStatus, MatchWinner } from "@k8event/shared/supabase/types";
 
 export type MatchCardData = {
@@ -23,6 +27,9 @@ export function MatchCard({
   match: MatchCardData;
   highlighted?: boolean;
 }) {
+  const { locale } = useFeLang();
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
+
   const home = match.home;
   const away = match.away;
   const now = Date.now();
@@ -43,17 +50,17 @@ export function MatchCard({
       <div className="flex items-center justify-between text-[11px] mb-3">
         <span className="text-[var(--text-lo)]">{formatMalaysia(match.kickoff_at, "MM-dd HH:mm")} (GMT+8)</span>
         {finished ? (
-          <Chip variant="pitch">已结束 · {match.result}</Chip>
+          <Chip variant="pitch">{t("match_finished_label")} · {match.result}</Chip>
         ) : live ? (
           <Chip variant="crimson" className="inline-flex items-center gap-1">
             <span
               className="h-1.5 w-1.5 rounded-full bg-[var(--crimson-500)]"
               style={{ animation: "pulse-dot 1.4s ease-in-out infinite" }}
             />
-            进行中
+            {t("match_live")}
           </Chip>
         ) : (
-          <Chip variant="azure">可竞猜</Chip>
+          <Chip variant="azure">{t("match_can_predict")}</Chip>
         )}
       </div>
 
@@ -79,7 +86,7 @@ export function MatchCard({
         <div className="flex items-center gap-1.5 text-[var(--text-mid)] text-xs">
           <Timer size={13} />
           {finished ? (
-            <span>已结算</span>
+            <span>{t("match_settled")}</span>
           ) : (
             <Countdown to={match.kickoff_at} compact className="tabular-nums" />
           )}

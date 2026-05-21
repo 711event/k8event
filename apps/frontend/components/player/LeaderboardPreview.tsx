@@ -1,7 +1,11 @@
+"use client";
+
 import { SectionHeader } from "./SectionHeader";
 import { PodiumCard } from "./PodiumCard";
 import { EmptyState } from "./EmptyState";
 import { Trophy } from "lucide-react";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 export type PodiumEntry = {
   player_id: string;
@@ -17,15 +21,18 @@ export function LeaderboardPreview({
   top3: PodiumEntry[];
   currentUserId?: string | null;
 }) {
+  const { locale } = useFeLang();
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
+
   if (!top3.length) {
     return (
       <div>
-        <SectionHeader title="排行榜" href="/leaderboard" />
+        <SectionHeader title={t("leaderboard_ranking_title")} href="/leaderboard" />
         <div className="mt-3">
           <EmptyState
             icon={<Trophy size={28} />}
-            title="还没有玩家上榜"
-            body="结算第一场比赛后,猜对的玩家将出现在这里。"
+            title={t("leaderboard_empty_title")}
+            body={t("leaderboard_empty_body")}
           />
         </div>
       </div>
@@ -39,7 +46,7 @@ export function LeaderboardPreview({
 
   return (
     <div>
-      <SectionHeader title="领奖台" hint="累计获得 Token Top 3" href="/leaderboard" />
+      <SectionHeader title={t("leaderboard_title")} hint={t("leaderboard_hint")} href="/leaderboard" />
       <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3 items-end">
         {r2 ? (
           <PodiumCard

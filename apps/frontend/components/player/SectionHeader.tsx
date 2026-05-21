@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { cn } from "@k8event/shared/utils";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 export function SectionHeader({
   title,
   hint,
   href,
-  hrefLabel = "查看全部",
+  hrefLabel,
   className,
 }: {
   title: string;
@@ -14,6 +18,9 @@ export function SectionHeader({
   hrefLabel?: string;
   className?: string;
 }) {
+  const { locale } = useFeLang();
+  const defaultLabel = tFe(locale, "view_all");
+
   return (
     <div className={cn("flex items-end justify-between gap-3 px-1", className)}>
       <div>
@@ -27,7 +34,7 @@ export function SectionHeader({
           href={href}
           className="text-xs font-medium text-[var(--gold-300)] hover:text-[var(--gold-500)] transition-colors whitespace-nowrap"
         >
-          {hrefLabel} →
+          {hrefLabel ?? defaultLabel} →
         </Link>
       )}
     </div>

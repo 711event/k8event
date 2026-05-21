@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { CalendarCheck } from "lucide-react";
+import { useFeLang } from "./LangProvider";
+import { tFe } from "@/lib/i18n";
 
 interface Props {
   checkedInToday: boolean;
@@ -9,6 +13,9 @@ interface Props {
 }
 
 export function CheckinCard({ checkedInToday, currentStreak, todayTokens }: Props) {
+  const { locale } = useFeLang();
+  const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+
   return (
     <Link
       href="/activities/checkin"
@@ -28,21 +35,21 @@ export function CheckinCard({ checkedInToday, currentStreak, todayTokens }: Prop
 
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-white">
-            {checkedInToday ? "今日已签到 ✓" : "每日签到"}
+            {checkedInToday ? t("checkin_done") : t("checkin_title")}
           </div>
           <div className="text-xs text-zinc-400 mt-0.5">
             {checkedInToday
               ? currentStreak > 0
-                ? `连续签到 ${currentStreak} 天 🔥`
-                : "明天继续签到"
-              : `签到得 +${todayTokens} Token`}
+                ? t("checkin_streak", { n: currentStreak })
+                : t("checkin_card_tomorrow")
+              : t("checkin_card_earn", { tokens: todayTokens })}
           </div>
         </div>
 
         {!checkedInToday && (
           <div className="flex-shrink-0">
             <span className="inline-flex items-center h-8 px-3 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-white text-xs font-bold shadow shadow-emerald-500/20">
-              签到
+              {t("checkin_card_btn")}
             </span>
           </div>
         )}

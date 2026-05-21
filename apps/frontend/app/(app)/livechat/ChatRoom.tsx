@@ -13,6 +13,8 @@ import {
   type SenderContext,
 } from "@k8event/shared/chat/uploadImage";
 import { getChatDb } from "@k8event/shared/chat/dexie";
+import { useFeLang } from "@/components/player/LangProvider";
+import { tFe } from "@/lib/i18n";
 
 const PAGE_SIZE = 50;
 const uuid = () => crypto.randomUUID();
@@ -48,6 +50,8 @@ export function ChatRoom() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const { locale } = useFeLang();
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
   // oldest created_at we've loaded — used as cursor for loading older messages
   const oldestAt = useRef<string | null>(null);
 
@@ -238,7 +242,7 @@ export function ChatRoom() {
       );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "send_failed";
-      setError(msg === "timeout" ? "网络较慢,消息可能尚未送达,请刷新页面确认。" : msg);
+      setError(msg === "timeout" ? t("chat_slow_text") : msg);
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
   }
@@ -271,7 +275,7 @@ export function ChatRoom() {
     const clientId = uuid();
     setMessages((prev) => [
       ...prev,
-      { id: clientId, sender: "guest", kind: "text", body: `📎 ${file.name}（上传中…）`, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
+      { id: clientId, sender: "guest", kind: "text", body: `📎 ${file.name}（${t("chat_uploading")}）`, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
     ]);
     try {
       const form = new FormData();
@@ -294,7 +298,7 @@ export function ChatRoom() {
         prev.map((m) => (m.id === clientId ? { ...m, body, pending: false } : m)),
       );
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "文件上传失败");
+      setError(e instanceof Error ? e.message : t("chat_upload_failed"));
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
   }
@@ -372,7 +376,7 @@ export function ChatRoom() {
       await getChatDb().images.delete(localId);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "upload_failed";
-      setError(msg === "timeout" ? "网络较慢,图片可能尚未送达,请刷新页面确认。" : msg);
+      setError(msg === "timeout" ? t("chat_slow_image") : msg);
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
   }
@@ -384,13 +388,13 @@ export function ChatRoom() {
           711
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-[var(--text-hi)] text-sm">711event 客服</h1>
+          <h1 className="font-semibold text-[var(--text-hi)] text-sm">{t("chat_agent_name")}</h1>
           <p className="text-[11px] text-[var(--pitch-400)] flex items-center gap-1.5">
             <span
               className="h-1.5 w-1.5 rounded-full bg-[var(--pitch-500)]"
               style={{ animation: "pulse-dot 1.6s ease-in-out infinite" }}
             />
-            在线 · 通常几分钟内回复
+            {t("chat_online")}
           </p>
         </div>
       </header>
@@ -403,14 +407,14 @@ export function ChatRoom() {
             onClick={() => setError(null)}
             className="text-[11px] underline hover:text-[var(--crimson-500)]"
           >
-            关闭
+            {t("chat_error_close")}
           </button>
         </div>
       )}
 
       {!session ? (
         <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-lo)]">
-          连接中…
+          {t("chat_connecting")}
         </div>
       ) : (
         <MessageList
