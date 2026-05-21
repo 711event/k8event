@@ -7,11 +7,12 @@ import { AgentChat } from "./AgentChat";
 
 export const metadata = { title: "会话 · 管理后台" };
 
-const STATUS_LABEL = {
+const STATUS_LABEL: Record<string, string> = {
   open: "未处理",
   claimed: "未处理",
+  pending: "跟进中",
   closed: "已关闭",
-} as const;
+};
 
 export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
   const user = await requireRole(["admin", "agent"]);
