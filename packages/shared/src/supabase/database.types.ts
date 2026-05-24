@@ -301,6 +301,7 @@ export type Database = {
       chat_retention_settings: {
         Row: {
           id: string;
+          group_id: string | null;
           message_retention_days: number;
           media_retention_days: number;
           archive_closed_threads_after_days: number;
@@ -311,6 +312,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          group_id?: string | null;
           message_retention_days?: number;
           media_retention_days?: number;
           archive_closed_threads_after_days?: number;
@@ -330,6 +332,7 @@ export type Database = {
           sort_order: number;
           is_active: boolean;
           image_url: string | null;
+          group_id: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -339,6 +342,7 @@ export type Database = {
           sort_order?: number;
           is_active?: boolean;
           image_url?: string | null;
+          group_id?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["quick_replies"]["Insert"]>;
