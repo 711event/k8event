@@ -9,26 +9,30 @@ import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
+import { getGroupId } from "@/lib/get-group";
 
 export const metadata = { title: "比赛 · 711event" };
 export const dynamic = "force-dynamic";
 
-const getWcRules = unstable_cache(
-  async () => {
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data } = await supabase
-      .from("activities")
-      .select("rules, settings")
-      .eq("type", "worldcup_prediction")
-      .maybeSingle();
-    return data ?? null;
-  },
-  ["wc-rules-v1"],
-  { revalidate: 300, tags: ["activities"] },
-);
+function getWcRules(groupId: string) {
+  return unstable_cache(
+    async () => {
+      const supabase = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("activities")
+        .select("rules, settings")
+        .eq("type", "worldcup_prediction")
+        .eq("group_id", groupId)
+        .maybeSingle();
+      return data ?? null;
+    },
+    [`wc-rules-${groupId}`],
+    { revalidate: 300, tags: ["activities"] },
+  )();
+}
 
 type Tab = "open" | "live" | "finished";
 
@@ -71,7 +75,7 @@ export default async function MatchesListPage(props: {
   const locale = await getFeLocale();
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
 
-  const wcActivity = await getWcRules();
+  const wcActivity = await getWcRules(getGroupId());
   const wcSettings = wcActivity?.settings as Record<string, unknown> | null;
   const rulesText =
     locale === "zh"
