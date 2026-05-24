@@ -58,6 +58,25 @@ export default async function CheckinPage() {
   const settings = activity.settings as Record<string, unknown>;
   const dayRewards = (settings.day_rewards as number[] | undefined) ?? DEFAULT_REWARDS;
 
+  // Localized content — fallback to zh (top-level columns) if not set
+  const localeSuffix = locale === "zh" ? "" : `_${locale}`;
+  const displayName =
+    locale === "zh"
+      ? activity.name
+      : ((settings[`name${localeSuffix}`] as string | undefined) || activity.name);
+  const displayDesc =
+    locale === "zh"
+      ? activity.description
+      : ((settings[`description${localeSuffix}`] as string | undefined) || activity.description);
+  const displayBanner =
+    locale === "zh"
+      ? activity.banner_url
+      : ((settings[`banner_url${localeSuffix}`] as string | undefined) || activity.banner_url);
+  const displayRules =
+    locale === "zh"
+      ? activity.rules
+      : ((settings[`rules${localeSuffix}`] as string | undefined) || activity.rules);
+
   const today = malaysiaDateString();
 
   // Load player's check-in data
@@ -110,10 +129,10 @@ export default async function CheckinPage() {
   return (
     <div className="space-y-6 max-w-lg mx-auto">
       {/* Banner image */}
-      {activity.banner_url && (
+      {displayBanner && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={activity.banner_url}
+          src={displayBanner}
           alt=""
           className="w-full rounded-2xl object-cover"
           style={{ aspectRatio: "5/2", maxHeight: "300px" }}
@@ -140,8 +159,8 @@ export default async function CheckinPage() {
       </Link>
 
       <div className="text-center space-y-1">
-        <h1 className="text-2xl font-bold text-white">{t("checkin_activity_name")}</h1>
-        <p className="text-sm text-zinc-400">{t("checkin_activity_desc")}</p>
+        <h1 className="text-2xl font-bold text-white">{displayName || t("checkin_activity_name")}</h1>
+        <p className="text-sm text-zinc-400">{displayDesc || t("checkin_activity_desc")}</p>
       </div>
 
       {/* Streak counter */}
@@ -232,13 +251,13 @@ export default async function CheckinPage() {
       )}
 
       {/* Rules */}
-      {activity.rules && (
+      {displayRules && (
         <details className="rounded-xl border border-white/10">
           <summary className="px-4 py-3 cursor-pointer text-sm text-zinc-400 hover:text-zinc-300">
             {t("checkin_rules")}
           </summary>
           <div className="px-4 pb-4 text-sm text-zinc-500 whitespace-pre-wrap leading-relaxed">
-            {activity.rules}
+            {displayRules}
           </div>
         </details>
       )}

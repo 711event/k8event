@@ -64,7 +64,7 @@ export default async function ActivityDetailPage(props: {
       {/* General settings */}
       <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
         <h2 className="text-lg font-medium">基本设置</h2>
-        <ActivitySettingsForm activity={activity} />
+        <ActivitySettingsForm activity={{ ...activity, settings: (activity.settings as Record<string, unknown>) ?? {} }} />
       </section>
     </div>
   );
