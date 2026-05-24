@@ -9,7 +9,7 @@ const ALL_MODULES_ORDERED = [
   "redemptions", "checkins", "chat", "quick_replies", "staff", "roles",
 ];
 
-export function CreateRoleForm({ modules }: { modules: Record<string, string> }) {
+export function CreateRoleForm({ modules, onCreated }: { modules: Record<string, string>; onCreated?: () => void }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [permissions, setPermissions] = useState<Record<string, boolean>>(
@@ -38,6 +38,7 @@ export function CreateRoleForm({ modules }: { modules: Record<string, string> })
       setName("");
       setSlug("");
       setPermissions(Object.fromEntries(ALL_MODULES_ORDERED.map(m => [m, false])));
+      onCreated?.();
     });
   }
 

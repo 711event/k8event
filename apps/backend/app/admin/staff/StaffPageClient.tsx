@@ -463,34 +463,70 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
     roles[0]?.id ?? null
   );
+  const [showCreate, setShowCreate] = useState(false);
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) ?? null;
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-zinc-500">
-        设置每个角色可访问的功能模块。超级管理员始终拥有全部权限。
-      </p>
+      {/* Create new role — at top */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-zinc-500">
+          设置每个角色可访问的功能模块。超级管理员始终拥有全部权限。
+        </p>
+        <button
+          onClick={() => setShowCreate(v => !v)}
+          className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition shrink-0"
+        >
+          <Plus size={15} />
+          创建新角色
+        </button>
+      </div>
+
+      {showCreate && (
+        <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-medium flex items-center gap-2">
+              <Plus size={16} className="text-zinc-500" />创建新角色
+            </h2>
+            <button
+              onClick={() => setShowCreate(false)}
+              className="p-1 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <CreateRoleForm
+            modules={MODULE_LABELS}
+            onCreated={() => {
+              setShowCreate(false);
+              router.refresh();
+            }}
+          />
+        </section>
+      )}
 
       {/* Role chips */}
-      <div className="flex flex-wrap gap-2">
-        {roles.map(r => (
-          <button
-            key={r.id}
-            onClick={() => setSelectedRoleId(r.id)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-              r.id === selectedRoleId
-                ? "bg-zinc-900 text-white border-zinc-900"
-                : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-500"
-            }`}
-          >
-            {r.name}
-            {r.is_system && (
-              <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-60">系统</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {roles.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {roles.map(r => (
+            <button
+              key={r.id}
+              onClick={() => setSelectedRoleId(r.id)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                r.id === selectedRoleId
+                  ? "bg-zinc-900 text-white border-zinc-900"
+                  : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-500"
+              }`}
+            >
+              {r.name}
+              {r.is_system && (
+                <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-60">系统</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Inline role editor */}
       {selectedRole && (
@@ -505,14 +541,6 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
           }}
         />
       )}
-
-      {/* Create new role */}
-      <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
-        <h2 className="font-medium flex items-center gap-2">
-          <Plus size={16} className="text-zinc-500" />创建新角色
-        </h2>
-        <CreateRoleForm modules={MODULE_LABELS} />
-      </section>
     </div>
   );
 }
@@ -617,7 +645,7 @@ function RoleEditor({
           disabled={pending}
           className="h-9 px-5 rounded bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition disabled:opacity-60"
         >
-          {pending ? "保存中…" : "保存权限"}
+          {pending ? "保存中…" : "保存"}
         </button>
       )}
     </div>
