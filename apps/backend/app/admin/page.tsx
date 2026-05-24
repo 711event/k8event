@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Users, CheckCircle2, ClipboardCheck, MessageSquare, ArrowRight } from "lucide-react";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { malaysiaDateString } from "@k8event/shared/time/malaysia";
+import { getGroupId, getGroupPlayerIds } from "@/lib/get-group";
 
 export const metadata = { title: "总览 · 管理后台" };
 export const dynamic = "force-dynamic";
@@ -9,18 +10,17 @@ export const dynamic = "force-dynamic";
 export default async function AdminHomePage() {
   const supabase = await createSupabaseServerClient();
   const today = malaysiaDateString();
+  const groupId = getGroupId();
+  const playerIds = await getGroupPlayerIds();
 
   const [playersCount, todayEligibleCount, pendingRedemptions, openChats] = await Promise.all([
-    supabase.from("profiles").select("user_id", { count: "exact", head: true }).eq("role", "player"),
-    supabase
-      .from("daily_recharge")
-      .select("player_id", { count: "exact", head: true })
-      .eq("recharge_date", today)
-      .gte("amount", 500),
-    supabase
-      .from("redemption_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
+    supabase.from("profiles").select("user_id", { count: "exact", head: true }).eq("role", "player").eq("group_id", groupId),
+    playerIds.length
+      ? supabase.from("daily_recharge").select("player_id", { count: "exact", head: true }).eq("recharge_date", today).gte("amount", 500).in("player_id", playerIds)
+      : Promise.resolve({ count: 0 }),
+    playerIds.length
+      ? supabase.from("redemption_requests").select("id", { count: "exact", head: true }).eq("status", "pending").in("player_id", playerIds)
+      : Promise.resolve({ count: 0 }),
     supabase
       .from("chat_threads")
       .select("id", { count: "exact", head: true })

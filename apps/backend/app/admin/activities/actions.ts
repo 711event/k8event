@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 
 export type ActivityType =
   | "worldcup_prediction"
@@ -44,6 +45,7 @@ export async function createActivityAction(data: ActivityFormData) {
     is_visible: data.is_visible,
     sort_order: data.sort_order,
     settings: data.settings,
+    group_id: getGroupId(),
   });
 
   if (error) return { error: error.message };

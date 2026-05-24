@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 
 const rewardSchema = z.object({
   name: z.string().min(1).max(100),
@@ -41,6 +42,7 @@ export async function createRewardAction(
     image_url: parsed.data.imageUrl,
     cost: parsed.data.cost,
     stock: parsed.data.stock,
+    group_id: getGroupId(),
   });
   if (error) return { error: error.message };
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupId } from "@/lib/get-group";
 import { ActivitiesManager } from "./ActivitiesManager";
 
 export const metadata = { title: "活动管理 · 管理后台" };
@@ -22,6 +23,7 @@ export default async function ActivitiesPage() {
   const { data: activities } = await supabase
     .from("activities")
     .select("id, type, name, slug, is_active, is_visible, sort_order, start_at, end_at, created_at")
+    .eq("group_id", getGroupId())
     .order("sort_order", { ascending: true });
 
   return (

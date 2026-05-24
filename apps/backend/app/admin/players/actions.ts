@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@k8event/shared/supabase/admin";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 
 const usernameSchema = z
   .string()
@@ -65,6 +66,7 @@ export async function createPlayerAction(
     role: "player",
     username,
     display_name: displayName ?? username,
+    group_id: getGroupId(),
   });
   if (profErr) {
     // Rollback the auth user if profile insert fails

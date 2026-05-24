@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getSupabaseAdmin } from "@k8event/shared/supabase/admin";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 
 const rawRowSchema = z.object({
   date: z
@@ -50,7 +51,8 @@ export async function previewRechargeAction(input: unknown): Promise<PreviewResu
     .from("profiles")
     .select("user_id, username")
     .in("username", usernames)
-    .eq("role", "player");
+    .eq("role", "player")
+    .eq("group_id", getGroupId());
 
   const userMap = new Map<string, string>();
   for (const p of profiles ?? []) {

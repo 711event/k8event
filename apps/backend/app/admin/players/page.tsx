@@ -1,6 +1,7 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupId } from "@/lib/get-group";
 import { CreatePlayerForm } from "./CreatePlayerForm";
 import { PlayerRow } from "./PlayerRow";
 
@@ -14,6 +15,7 @@ export default async function PlayersPage() {
     .from("profiles")
     .select("user_id, username, display_name, created_at")
     .eq("role", "player")
+    .eq("group_id", getGroupId())
     .order("created_at", { ascending: false })
     .limit(200);
 

@@ -14,6 +14,8 @@ export const boTranslations = {
     nav_checkins: "签到记录",
     nav_chat: "客服会话",
     nav_quickReplies: "快速回复",
+    nav_roles: "角色权限",
+    nav_staff: "后台账号",
     // Header
     header_title: "BO 管理后台",
     header_signOut: "退出",
@@ -68,6 +70,8 @@ export const boTranslations = {
     nav_checkins: "Check-ins",
     nav_chat: "Chat Support",
     nav_quickReplies: "Quick Replies",
+    nav_roles: "Roles & Permissions",
+    nav_staff: "Staff Accounts",
     header_title: "Admin Panel",
     header_signOut: "Sign out",
     tab_open: "Open",

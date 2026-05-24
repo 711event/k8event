@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { RedeemButton } from "./RedeemButton";
 import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
+import { getGroupId } from "@/lib/get-group";
 
 export const metadata = { title: "奖品详情 · 711event" };
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function RewardItemPage(props: { params: Promise<{ id: stri
       .from("reward_items")
       .select("id, name, description, image_url, cost, stock, is_active")
       .eq("id", id)
+      .eq("group_id", getGroupId())
       .maybeSingle(),
     user
       ? supabase.from("token_balances").select("balance").eq("player_id", user.id).maybeSingle()

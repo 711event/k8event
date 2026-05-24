@@ -1,6 +1,7 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia, malaysiaDateString } from "@k8event/shared/time/malaysia";
+import { getGroupId } from "@/lib/get-group";
 
 export const metadata = { title: "签到记录 · 管理后台" };
 
@@ -70,14 +71,25 @@ export default async function CheckinsPage(props: {
 
   const supabase = await createSupabaseServerClient();
 
-  // If searching by member, resolve player_ids first
+  const groupId = getGroupId();
+
+  // If searching by member, resolve player_ids first (scoped to current group)
   let playerIdFilter: string[] | null = null;
   if (q) {
     const { data: matched } = await supabase
       .from("profiles")
       .select("user_id")
+      .eq("group_id", groupId)
       .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`);
     playerIdFilter = matched?.map((p) => p.user_id) ?? [];
+  } else {
+    // Scope all checkins to the current group's players
+    const { data: groupPlayers } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("group_id", groupId)
+      .eq("role", "player");
+    playerIdFilter = groupPlayers?.map((p) => p.user_id) ?? [];
   }
 
   let query = supabase

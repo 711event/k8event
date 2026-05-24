@@ -10,38 +10,43 @@ import { EmptyState } from "@/components/player/EmptyState";
 import { CheckinButton } from "./CheckinButton";
 import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
+import { getGroupId } from "@/lib/get-group";
 
 export const metadata = { title: "每日签到 · 711event" };
 export const dynamic = "force-dynamic";
 
 const DEFAULT_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
-// Activity config changes rarely — cache for 60 s
-const getCheckinActivity = unstable_cache(
-  async () => {
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data } = await supabase
-      .from("activities")
-      .select("id, name, description, rules, settings, banner_url")
-      .eq("type", "daily_checkin")
-      .eq("is_active", true)
-      .maybeSingle();
-    return data ?? null;
-  },
-  ["checkin-activity-v1"],
-  { revalidate: 60, tags: ["activities"] },
-);
+// Activity config changes rarely — cache for 60 s per group
+function getCheckinActivity(groupId: string) {
+  return unstable_cache(
+    async () => {
+      const supabase = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("activities")
+        .select("id, name, description, rules, settings, banner_url")
+        .eq("type", "daily_checkin")
+        .eq("is_active", true)
+        .eq("group_id", groupId)
+        .maybeSingle();
+      return data ?? null;
+    },
+    [`checkin-activity-${groupId}`],
+    { revalidate: 60, tags: ["activities"] },
+  )();
+}
 
 export default async function CheckinPage() {
   const user = await getCurrentUser();
   const locale = await getFeLocale();
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+  const groupId = getGroupId();
 
-  // Load the daily_checkin activity (cached)
-  const activity = await getCheckinActivity();
+  // Load the daily_checkin activity (cached, group-scoped)
+  const activity = await getCheckinActivity(groupId);
 
   if (!activity) {
     return (

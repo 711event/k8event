@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupPlayerIds } from "@/lib/get-group";
 import { RedemptionActions } from "./RedemptionActions";
 import type { RedemptionStatus } from "@k8event/shared/supabase/types";
 
@@ -37,6 +38,8 @@ export default async function RedemptionsPage(props: {
   const active = (tabs.find((t) => t.key === sp.status)?.key ?? "pending") as RedemptionStatus | "all";
 
   const supabase = await createSupabaseServerClient();
+  const playerIds = await getGroupPlayerIds();
+
   let query = supabase
     .from("redemption_requests")
     .select(
@@ -45,6 +48,7 @@ export default async function RedemptionsPage(props: {
     .order("created_at", { ascending: false })
     .limit(200);
 
+  if (playerIds.length) query = query.in("player_id", playerIds);
   if (active !== "all") query = query.eq("status", active);
 
   const { data: rows } = await query;

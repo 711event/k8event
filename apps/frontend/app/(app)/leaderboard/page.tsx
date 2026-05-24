@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 
 export const metadata = { title: "排行榜 · 711event" };
 
@@ -7,23 +8,38 @@ export default async function LeaderboardPage() {
   const user = await getCurrentUser();
   if (!user) return null;
   const supabase = await createSupabaseServerClient();
+  const groupId = getGroupId();
 
-  // token_earned is a view that joins easily but has limited types — fetch raw and join in JS.
-  const { data: earnedRows } = await supabase
-    .from("token_earned")
-    .select("player_id, earned")
-    .order("earned", { ascending: false })
-    .limit(50);
+  // Get all player_ids in this group first
+  const { data: groupProfiles } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("group_id", groupId)
+    .eq("role", "player");
 
-  const ids = (earnedRows ?? []).map((r) => r.player_id);
-  let profilesByid = new Map<string, { username: string | null; display_name: string }>();
+  const groupPlayerIds = (groupProfiles ?? []).map((p) => p.user_id);
+
+  // Fetch token_earned only for this group's players
+  let earnedRows: { player_id: string; earned: number }[] = [];
+  if (groupPlayerIds.length) {
+    const { data } = await supabase
+      .from("token_earned")
+      .select("player_id, earned")
+      .in("player_id", groupPlayerIds)
+      .order("earned", { ascending: false })
+      .limit(50);
+    earnedRows = data ?? [];
+  }
+
+  const ids = earnedRows.map((r) => r.player_id);
+  const profilesById = new Map<string, { username: string | null; display_name: string }>();
   if (ids.length) {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, username, display_name")
       .in("user_id", ids);
     for (const p of profiles ?? []) {
-      profilesByid.set(p.user_id, { username: p.username, display_name: p.display_name });
+      profilesById.set(p.user_id, { username: p.username, display_name: p.display_name });
     }
   }
 
@@ -33,11 +49,11 @@ export default async function LeaderboardPage() {
       <p className="text-sm text-zinc-500">Top 50 by all-time tokens earned.</p>
 
       <ol className="rounded-lg border border-foreground/10 divide-y divide-foreground/10">
-        {!earnedRows?.length ? (
+        {!earnedRows.length ? (
           <li className="px-4 py-6 text-zinc-500">No tokens awarded yet.</li>
         ) : (
           earnedRows.map((r, idx) => {
-            const profile = profilesByid.get(r.player_id);
+            const profile = profilesById.get(r.player_id);
             const isSelf = r.player_id === user.id;
             return (
               <li
