@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOutAction } from "@k8event/shared/auth/sign-out";
+import { LangSwitcher } from "./LangSwitcher";
 
 export function AvatarMenu({ displayName, username }: { displayName: string; username: string }) {
   const [open, setOpen] = useState(false);
@@ -35,9 +36,10 @@ export function AvatarMenu({ displayName, username }: { displayName: string; use
       </button>
       {open && (
         <div className="absolute right-0 top-11 w-56 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] shadow-[var(--shadow-card)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
+          <div className="px-4 py-3 border-b border-[var(--border-subtle)] space-y-2">
             <div className="text-sm font-semibold text-[var(--text-hi)] truncate">{displayName}</div>
             <div className="text-xs text-[var(--text-lo)] font-mono truncate">{username}</div>
+            <LangSwitcher />
           </div>
           <nav className="py-1">
             <Item href="/history" onClick={() => setOpen(false)} icon="📋" label="我的预测" />
