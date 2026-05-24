@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { Trophy } from "lucide-react";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@k8event/shared/supabase/database.types";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { MatchCard, type MatchCardData } from "@/components/player/MatchCard";
 import { SectionHeader } from "@/components/player/SectionHeader";
@@ -9,6 +12,23 @@ import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "比赛 · 711event" };
 export const dynamic = "force-dynamic";
+
+const getWcRules = unstable_cache(
+  async () => {
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data } = await supabase
+      .from("activities")
+      .select("rules, settings")
+      .eq("type", "worldcup_prediction")
+      .maybeSingle();
+    return data ?? null;
+  },
+  ["wc-rules-v1"],
+  { revalidate: 300, tags: ["activities"] },
+);
 
 type Tab = "open" | "live" | "finished";
 
@@ -50,6 +70,15 @@ export default async function MatchesListPage(props: {
 
   const locale = await getFeLocale();
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
+
+  const wcActivity = await getWcRules();
+  const wcSettings = wcActivity?.settings as Record<string, unknown> | null;
+  const rulesText =
+    locale === "zh"
+      ? wcActivity?.rules
+      : locale === "en"
+        ? (wcSettings?.rules_en as string | undefined) ?? wcActivity?.rules
+        : (wcSettings?.rules_ms as string | undefined) ?? wcActivity?.rules;
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "open", label: t("matches_tab_open") },
@@ -94,6 +123,19 @@ export default async function MatchesListPage(props: {
   return (
     <div className="space-y-5">
       <SectionHeader title={t("matches_title")} hint={t("matches_hint")} />
+
+      {rulesText && (
+        <details className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-elevated)]">
+          <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-[var(--text-mid)] hover:text-[var(--text-hi)] transition select-none list-none">
+            <span className="text-base">📋</span>
+            {t("matches_rules")}
+            <span className="ml-auto text-[var(--text-lo)] text-xs">▸</span>
+          </summary>
+          <div className="px-4 pb-4 text-sm text-[var(--text-mid)] whitespace-pre-wrap leading-relaxed border-t border-[var(--border-subtle)] pt-3">
+            {rulesText}
+          </div>
+        </details>
+      )}
 
       <div className="inline-flex rounded-full bg-[var(--bg-raised)] p-1 border border-[var(--border-strong)]">
         {tabs.map((tab) => {
