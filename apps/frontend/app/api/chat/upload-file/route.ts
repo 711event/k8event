@@ -11,13 +11,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_session" }, { status: 401 });
   }
 
-  // Validate guest token
+  // Validate guest token — must match the current group's thread
   const supabase = getSupabaseAdmin();
-  const { data: thread } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let threadQ = (supabase as any)
     .from("chat_threads")
     .select("id")
-    .eq("guest_session", token)
-    .maybeSingle();
+    .eq("guest_session", token);
+  const groupId = process.env.NEXT_PUBLIC_GROUP_ID;
+  if (groupId) threadQ = threadQ.eq("group_id", groupId);
+  const { data: thread } = await threadQ.maybeSingle();
   if (!thread) {
     return NextResponse.json({ error: "invalid_session" }, { status: 401 });
   }

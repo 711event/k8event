@@ -30,11 +30,14 @@ export async function POST(req: Request) {
   }
 
   const admin = getSupabaseAdmin();
-  const { data: thread } = await admin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let threadQ = (admin as any)
     .from("chat_threads")
     .select("id, status")
-    .eq("guest_session", token)
-    .maybeSingle();
+    .eq("guest_session", token);
+  const groupId = process.env.NEXT_PUBLIC_GROUP_ID;
+  if (groupId) threadQ = threadQ.eq("group_id", groupId);
+  const { data: thread } = await threadQ.maybeSingle();
 
   if (!thread) {
     return NextResponse.json({ error: "thread_not_found" }, { status: 404 });
