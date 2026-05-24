@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 import {
   deleteMatchAction,
   setMatchStatusAction,
@@ -93,10 +94,10 @@ export function MatchControls({
       {settleable && (
         <div className="rounded-md border border-zinc-200 p-4 space-y-3">
           <div className="text-sm font-medium">选择结果并结算</div>
-          <div className="flex flex-wrap gap-2">
-            <ResultChoice value="home" current={chosen} onPick={setChosen} label={`主队胜：${homeName}`} />
-            <ResultChoice value="away" current={chosen} onPick={setChosen} label={`客队胜：${awayName}`} />
-            <ResultChoice value="draw" current={chosen} onPick={setChosen} label="平局（不发放奖励）" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <ResultChoice value="home" current={chosen} onPick={setChosen} label={`主队胜`} sublabel={homeName} color="blue" />
+            <ResultChoice value="away" current={chosen} onPick={setChosen} label={`客队胜`} sublabel={awayName} color="green" />
+            <ResultChoice value="draw" current={chosen} onPick={setChosen} label="平局" sublabel="不发放奖励" color="amber" />
           </div>
           <button
             type="button"
@@ -116,30 +117,43 @@ export function MatchControls({
   );
 }
 
+const colorMap = {
+  blue:  { ring: "ring-2 ring-blue-500 border-blue-500 bg-blue-50",   idle: "border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50",  check: "text-blue-600"  },
+  green: { ring: "ring-2 ring-green-500 border-green-500 bg-green-50", idle: "border-zinc-200 hover:border-green-300 hover:bg-green-50/50", check: "text-green-600" },
+  amber: { ring: "ring-2 ring-amber-500 border-amber-500 bg-amber-50", idle: "border-zinc-200 hover:border-amber-300 hover:bg-amber-50/50", check: "text-amber-600" },
+};
+
 function ResultChoice({
   value,
   current,
   onPick,
   label,
+  sublabel,
+  color,
 }: {
   value: Result;
   current: Result | "";
   onPick: (v: Result) => void;
   label: string;
+  sublabel: string;
+  color: keyof typeof colorMap;
 }) {
   const selected = current === value;
+  const c = colorMap[color];
   return (
     <button
       type="button"
       onClick={() => onPick(value)}
       className={
-        "h-10 px-4 rounded-md border text-sm font-medium transition " +
-        (selected
-          ? "border-foreground bg-foreground/10"
-          : "border-foreground/20 hover:border-foreground/40")
+        "relative flex flex-col items-center justify-center gap-0.5 rounded-lg border p-3 text-sm font-medium transition cursor-pointer select-none " +
+        (selected ? c.ring : c.idle)
       }
     >
-      {label}
+      {selected && (
+        <CheckCircle2 size={15} className={`absolute top-2 right-2 ${c.check}`} />
+      )}
+      <span className="font-semibold">{label}</span>
+      <span className="text-xs text-zinc-500 font-normal truncate max-w-full">{sublabel}</span>
     </button>
   );
 }
