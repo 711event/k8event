@@ -12,6 +12,9 @@ import { tBo } from "@/lib/i18n";
 import { getGroupBranding } from "@/lib/get-branding";
 
 // Map nav href → permission module key
+// /admin/staff covers both "staff" and "roles" (merged page with tabs).
+// A user with either permission can access the page; the server component
+// shows only the tab(s) they are allowed to see.
 const NAV_MODULES: Record<string, string> = {
   "/admin":               "overview",
   "/admin/players":       "players",
@@ -22,7 +25,6 @@ const NAV_MODULES: Record<string, string> = {
   "/admin/checkins":      "checkins",
   "/admin/chat":          "chat",
   "/admin/quick-replies": "quick_replies",
-  "/admin/roles":         "roles",
   "/admin/staff":         "staff",
 };
 
@@ -43,14 +45,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/chat",          label: t("nav_chat"),         icon: "MessageSquare" },
     { href: "/admin/quick-replies", label: t("nav_quickReplies"), icon: "Zap" },
     { href: "/admin/staff",         label: t("nav_staff"),        icon: "UserCog" },
-    { href: "/admin/roles",         label: t("nav_roles"),        icon: "ShieldCheck" },
     { href: "/admin/settings",      label: t("nav_settings"),     icon: "Settings2" },
   ];
 
-  // Filter nav items based on user's permissions
+  // Filter nav items based on user's permissions.
+  // /admin/staff is the merged accounts+roles page — show it if the user
+  // has either the "staff" or "roles" permission module.
   const links = allNav.filter((item) => {
     const module = NAV_MODULES[item.href];
     if (!module) return true;
+    if (item.href === "/admin/staff") {
+      return hasPermission(user, "staff") || hasPermission(user, "roles");
+    }
     return hasPermission(user, module);
   });
 
