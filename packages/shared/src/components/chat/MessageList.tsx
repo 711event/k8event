@@ -16,18 +16,36 @@ export type ChatMessageView = {
   pending?: boolean;
 };
 
+export type MessageListStrings = {
+  loadMore?: string;
+  loadingMore?: string;
+  empty?: string;
+  sending?: string;
+  download?: string;
+};
+
+const DEFAULT_STRINGS: Required<MessageListStrings> = {
+  loadMore: "加载更早的消息",
+  loadingMore: "加载中…",
+  empty: "还没有消息，先打个招呼吧 👋",
+  sending: "发送中…",
+  download: "点击下载",
+};
+
 export function MessageList({
   messages,
   perspective,
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  strings,
 }: {
   messages: ChatMessageView[];
   perspective: "guest" | "agent";
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  strings?: MessageListStrings;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,6 +90,8 @@ export function MessageList({
     onLoadMore?.();
   }
 
+  const s = { ...DEFAULT_STRINGS, ...strings };
+
   return (
     <div
       ref={containerRef}
@@ -86,7 +106,7 @@ export function MessageList({
             disabled={loadingMore}
             className="text-xs px-3 py-1.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-lo)] border border-[var(--border-subtle)] hover:text-[var(--text-hi)] disabled:opacity-50 transition"
           >
-            {loadingMore ? "加载中…" : "加载更早的消息"}
+            {loadingMore ? s.loadingMore : s.loadMore}
           </button>
         </div>
       )}
@@ -96,7 +116,7 @@ export function MessageList({
           <div className="h-12 w-12 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
             <MessageCircle size={22} />
           </div>
-          <p className="text-sm">还没有消息,先打个招呼吧 👋</p>
+          <p className="text-sm">{s.empty}</p>
         </div>
       ) : (
         groupByDay(messages).map((group, gi) => (
@@ -107,7 +127,7 @@ export function MessageList({
               </span>
             </div>
             {group.messages.map((m) => (
-              <MessageBubble key={m.id} message={m} perspective={perspective} />
+              <MessageBubble key={m.id} message={m} perspective={perspective} strings={s} />
             ))}
           </div>
         ))
@@ -151,9 +171,11 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
 function MessageBubble({
   message,
   perspective,
+  strings,
 }: {
   message: ChatMessageView;
   perspective: "guest" | "agent";
+  strings: Required<MessageListStrings>;
 }) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   if (message.sender === "system") {
@@ -190,7 +212,7 @@ function MessageBubble({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={message.imageUrl}
-              alt="图片"
+              alt=""
               width={message.width ?? undefined}
               height={message.height ?? undefined}
               className="max-w-[260px] max-h-[260px] object-cover"
@@ -200,14 +222,14 @@ function MessageBubble({
             </div>
           </button>
         ) : isFileMessage(message.body) ? (
-          <FileMessageBubble body={message.body!} />
+          <FileMessageBubble body={message.body!} downloadLabel={strings.download} />
         ) : (
           message.body
         )}
       </div>
       <div className="text-[10px] text-[var(--text-lo)] mt-0.5 px-1 tabular-nums">
         {formatMalaysia(message.createdAt, "HH:mm")}
-        {message.pending && " · 发送中…"}
+        {message.pending && ` · ${strings.sending}`}
       </div>
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </div>
@@ -221,9 +243,9 @@ function isFileMessage(body: string | null): boolean {
   return lines.length === 2 && lines[0].startsWith("📎 ") && lines[1].startsWith("https://");
 }
 
-function FileMessageBubble({ body }: { body: string }) {
+function FileMessageBubble({ body, downloadLabel }: { body: string; downloadLabel: string }) {
   const [nameLine, url] = body.split("\n");
-  const filename = nameLine.replace("📎 ", "").replace(" (上传中…)", "");
+  const filename = nameLine.replace("📎 ", "").replace(" (上传中…)", "").replace("（上传中…）", "");
   const uploading = nameLine.includes("（上传中…）") || nameLine.includes("(上传中…)");
   return (
     <a
@@ -238,7 +260,7 @@ function FileMessageBubble({ body }: { body: string }) {
       </span>
       <div className="flex flex-col min-w-0">
         <span className="text-sm font-medium truncate">{filename}</span>
-        <span className="text-[10px] opacity-70">{uploading ? "上传中…" : "点击下载"}</span>
+        <span className="text-[10px] opacity-70">{uploading ? "…" : downloadLabel}</span>
       </div>
     </a>
   );

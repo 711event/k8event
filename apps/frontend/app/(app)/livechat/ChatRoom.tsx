@@ -427,6 +427,13 @@ export function ChatRoom({ agentLogoUrl, agentName }: { agentLogoUrl: string | n
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={loadOlderMessages}
+          strings={{
+            loadMore: t("chat_load_more"),
+            loadingMore: t("chat_loading_more"),
+            empty: t("chat_empty"),
+            sending: t("chat_sending"),
+            download: t("chat_download"),
+          }}
         />
       )}
 
@@ -436,6 +443,7 @@ export function ChatRoom({ agentLogoUrl, agentName }: { agentLogoUrl: string | n
         pendingFiles={pendingFiles}
         onRemoveFile={(idx) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
         leftSlot={<AttachMenu onFiles={handleFiles} disabled={!session} />}
+        placeholder={t("chat_placeholder")}
       />
     </>
   );

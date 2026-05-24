@@ -11,6 +11,7 @@ export function InputBar({
   leftSlot,
   pendingFiles,
   onRemoveFile,
+  placeholder = "输入消息…",
 }: {
   onSend: (text: string, files: File[]) => void | Promise<void>;
   disabled?: boolean;
@@ -19,6 +20,7 @@ export function InputBar({
   leftSlot?: React.ReactNode;
   pendingFiles?: File[];
   onRemoveFile?: (idx: number) => void;
+  placeholder?: string;
 }) {
   const [text, setText] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -110,7 +112,7 @@ export function InputBar({
             }
           }}
           rows={1}
-          placeholder="输入消息…"
+          placeholder={placeholder}
           disabled={disabled}
           className="flex-1 resize-none max-h-32 min-h-[40px] px-3 py-2 rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-raised)] text-sm text-[var(--text-hi)] placeholder:text-[var(--text-lo)] focus:outline-none focus:border-[var(--gold-500)]/60 disabled:opacity-60"
         />
