@@ -7,17 +7,16 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 const COOKIE = "k8e_guest";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
+function makeCookieOpts() {
+  return { httpOnly: true, sameSite: "lax" as const, path: "/", maxAge: ONE_YEAR };
+}
+
 export async function POST() {
   const cookieStore = await cookies();
   let token = cookieStore.get(COOKIE)?.value;
   if (!token || token.length < 16) {
     token = randomUUID();
-    cookieStore.set(COOKIE, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: ONE_YEAR,
-    });
+    cookieStore.set(COOKIE, token, makeCookieOpts());
   }
 
   // If the user is logged in (player session), use their username as the chat name
@@ -45,7 +44,6 @@ export async function POST() {
   }
 
   const admin = getSupabaseAdmin();
-
   const groupId = process.env.NEXT_PUBLIC_GROUP_ID ?? null;
 
   // -----------------------------------------------------------------------
@@ -91,8 +89,26 @@ export async function POST() {
       if (memberLabel && playerThread.guest_name !== memberLabel) {
         patch.guest_name = memberLabel;
       }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (admin as any).from("chat_threads").update(patch).eq("id", playerThread.id);
+      const { error: updateErr } = await (admin as any)
+        .from("chat_threads")
+        .update(patch)
+        .eq("id", playerThread.id);
+
+      // UNIQUE constraint (code 23505): the current cookie is already anchored to a
+      // different thread on this device (e.g. an anonymous thread or another player's
+      // thread from a shared device). Issue a fresh cookie so both threads keep their
+      // own distinct guest_session.
+      if (updateErr?.code === "23505") {
+        token = randomUUID();
+        cookieStore.set(COOKIE, token, makeCookieOpts());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (admin as any)
+          .from("chat_threads")
+          .update({ guest_session: token, ...(memberLabel ? { guest_name: memberLabel } : {}) })
+          .eq("id", playerThread.id);
+      }
 
       return NextResponse.json({
         threadId: playerThread.id,
@@ -101,15 +117,57 @@ export async function POST() {
         guestName: memberLabel ?? playerThread.guest_name,
       });
     }
+
+    // No thread exists yet for this player.
+    // Check if the current cookie is already owned by a different thread, and issue
+    // a fresh one to avoid a UNIQUE constraint failure on insert.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cookieCheckQ = (admin as any)
+      .from("chat_threads")
+      .select("id")
+      .eq("guest_session", token)
+      .maybeSingle();
+    if (groupId) cookieCheckQ = cookieCheckQ.eq("group_id", groupId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cookieOwner } = await cookieCheckQ;
+    if (cookieOwner) {
+      // Cookie is taken by another thread — generate a fresh one.
+      token = randomUUID();
+      cookieStore.set(COOKIE, token, makeCookieOpts());
+    }
+
+    // Create a new thread for this authenticated player.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertPayload: Record<string, unknown> = {
+      guest_session: token,
+      guest_name: memberLabel,
+      player_id: authUserId,
+    };
+    if (groupId) insertPayload.group_id = groupId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: created, error } = await (admin as any)
+      .from("chat_threads")
+      .insert(insertPayload)
+      .select("id, status, guest_name")
+      .single();
+    if (error || !created) {
+      return NextResponse.json({ error: error?.message ?? "insert_failed" }, { status: 500 });
+    }
+    return NextResponse.json({
+      threadId: created.id,
+      guestToken: token,
+      status: created.status,
+      guestName: memberLabel ?? created.guest_name,
+    });
   }
 
   // -----------------------------------------------------------------------
-  // 2. Fall back to cookie-based lookup (anonymous guests + first login).
+  // 2. Anonymous guest: fall back to cookie-based lookup.
   // -----------------------------------------------------------------------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let cookieQ = (admin as any)
     .from("chat_threads")
-    .select("id, status, guest_name")
+    .select("id, status, guest_name, player_id")
     .eq("guest_session", token)
     .maybeSingle();
   if (groupId) cookieQ = cookieQ.eq("group_id", groupId);
@@ -118,14 +176,13 @@ export async function POST() {
 
   if (!thread) {
     // -----------------------------------------------------------------------
-    // 3. No existing thread — create one, linking player_id if authenticated.
+    // 3. No existing thread — create one (anonymous, no player_id).
     // -----------------------------------------------------------------------
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const insertPayload: Record<string, unknown> = {
       guest_session: token,
       guest_name: memberLabel,
     };
-    if (authUserId) insertPayload.player_id = authUserId;
     if (groupId) insertPayload.group_id = groupId;
 
     const { data: created, error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -137,24 +194,6 @@ export async function POST() {
       return NextResponse.json({ error: error?.message ?? "insert_failed" }, { status: 500 });
     }
     thread = created;
-  } else {
-    // -----------------------------------------------------------------------
-    // 4. Existing cookie thread — backfill player_id and name if now logged in.
-    // -----------------------------------------------------------------------
-    const patch: Record<string, unknown> = {};
-    if (memberLabel && thread.guest_name !== memberLabel) patch.guest_name = memberLabel;
-    if (authUserId) patch.player_id = authUserId;
-
-    if (Object.keys(patch).length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: updated } = await (admin as any)
-        .from("chat_threads")
-        .update(patch)
-        .eq("id", thread.id)
-        .select("id, status, guest_name")
-        .single();
-      if (updated) thread = updated;
-    }
   }
 
   if (!thread) {
