@@ -26,6 +26,22 @@ type Timestamp = string;
 export type Database = {
   public: {
     Tables: {
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["groups"]["Insert"]>;
+        Relationships: [];
+      };
       profiles: {
         Row: {
           user_id: string;
@@ -33,6 +49,7 @@ export type Database = {
           username: string | null;
           display_name: string;
           avatar_url: string | null;
+          group_id: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -41,6 +58,7 @@ export type Database = {
           username?: string | null;
           display_name: string;
           avatar_url?: string | null;
+          group_id?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
@@ -167,6 +185,7 @@ export type Database = {
           cost: number;
           stock: number;
           is_active: boolean;
+          group_id: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -177,6 +196,7 @@ export type Database = {
           cost: number;
           stock?: number;
           is_active?: boolean;
+          group_id?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["reward_items"]["Insert"]>;
@@ -331,6 +351,7 @@ export type Database = {
           is_visible: boolean;
           sort_order: number;
           settings: Record<string, unknown>;
+          group_id: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -347,6 +368,7 @@ export type Database = {
           is_visible?: boolean;
           sort_order?: number;
           settings?: Record<string, unknown>;
+          group_id?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["activities"]["Insert"]>;
