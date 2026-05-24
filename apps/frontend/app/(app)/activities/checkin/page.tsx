@@ -25,7 +25,7 @@ const getCheckinActivity = unstable_cache(
     );
     const { data } = await supabase
       .from("activities")
-      .select("id, name, description, rules, settings")
+      .select("id, name, description, rules, settings, banner_url")
       .eq("type", "daily_checkin")
       .eq("is_active", true)
       .maybeSingle();
@@ -109,6 +109,17 @@ export default async function CheckinPage() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
+      {/* Banner image */}
+      {activity.banner_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={activity.banner_url}
+          alt=""
+          className="w-full rounded-2xl object-cover"
+          style={{ aspectRatio: "5/2", maxHeight: "300px" }}
+        />
+      )}
+
       {/* Floating World Cup button */}
       <Link
         href="/event"
