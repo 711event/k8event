@@ -46,6 +46,8 @@ export async function POST() {
 
   const admin = getSupabaseAdmin();
 
+  const groupId = process.env.NEXT_PUBLIC_GROUP_ID ?? null;
+
   // -----------------------------------------------------------------------
   // 1. Logged-in player: find the most-recent non-closed thread by player_id.
   //    This is the persistence key — survives cookie loss and device changes.
@@ -54,7 +56,7 @@ export async function POST() {
     // Prefer the most recent non-closed thread; fall back to the most recent
     // closed thread so conversation history is preserved across devices (cookie loss).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: playerThread } = await (admin as any)
+    let q = (admin as any)
       .from("chat_threads")
       .select("id, status, guest_name")
       .eq("player_id", authUserId)
@@ -62,18 +64,23 @@ export async function POST() {
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
+    if (groupId) q = q.eq("group_id", groupId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let { data: playerThread } = await q;
 
     if (!playerThread) {
       // No open thread — try most recent closed thread (device change scenario)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ data: playerThread } = await (admin as any)
+      let q2 = (admin as any)
         .from("chat_threads")
         .select("id, status, guest_name")
         .eq("player_id", authUserId)
         .eq("status", "closed")
         .order("last_message_at", { ascending: false, nullsFirst: false })
         .limit(1)
-        .maybeSingle());
+        .maybeSingle();
+      if (groupId) q2 = q2.eq("group_id", groupId);
+      ({ data: playerThread } = await q2);
     }
 
     if (playerThread) {
@@ -99,11 +106,15 @@ export async function POST() {
   // -----------------------------------------------------------------------
   // 2. Fall back to cookie-based lookup (anonymous guests + first login).
   // -----------------------------------------------------------------------
-  let { data: thread } = await admin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let cookieQ = (admin as any)
     .from("chat_threads")
     .select("id, status, guest_name")
     .eq("guest_session", token)
     .maybeSingle();
+  if (groupId) cookieQ = cookieQ.eq("group_id", groupId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data: thread } = await cookieQ;
 
   if (!thread) {
     // -----------------------------------------------------------------------
@@ -115,6 +126,7 @@ export async function POST() {
       guest_name: memberLabel,
     };
     if (authUserId) insertPayload.player_id = authUserId;
+    if (groupId) insertPayload.group_id = groupId;
 
     const { data: created, error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from("chat_threads")

@@ -1,4 +1,5 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { SignOutButton } from "@k8event/shared/components/SignOutButton";
 import { AdminSidebar, type AdminNavItem } from "@/components/admin/AdminSidebar";
@@ -56,9 +57,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Role badge label: show custom role name if assigned, else the system role
   const roleLabel = user.adminRoleName ?? user.role;
 
+  const groupId = getGroupId();
+
   return (
     <LangProvider locale={locale}>
-      <ChatUnreadProvider>
+      <ChatUnreadProvider groupId={groupId}>
         <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
           <AdminSidebar items={links} userLabel={user.displayName} userRole={roleLabel} branding={branding} />
 

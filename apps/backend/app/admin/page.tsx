@@ -24,6 +24,7 @@ export default async function AdminHomePage() {
     supabase
       .from("chat_threads")
       .select("id", { count: "exact", head: true })
+      .eq("group_id", groupId)
       .in("status", ["open", "claimed"]),
   ]);
 

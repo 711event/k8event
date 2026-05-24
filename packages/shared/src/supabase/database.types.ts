@@ -240,6 +240,7 @@ export type Database = {
           guest_name: string | null;
           status: ChatThreadStatus;
           claimed_by: string | null;
+          group_id: string | null;
           last_message_at: Timestamp | null;
           last_message_body: string | null;
           last_message_kind: ChatKind | null;
@@ -253,6 +254,7 @@ export type Database = {
           guest_name?: string | null;
           status?: ChatThreadStatus;
           claimed_by?: string | null;
+          group_id?: string | null;
           last_message_at?: Timestamp | null;
           last_message_body?: string | null;
           last_message_kind?: ChatKind | null;

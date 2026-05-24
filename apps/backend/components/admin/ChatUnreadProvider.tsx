@@ -31,7 +31,7 @@ const POLL_INTERVAL_MS = 5000;
  * - Pauses polling when document.hidden (Page Visibility API); resumes + fires
  *   one immediate fetch on visibilitychange back to visible.
  */
-export function ChatUnreadProvider({ children }: { children: React.ReactNode }) {
+export function ChatUnreadProvider({ children, groupId }: { children: React.ReactNode; groupId?: string }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingHasNew, setPendingHasNew] = useState(false);
   const pathname = usePathname();
@@ -106,22 +106,29 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
         const lastSeen = readLastSeen();
         const pendingLastSeen = readPendingLastSeen();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sb = supabase as any;
+
+        // Count threads with new unread guest messages in this group.
+        // Using thread-level last_message_at so we can filter by group_id without a join.
+        let unreadQ = sb
+          .from("chat_threads")
+          .select("id", { count: "exact", head: true })
+          .eq("last_message_sender", "guest")
+          .gt("last_message_at", lastSeen);
+        if (groupId) unreadQ = unreadQ.eq("group_id", groupId);
+
+        let pendingQ = sb
+          .from("chat_threads")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending")
+          .eq("last_message_sender", "guest")
+          .gt("last_message_at", pendingLastSeen);
+        if (groupId) pendingQ = pendingQ.eq("group_id", groupId);
+
         const [{ count, error }, { count: pendingCount }] = await Promise.all([
-          // All new guest messages (for unread badge + sound)
-          supabase
-            .from("chat_messages")
-            .select("id", { count: "exact", head: true })
-            .eq("sender", "guest")
-            .gt("created_at", lastSeen),
-          // New guest messages on pending threads (for flash indicator)
-          // Uses last_message_at + last_message_sender on chat_threads (no join needed)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
-            .from("chat_threads")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "pending")
-            .eq("last_message_sender", "guest")
-            .gt("last_message_at", pendingLastSeen),
+          unreadQ,
+          pendingQ,
         ]);
 
         if (cancelled) return;
@@ -177,7 +184,7 @@ export function ChatUnreadProvider({ children }: { children: React.ReactNode }) 
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [groupId]);
 
   return (
     <ChatUnreadContext.Provider value={{ unreadCount, pendingHasNew, clearPendingNew }}>

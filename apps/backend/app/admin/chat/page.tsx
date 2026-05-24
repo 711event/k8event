@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { ChatInboxAutoRefresh } from "./ChatInboxAutoRefresh";
 import { ThreadListClient } from "./ThreadListClient";
 import { InboxTabsClient } from "./InboxTabsClient";
@@ -19,6 +20,7 @@ export default async function ChatInboxPage(props: {
   const active = (validTabs.includes(sp.status as TabKey) ? sp.status : "open") as TabKey;
 
   const supabase = await createSupabaseServerClient();
+  const groupId = getGroupId();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
@@ -31,6 +33,7 @@ export default async function ChatInboxPage(props: {
           .select(
             "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
           )
+          .eq("group_id", groupId)
           .order("last_message_at", { ascending: false, nullsFirst: false })
           .limit(200);
         if (active !== "all") q = q.eq("status", active);
@@ -41,8 +44,8 @@ export default async function ChatInboxPage(props: {
         .select("warn_after_minutes, critical_after_minutes")
         .limit(1)
         .maybeSingle(),
-      sb.from("chat_threads").select("id", { count: "exact", head: true }).eq("status", "open"),
-      sb.from("chat_threads").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      sb.from("chat_threads").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "open"),
+      sb.from("chat_threads").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "pending"),
     ]);
 
   const warnAfterMinutes = urgencySettings?.warn_after_minutes ?? 5;
