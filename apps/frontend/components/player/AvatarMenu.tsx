@@ -45,7 +45,7 @@ export function AvatarMenu({ displayName, username }: { displayName: string; use
             <Item href="/history" onClick={() => setOpen(false)} icon="📋" label="我的预测" />
             <Item href="/tokens" onClick={() => setOpen(false)} icon="🪙" label="Token 流水" />
             <Item href="/leaderboard" onClick={() => setOpen(false)} icon="🏆" label="完整排行榜" />
-            <Item href="/redemptions" onClick={() => setOpen(false)} icon="🎁" label="我的兑换" />
+            <Item href="/reward" onClick={() => setOpen(false)} icon="🎁" label="我的兑换" />
           </nav>
           <form
             action={signOutAction}
