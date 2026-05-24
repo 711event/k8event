@@ -15,6 +15,8 @@ import {
   Zap,
   LayoutGrid,
   CalendarCheck,
+  ShieldCheck,
+  UserCog,
   Menu,
   X,
 } from "lucide-react";
@@ -34,6 +36,8 @@ const iconMap = {
   Zap,
   LayoutGrid,
   CalendarCheck,
+  ShieldCheck,
+  UserCog,
 };
 
 export function AdminMobileNav({
