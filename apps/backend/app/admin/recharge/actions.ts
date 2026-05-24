@@ -116,8 +116,21 @@ export async function importRechargeAction(input: unknown): Promise<{ inserted: 
   }
   if (!parsed.data.length) return { inserted: 0 };
 
+  // Re-validate that all player IDs belong to this group (prevents cross-group injection)
+  const supabase = await createSupabaseServerClient();
+  const submittedPlayerIds = Array.from(new Set(parsed.data.map((r) => r.playerId)));
+  const { data: validProfiles } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .in("user_id", submittedPlayerIds)
+    .eq("group_id", getGroupId())
+    .eq("role", "player");
+  const validPlayerIds = new Set((validProfiles ?? []).map((p) => p.user_id));
+  const filteredRows = parsed.data.filter((r) => validPlayerIds.has(r.playerId));
+  if (filteredRows.length === 0) return { inserted: 0 };
+
   const admin = getSupabaseAdmin();
-  const payload = parsed.data.map((r) => ({
+  const payload = filteredRows.map((r) => ({
     player_id: r.playerId,
     recharge_date: r.date,
     amount: r.amount,
@@ -133,5 +146,5 @@ export async function importRechargeAction(input: unknown): Promise<{ inserted: 
 
   revalidatePath("/admin/recharge");
   revalidatePath("/admin");
-  return { inserted: count ?? payload.length };
+  return { inserted: count ?? filteredRows.length };
 }

@@ -54,7 +54,7 @@ export async function createRewardAction(
 export async function toggleRewardActiveAction(id: string, active: boolean): Promise<RewardFormState> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("reward_items").update({ is_active: active }).eq("id", id);
+  const { error } = await supabase.from("reward_items").update({ is_active: active }).eq("id", id).eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/rewards");
   revalidatePath("/shop");
@@ -64,7 +64,7 @@ export async function toggleRewardActiveAction(id: string, active: boolean): Pro
 export async function deleteRewardAction(id: string): Promise<RewardFormState> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("reward_items").delete().eq("id", id);
+  const { error } = await supabase.from("reward_items").delete().eq("id", id).eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/rewards");
   revalidatePath("/shop");

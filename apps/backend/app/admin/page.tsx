@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Users, CheckCircle2, ClipboardCheck, MessageSquare, ArrowRight } from "lucide-react";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { requireRole } from "@k8event/shared/auth/require-role";
 import { malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { getGroupId, getGroupPlayerIds } from "@/lib/get-group";
 
@@ -8,6 +9,7 @@ export const metadata = { title: "总览 · 管理后台" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminHomePage() {
+  await requireRole(["admin", "agent"]);
   const supabase = await createSupabaseServerClient();
   const today = malaysiaDateString();
   const groupId = getGroupId();

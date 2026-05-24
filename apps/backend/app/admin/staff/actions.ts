@@ -27,7 +27,7 @@ export type StaffActionResult =
 function generatePassword(): string {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#";
   let pw = "";
-  for (let i = 0; i < 12; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 12; i++) pw += chars[crypto.getRandomValues(new Uint32Array(1))[0] % chars.length];
   return pw;
 }
 
@@ -100,6 +100,15 @@ export async function assignRoleAction(userId: string, adminRoleId: string | nul
 export async function changeStaffPasswordAction(userId: string, newPassword: string): Promise<{ error?: string }> {
   await requireStaffPermission();
   if (newPassword.length < 8) return { error: "密码至少 8 位" };
+  // Verify the target staff member belongs to this group
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .in("role", ["admin", "agent"])
+    .maybeSingle();
+  if (!profile) return { error: "账号不存在" };
   const adminClient = getSupabaseAdmin();
   const { error } = await adminClient.auth.admin.updateUserById(userId, { password: newPassword });
   if (error) return { error: error.message };
@@ -108,8 +117,18 @@ export async function changeStaffPasswordAction(userId: string, newPassword: str
 
 export async function deleteStaffAction(userId: string): Promise<{ error?: string }> {
   await requireStaffPermission();
+  // Verify the target staff member belongs to this group
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .in("role", ["admin", "agent"])
+    .maybeSingle();
+  if (!profile) return { error: "账号不存在" };
   const adminClient = getSupabaseAdmin();
-  await adminClient.auth.admin.deleteUser(userId);
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
   revalidatePath("/admin/staff");
   return {};
 }

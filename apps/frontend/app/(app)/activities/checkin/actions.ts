@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 
 export async function checkinAction(activityId: string) {
+  await requireRole("player");
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.rpc("perform_checkin", {

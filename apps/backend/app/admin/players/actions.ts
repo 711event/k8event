@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@k8event/shared/supabase/admin";
+import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { getGroupId } from "@/lib/get-group";
 
@@ -20,7 +21,7 @@ const createPlayerSchema = z.object({
 function generatePassword(): string {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let pw = "";
-  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 10; i++) pw += chars[crypto.getRandomValues(new Uint32Array(1))[0] % chars.length];
   return pw;
 }
 
@@ -88,15 +89,37 @@ export async function changePasswordAction(
 ): Promise<{ error?: string }> {
   await requireRole("admin");
   if (newPassword.length < 8) return { error: "密码至少 8 位" };
+  // Verify the target player belongs to this group before touching their auth record
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId())
+    .eq("role", "player")
+    .maybeSingle();
+  if (!profile) return { error: "玩家不存在或不属于本组" };
   const admin = getSupabaseAdmin();
   const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
   if (error) return { error: error.message };
   return {};
 }
 
-export async function deletePlayerAction(userId: string): Promise<void> {
+export async function deletePlayerAction(userId: string): Promise<{ error?: string }> {
   await requireRole("admin");
+  // Verify the target player belongs to this group before deleting
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId())
+    .eq("role", "player")
+    .maybeSingle();
+  if (!profile) return { error: "玩家不存在或不属于本组" };
   const admin = getSupabaseAdmin();
-  await admin.auth.admin.deleteUser(userId);
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
   revalidatePath("/admin/players");
+  return {};
 }

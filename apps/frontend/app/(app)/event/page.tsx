@@ -28,15 +28,26 @@ function oneOrNull<T>(v: T | T[] | null | undefined): T | null {
 }
 
 // ---------------------------------------------------------------------------
-// Public data: cached for 30 s — reduces PostgREST load significantly.
+// Public data: cached for 30 s per group — reduces PostgREST load significantly.
 // Uses anon key (no cookies), safe for server-side caching.
+// Cache key includes GROUP_ID so each group gets an isolated cache entry.
 // ---------------------------------------------------------------------------
+const GROUP_ID = process.env.NEXT_PUBLIC_GROUP_ID ?? "default";
+
 const getPublicEventData = unstable_cache(
-  async () => {
+  async (groupId: string) => {
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+
+    // First get all player IDs for this group so we can scope leaderboard correctly
+    const { data: groupProfiles } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("group_id", groupId)
+      .eq("role", "player");
+    const groupPlayerIds = (groupProfiles ?? []).map((p) => p.user_id);
 
     const [matchesQ, top3Q, checkinActivityQ] = await Promise.all([
       supabase
@@ -45,8 +56,10 @@ const getPublicEventData = unstable_cache(
         .in("status", ["scheduled", "locked"])
         .order("kickoff_at", { ascending: true })
         .limit(6),
-      supabase.from("token_earned").select("player_id, earned").order("earned", { ascending: false }).limit(3),
-      supabase.from("activities").select("id, settings").eq("type", "daily_checkin").eq("is_active", true).maybeSingle(),
+      groupPlayerIds.length > 0
+        ? supabase.from("token_earned").select("player_id, earned").in("player_id", groupPlayerIds).order("earned", { ascending: false }).limit(3)
+        : Promise.resolve({ data: [] }),
+      supabase.from("activities").select("id, settings").eq("type", "daily_checkin").eq("is_active", true).eq("group_id", groupId).maybeSingle(),
     ]);
 
     // Fetch profiles only for the top-3 players (not the entire table)
@@ -62,7 +75,7 @@ const getPublicEventData = unstable_cache(
       checkinActivityData: checkinActivityQ.data ?? null,
     };
   },
-  ["event-public-v1"],
+  ["event-public-v2"],
   { revalidate: 30, tags: ["event-public"] },
 );
 
@@ -76,7 +89,7 @@ export default async function EventHomePage() {
 
   // Public data (cached 30 s) + user-specific data (always live) — fire in parallel
   const [publicData, balanceQ, earnedQ, rechargeQ, chancesQ, todayCIQ, recentCIQ] = await Promise.all([
-    getPublicEventData(),
+    getPublicEventData(GROUP_ID),
     user
       ? createSupabaseServerClient().then((s) => s.from("token_balances").select("balance").eq("player_id", user.id).maybeSingle())
       : Promise.resolve({ data: null } as const),

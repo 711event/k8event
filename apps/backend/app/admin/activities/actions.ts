@@ -71,7 +71,7 @@ export async function updateActivityAction(id: string, data: Partial<ActivityFor
   if (data.settings !== undefined) patch.settings = data.settings;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await supabase.from("activities").update(patch as any).eq("id", id);
+  const { error } = await supabase.from("activities").update(patch as any).eq("id", id).eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/activities");
   revalidatePath(`/admin/activities/${id}`);
@@ -86,7 +86,7 @@ export async function toggleActivityField(
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await supabase.from("activities").update({ [field]: value } as any).eq("id", id);
+  const { error } = await supabase.from("activities").update({ [field]: value } as any).eq("id", id).eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/activities");
   return { ok: true };
