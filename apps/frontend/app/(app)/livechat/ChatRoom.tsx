@@ -392,7 +392,7 @@ export function ChatRoom({ agentLogoUrl, agentName }: { agentLogoUrl: string | n
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-[var(--text-hi)] text-sm">{agentName} 客服</h1>
+          <h1 className="font-semibold text-[var(--text-hi)] text-sm">{t("nav_livechat")}</h1>
           <p className="text-[11px] text-[var(--pitch-400)] flex items-center gap-1.5">
             <span
               className="h-1.5 w-1.5 rounded-full bg-[var(--pitch-500)]"

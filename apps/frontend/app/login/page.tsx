@@ -60,8 +60,9 @@ export default async function LoginPage() {
             {branding.logo_url && (
               <img src={branding.logo_url} alt={branding.company_name} className="h-14 w-auto object-contain max-w-[200px] mx-auto mb-3" />
             )}
-            <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight">{branding.company_name}</h1>
-            <p className="text-sm text-[var(--text-mid)] mt-1.5">{t("login_tagline")}</p>
+            {branding.tagline && (
+              <p className="text-sm text-[var(--text-mid)] mt-1.5">{branding.tagline}</p>
+            )}
           </div>
           <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
             <LoginForm locale={locale} />

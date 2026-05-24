@@ -4,6 +4,7 @@ import { getGroupId } from "./get-group";
 export type GroupBranding = {
   company_name: string;
   logo_url: string | null;
+  tagline: string | null;
 };
 
 export async function getGroupBranding(): Promise<GroupBranding> {
@@ -11,14 +12,15 @@ export async function getGroupBranding(): Promise<GroupBranding> {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
       .from("groups")
-      .select("company_name, logo_url")
+      .select("company_name, logo_url, tagline")
       .eq("id", getGroupId())
       .maybeSingle();
     return {
       company_name: data?.company_name ?? "711event",
       logo_url: data?.logo_url ?? null,
+      tagline: data?.tagline ?? null,
     };
   } catch {
-    return { company_name: "711event", logo_url: null };
+    return { company_name: "711event", logo_url: null, tagline: null };
   }
 }

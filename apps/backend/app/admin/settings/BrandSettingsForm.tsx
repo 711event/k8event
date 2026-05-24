@@ -65,6 +65,18 @@ export function BrandSettingsForm({ branding }: { branding: GroupBranding }) {
         />
       </div>
 
+      {/* Login page tagline */}
+      <div>
+        <label className="block text-xs font-medium text-zinc-600 mb-1">登录页副标题</label>
+        <input
+          name="tagline"
+          defaultValue={branding.tagline ?? ""}
+          className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          placeholder="免费畅聊 · 竞猜赢豪礼，天天来领奖"
+        />
+        <p className="text-[11px] text-zinc-400 mt-1">显示在登录页 Logo 下方，留空则不显示</p>
+      </div>
+
       {/* Logo upload */}
       <div>
         <label className="block text-xs font-medium text-zinc-600 mb-1">上传 Logo（170×85 px，PNG/WebP）</label>

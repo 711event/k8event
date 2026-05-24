@@ -14,6 +14,7 @@ export async function updateBrandingAction(formData: FormData) {
   );
 
   const companyName = formData.get("company_name") as string | null;
+  const tagline = formData.get("tagline") as string | null;
   const file = formData.get("logo_file") as File | null;
   const groupId = getGroupId();
 
@@ -46,6 +47,8 @@ export async function updateBrandingAction(formData: FormData) {
   const updateData: Record<string, unknown> = {};
   if (companyName?.trim()) updateData.company_name = companyName.trim();
   if (logoUrl) updateData.logo_url = logoUrl;
+  // tagline: save whatever the user typed (empty string → set to null to hide it)
+  if (tagline !== null) updateData.tagline = tagline.trim() || null;
 
   if (Object.keys(updateData).length > 0) {
     await supabase.from("groups").update(updateData).eq("id", groupId);
@@ -53,6 +56,7 @@ export async function updateBrandingAction(formData: FormData) {
 
   revalidatePath("/admin/settings");
   revalidatePath("/admin", "layout");
+  revalidatePath("/login");
 }
 
 export async function removeLogo() {

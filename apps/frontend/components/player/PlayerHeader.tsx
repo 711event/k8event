@@ -16,7 +16,7 @@ export function PlayerHeader({ locale, user, branding }: Props) {
       <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between gap-3">
         <Link href="/activities/checkin" className="flex items-center gap-2">
           {branding.logo_url ? (
-            <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-auto object-contain max-w-[120px]" />
+            <img src={branding.logo_url} alt={branding.company_name} className="h-10 w-auto object-contain max-w-[160px]" />
           ) : (
             <>
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-[11px] tracking-tight">

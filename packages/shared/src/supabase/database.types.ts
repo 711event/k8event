@@ -34,6 +34,7 @@ export type Database = {
           created_at: Timestamp;
           company_name: string | null;
           logo_url: string | null;
+          tagline: string | null;
         };
         Insert: {
           id?: string;
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: Timestamp;
           company_name?: string | null;
           logo_url?: string | null;
+          tagline?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["groups"]["Insert"]>;
         Relationships: [];
