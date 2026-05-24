@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { LoginForm } from "./LoginForm";
+import { getGroupBranding } from "@/lib/get-branding";
 
 export const metadata = { title: "员工登录 · 711event 管理后台", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default async function AdminLoginPage() {
     if (user.role === "agent") redirect("/admin/chat");
     // role=player accidentally hitting backend login while still authed — clear them.
   }
+  const branding = await getGroupBranding();
   return (
     <div
       data-theme="player"
@@ -29,11 +31,16 @@ export default async function AdminLoginPage() {
 
       <div className="relative w-full max-w-sm space-y-6">
         <div className="text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-lg mb-3 tracking-tight">
-            711
-          </span>
+          {!branding.logo_url && (
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-lg mb-3 tracking-tight">
+              711
+            </span>
+          )}
+          {branding.logo_url && (
+            <img src={branding.logo_url} alt={branding.company_name} className="h-14 w-auto object-contain max-w-[200px] mx-auto mb-3" />
+          )}
           <h1 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-bold tracking-tight">
-            711event 管理后台
+            {branding.company_name} 管理后台
           </h1>
           <p className="text-sm text-[var(--text-mid)] mt-1.5">员工登录</p>
         </div>

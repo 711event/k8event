@@ -17,6 +17,7 @@ import {
   CalendarCheck,
   ShieldCheck,
   UserCog,
+  Settings2,
   Menu,
   X,
 } from "lucide-react";
@@ -38,16 +39,19 @@ const iconMap = {
   CalendarCheck,
   ShieldCheck,
   UserCog,
+  Settings2,
 };
 
 export function AdminMobileNav({
   items,
   userLabel,
   userRole,
+  branding,
 }: {
   items: AdminNavItem[];
   userLabel: string;
   userRole: string;
+  branding: { company_name: string; logo_url: string | null };
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -72,10 +76,16 @@ export function AdminMobileNav({
           <aside className="relative h-full w-64 bg-zinc-900 text-zinc-100 flex flex-col">
             <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight">
-                  711
-                </div>
-                <span className="font-semibold text-sm">711event 后台</span>
+                {branding.logo_url ? (
+                  <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-auto object-contain max-w-[120px]" />
+                ) : (
+                  <>
+                    <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight flex-shrink-0">
+                      711
+                    </div>
+                    <span className="font-semibold text-sm">{branding.company_name} 后台</span>
+                  </>
+                )}
               </div>
               <button
                 type="button"

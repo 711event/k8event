@@ -16,6 +16,7 @@ import {
   CalendarCheck,
   ShieldCheck,
   UserCog,
+  Settings2,
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 
@@ -33,6 +34,7 @@ const iconMap = {
   CalendarCheck,
   ShieldCheck,
   UserCog,
+  Settings2,
 };
 
 export type AdminNavItem = {
@@ -45,23 +47,31 @@ export function AdminSidebar({
   items,
   userLabel,
   userRole,
+  branding,
 }: {
   items: AdminNavItem[];
   userLabel: string;
   userRole: string;
+  branding: { company_name: string; logo_url: string | null };
 }) {
   const pathname = usePathname();
 
   return (
     <aside className="hidden md:flex w-60 flex-shrink-0 bg-zinc-900 text-zinc-100 flex-col">
       <div className="h-14 px-4 flex items-center gap-2.5 border-b border-zinc-800">
-        <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight">
-          711
-        </div>
-        <div className="leading-tight">
-          <div className="text-sm font-semibold">711event</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-wider">管理后台</div>
-        </div>
+        {branding.logo_url ? (
+          <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-auto object-contain max-w-[120px]" />
+        ) : (
+          <>
+            <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight flex-shrink-0">
+              711
+            </div>
+            <div className="leading-tight min-w-0">
+              <div className="text-sm font-semibold truncate">{branding.company_name}</div>
+              <div className="text-[10px] text-zinc-400 uppercase tracking-wider">管理后台</div>
+            </div>
+          </>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">

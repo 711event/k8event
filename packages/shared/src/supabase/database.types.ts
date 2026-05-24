@@ -32,12 +32,16 @@ export type Database = {
           name: string;
           slug: string;
           created_at: Timestamp;
+          company_name: string | null;
+          logo_url: string | null;
         };
         Insert: {
           id?: string;
           name: string;
           slug: string;
           created_at?: Timestamp;
+          company_name?: string | null;
+          logo_url?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["groups"]["Insert"]>;
         Relationships: [];

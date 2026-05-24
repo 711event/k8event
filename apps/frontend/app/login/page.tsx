@@ -8,6 +8,7 @@ import { LangSwitcher } from "@/components/player/LangSwitcher";
 import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
 import { LoginForm } from "./LoginForm";
+import { getGroupBranding } from "@/lib/get-branding";
 
 export const metadata = { title: "登录 · 711event" };
 
@@ -19,6 +20,7 @@ export default async function LoginPage() {
 
   const locale = await getFeLocale();
   const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
+  const branding = await getGroupBranding();
 
   return (
     <LangProvider locale={locale}>
@@ -50,10 +52,15 @@ export default async function LoginPage() {
 
         <div className="relative w-full max-w-sm space-y-6">
           <div className="text-center">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-lg mb-3 tracking-tight">
-              711
-            </span>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight">711event</h1>
+            {!branding.logo_url && (
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold-300)] to-[var(--gold-600)] font-[family-name:var(--font-display)] text-[var(--text-on-gold)] font-bold text-lg mb-3 tracking-tight">
+                711
+              </span>
+            )}
+            {branding.logo_url && (
+              <img src={branding.logo_url} alt={branding.company_name} className="h-14 w-auto object-contain max-w-[200px] mx-auto mb-3" />
+            )}
+            <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight">{branding.company_name}</h1>
             <p className="text-sm text-[var(--text-mid)] mt-1.5">{t("login_tagline")}</p>
           </div>
           <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
