@@ -418,6 +418,7 @@ export type Database = {
     Functions: {
       auth_role: { Args: Record<string, never>; Returns: UserRole };
       is_eligible: { Args: { p_player: string; p_date: string }; Returns: boolean };
+      available_prediction_chances: { Args: { p_player: string }; Returns: number };
       settle_match: {
         Args: { p_match_id: string; p_result: MatchWinner };
         Returns: undefined;
