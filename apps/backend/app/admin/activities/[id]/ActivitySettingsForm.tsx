@@ -94,7 +94,10 @@ export function ActivitySettingsForm({ activity }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Banner 图片 URL</label>
+        <div className="flex items-baseline justify-between mb-1">
+          <label className="block text-sm font-medium">Banner 图片 URL</label>
+          <span className="text-xs text-zinc-400">推荐尺寸：750 × 300 px（比例 5:2，JPG/WebP，&lt;200 KB）</span>
+        </div>
         <input
           type="url"
           value={bannerUrl}
