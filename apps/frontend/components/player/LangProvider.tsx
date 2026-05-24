@@ -6,7 +6,7 @@ import type { FeLocale } from "@/lib/i18n";
 import { setFeLocaleAction } from "@/app/locale-action";
 
 type Ctx = { locale: FeLocale; setLocale: (l: FeLocale) => void; isPending: boolean };
-const LangCtx = createContext<Ctx>({ locale: "zh", setLocale: () => {}, isPending: false });
+const LangCtx = createContext<Ctx>({ locale: "ms", setLocale: () => {}, isPending: false });
 
 export function useFeLang() {
   return useContext(LangCtx);

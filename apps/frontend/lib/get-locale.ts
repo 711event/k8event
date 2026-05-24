@@ -5,6 +5,6 @@ import { FE_LOCALE_COOKIE } from "./i18n";
 export async function getFeLocale(): Promise<FeLocale> {
   const c = await cookies();
   const v = c.get(FE_LOCALE_COOKIE)?.value;
-  if (v === "en" || v === "ms") return v;
-  return "zh";
+  if (v === "zh" || v === "en" || v === "ms") return v;
+  return "ms";
 }
