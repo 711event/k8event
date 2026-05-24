@@ -46,7 +46,11 @@ export async function createPlayerAction(
 
   const { username, displayName } = parsed.data;
   const password = generatePassword();
-  const email = `${username}@k8event.local`;
+  // PLAYER_EMAIL_DOMAIN allows per-group username namespacing in shared Supabase Auth.
+  // Test group omits this var (defaults to k8event.local for backward compat).
+  // FW group sets PLAYER_EMAIL_DOMAIN=fw.k8event.local so usernames are independent.
+  const emailDomain = process.env.PLAYER_EMAIL_DOMAIN ?? "k8event.local";
+  const email = `${username}@${emailDomain}`;
   const admin = getSupabaseAdmin();
 
   const { data: created, error: authErr } = await admin.auth.admin.createUser({

@@ -5,7 +5,9 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 
 type LoginState = { error?: string } | undefined;
 
-const LOCAL_EMAIL_SUFFIX = "@k8event.local";
+// PLAYER_EMAIL_DOMAIN allows per-group username namespacing in shared Supabase Auth.
+// Test group omits this var (defaults to k8event.local). FW sets PLAYER_EMAIL_DOMAIN=fw.k8event.local.
+const LOCAL_EMAIL_SUFFIX = `@${process.env.PLAYER_EMAIL_DOMAIN ?? "k8event.local"}`;
 
 export async function signInAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const rawUsername = String(formData.get("username") ?? "").trim();
