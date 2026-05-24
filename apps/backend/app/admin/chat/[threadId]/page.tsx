@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupId } from "@/lib/get-group";
 import { AgentChat } from "./AgentChat";
 
 export const metadata = { title: "会话 · 管理后台" };
@@ -38,6 +39,7 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       .from("quick_replies")
       .select("id, title, body, image_url")
       .eq("is_active", true)
+      .eq("group_id", getGroupId())
       .order("sort_order")
       .order("title"),
   ]);

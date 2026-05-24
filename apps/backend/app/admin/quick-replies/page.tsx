@@ -1,5 +1,6 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { QuickRepliesManager } from "./QuickRepliesManager";
 
 export const metadata = { title: "快速回复 · 管理后台" };
@@ -11,6 +12,7 @@ export default async function QuickRepliesPage() {
   const { data: replies } = await supabase
     .from("quick_replies")
     .select("id, title, body, sort_order, is_active, image_url")
+    .eq("group_id", getGroupId())
     .order("sort_order")
     .order("title");
 

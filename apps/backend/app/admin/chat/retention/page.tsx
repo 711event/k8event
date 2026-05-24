@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { RetentionForm } from "./RetentionForm";
 
 export const metadata = { title: "聊天保留策略 · 管理后台" };
@@ -13,7 +14,7 @@ export default async function ChatRetentionPage() {
   const { data: settings } = await supabase
     .from("chat_retention_settings")
     .select("*")
-    .limit(1)
+    .eq("group_id", getGroupId())
     .maybeSingle();
 
   const defaults = {

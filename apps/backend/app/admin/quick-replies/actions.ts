@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 
 const qrSchema = z.object({
   title: z.string().trim().min(1, "请填写标题").max(80, "标题最多 80 字"),
@@ -44,6 +45,7 @@ export async function createQuickReplyAction(
     sort_order: parsed.data.sort_order,
     is_active: parsed.data.is_active,
     image_url: parsed.data.image_url ?? null,
+    group_id: getGroupId(),
   });
   if (error) {
     if (/duplicate|unique/i.test(error.message)) return { error: "标题已存在" };
@@ -72,7 +74,8 @@ export async function updateQuickReplyAction(
       is_active: parsed.data.is_active,
       image_url: parsed.data.image_url ?? null,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("group_id", getGroupId());
   if (error) {
     if (/duplicate|unique/i.test(error.message)) return { error: "标题已存在" };
     return { error: error.message };
@@ -87,7 +90,8 @@ export async function toggleQuickReplyAction(id: string, nextActive: boolean): P
   const { error } = await supabase
     .from("quick_replies")
     .update({ is_active: nextActive })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/quick-replies");
   return { ok: true };
@@ -96,7 +100,7 @@ export async function toggleQuickReplyAction(id: string, nextActive: boolean): P
 export async function deleteQuickReplyAction(id: string): Promise<QRState> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("quick_replies").delete().eq("id", id);
+  const { error } = await supabase.from("quick_replies").delete().eq("id", id).eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/quick-replies");
   return { ok: true };

@@ -4,6 +4,7 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { revalidatePath } from "next/cache";
+import { getGroupId } from "@/lib/get-group";
 
 export interface RetentionFormData {
   message_retention_days: number;
@@ -18,11 +19,12 @@ export async function updateRetentionSettingsAction(data: RetentionFormData) {
   const user = await getCurrentUser();
   const supabase = await createSupabaseServerClient();
 
-  // Always upsert the single row (there is always exactly one row seeded)
+  // Scope to this group's row (one row per group, seeded by migration)
+  const groupId = getGroupId();
   const { data: existing } = await supabase
     .from("chat_retention_settings")
     .select("id")
-    .limit(1)
+    .eq("group_id", groupId)
     .maybeSingle();
 
   const payload = {
@@ -39,12 +41,13 @@ export async function updateRetentionSettingsAction(data: RetentionFormData) {
     const { error } = await supabase
       .from("chat_retention_settings")
       .update(payload)
-      .eq("id", existing.id);
+      .eq("id", existing.id)
+      .eq("group_id", groupId);
     if (error) return { error: error.message };
   } else {
     const { error } = await supabase
       .from("chat_retention_settings")
-      .insert(payload);
+      .insert({ ...payload, group_id: groupId });
     if (error) return { error: error.message };
   }
 
