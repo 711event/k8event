@@ -11,12 +11,14 @@ export function TokenWallet({
   balance,
   earned,
   todayRecharge,
+  predictionChances,
   threshold = 500,
   guest = false,
 }: {
   balance: number;
   earned: number;
   todayRecharge: number;
+  predictionChances?: number;
   threshold?: number;
   guest?: boolean;
 }) {
@@ -84,7 +86,7 @@ export function TokenWallet({
           </div>
 
           <div className="relative mt-4">
-            <RechargeProgress amount={todayRecharge} threshold={threshold} />
+            <RechargeProgress amount={todayRecharge} threshold={threshold} predictionChances={predictionChances} />
           </div>
         </>
       )}

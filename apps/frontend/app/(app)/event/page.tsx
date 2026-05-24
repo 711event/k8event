@@ -75,7 +75,7 @@ export default async function EventHomePage() {
   const DEFAULT_CHECKIN_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
   // Public data (cached 30 s) + user-specific data (always live) — fire in parallel
-  const [publicData, balanceQ, earnedQ, rechargeQ, todayCIQ, recentCIQ] = await Promise.all([
+  const [publicData, balanceQ, earnedQ, rechargeQ, chancesQ, todayCIQ, recentCIQ] = await Promise.all([
     getPublicEventData(),
     user
       ? createSupabaseServerClient().then((s) => s.from("token_balances").select("balance").eq("player_id", user.id).maybeSingle())
@@ -85,6 +85,10 @@ export default async function EventHomePage() {
       : Promise.resolve({ data: null } as const),
     user
       ? createSupabaseServerClient().then((s) => s.from("daily_recharge").select("amount").eq("player_id", user.id).eq("recharge_date", today).maybeSingle())
+      : Promise.resolve({ data: null } as const),
+    // Accumulated prediction chances: qualifying deposit days minus predictions used
+    user
+      ? createSupabaseServerClient().then((s) => s.rpc("available_prediction_chances", { p_player: user.id }))
       : Promise.resolve({ data: null } as const),
     user
       ? createSupabaseServerClient().then((s) => s.from("player_checkins").select("activity_id").eq("player_id", user.id).eq("checkin_date", today).maybeSingle())
@@ -118,6 +122,7 @@ export default async function EventHomePage() {
   const balance = balanceQ.data?.balance ?? 0;
   const earned = earnedQ.data?.earned ?? 0;
   const todayRecharge = Number(rechargeQ.data?.amount ?? 0);
+  const predictionChances = typeof chancesQ.data === "number" ? chancesQ.data : null;
 
   // Check-in data
   const checkinActivity = checkinActivityData;
@@ -148,6 +153,7 @@ export default async function EventHomePage() {
         balance={balance}
         earned={earned}
         todayRecharge={todayRecharge}
+        predictionChances={predictionChances ?? undefined}
         guest={!user}
       />
 

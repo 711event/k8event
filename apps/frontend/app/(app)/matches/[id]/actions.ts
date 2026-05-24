@@ -32,7 +32,7 @@ export async function submitPredictionAction(
 
   if (error) {
     if (/Player not eligible/i.test(error.message)) {
-      return { error: "今日充值未满 500,暂无法参与竞猜。" };
+      return { error: "暂无竞猜机会。每天充值满 500 可获得 1 次机会，机会可累计使用。" };
     }
     if (/already started/i.test(error.message)) {
       return { error: "已超过开赛时间,无法再提交。" };

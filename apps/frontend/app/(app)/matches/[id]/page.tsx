@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Lock, Clock } from "lucide-react";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
-import { malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { StadiumHero } from "@/components/player/StadiumHero";
 import { Chip } from "@/components/player/Chip";
 import { getFeLocale } from "@/lib/get-locale";
@@ -35,7 +34,7 @@ export default async function MatchDetailPage(props: {
     .eq("id", id)
     .maybeSingle();
 
-  const [{ data: match }, predQ, rechargeQ] = await Promise.all([
+  const [{ data: match }, predQ, chancesQ] = await Promise.all([
     matchQ,
     user
       ? supabase
@@ -45,14 +44,10 @@ export default async function MatchDetailPage(props: {
           .eq("player_id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null } as const),
+    // Accumulated prediction chances — not tied to today's date
     user
-      ? supabase
-          .from("daily_recharge")
-          .select("amount")
-          .eq("player_id", user.id)
-          .eq("recharge_date", malaysiaDateString())
-          .maybeSingle()
-      : Promise.resolve({ data: null } as const),
+      ? supabase.rpc("available_prediction_chances", { p_player: user.id })
+      : Promise.resolve({ data: 0 } as const),
   ]);
 
   if (!match) notFound();
@@ -61,11 +56,11 @@ export default async function MatchDetailPage(props: {
   const home = oneOrNull(match.home) as TeamLite;
   const away = oneOrNull(match.away) as TeamLite;
   const pred = predQ?.data ?? null;
-  const recharge = rechargeQ?.data ?? null;
+  const availableChances = typeof chancesQ.data === "number" ? chancesQ.data : 0;
   const now = Date.now();
   const kickoffMs = new Date(match.kickoff_at).getTime();
   const beforeKickoff = now < kickoffMs;
-  const eligible = user ? Number(recharge?.amount ?? 0) >= 500 : false;
+  const eligible = user ? availableChances > 0 : false;
   const canPredict =
     !!user && !pred && match.status === "scheduled" && beforeKickoff && eligible;
 
@@ -138,13 +133,20 @@ export default async function MatchDetailPage(props: {
           }
         />
       ) : (
-        <PredictionForm
-          matchId={match.id}
-          homeName={home?.name ?? t("predict_home")}
-          awayName={away?.name ?? t("predict_away")}
-          tokenReward={match.token_reward}
-          locale={locale}
-        />
+        <>
+          {/* Remaining chances indicator */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-[var(--text-mid)]">竞猜机会剩余</span>
+            <span className="text-sm font-bold text-[var(--gold-300)] tabular-nums">{availableChances} 次</span>
+          </div>
+          <PredictionForm
+            matchId={match.id}
+            homeName={home?.name ?? t("predict_home")}
+            awayName={away?.name ?? t("predict_away")}
+            tokenReward={match.token_reward}
+            locale={locale}
+          />
+        </>
       )}
     </div>
   );
