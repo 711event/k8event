@@ -149,16 +149,15 @@ export default async function MatchDetailPage(props: {
         </>
       )}
       {/* Rules */}
-      <details className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)]">
-        <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-[var(--text-mid)] hover:text-[var(--text-hi)] transition select-none list-none">
+      <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-4 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-hi)]">
           <span>📋</span>
           {t("match_rules_title")}
-          <span className="ml-auto text-[var(--text-lo)] text-xs">▸</span>
-        </summary>
-        <div className="px-4 pb-4 pt-3 border-t border-[var(--border-subtle)] text-sm text-[var(--text-mid)] whitespace-pre-line leading-relaxed space-y-1">
+        </div>
+        <div className="text-sm text-[var(--text-mid)] whitespace-pre-line leading-relaxed">
           {t("match_rules")}
         </div>
-      </details>
+      </div>
     </div>
   );
 }
