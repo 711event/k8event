@@ -5,8 +5,10 @@ import { getGroupId } from "@/lib/get-group";
 import { ChatInboxAutoRefresh } from "./ChatInboxAutoRefresh";
 import { ThreadListClient } from "./ThreadListClient";
 import { InboxTabsClient } from "./InboxTabsClient";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 
-export const metadata = { title: "客服会话 · 管理后台" };
+export const metadata = { title: "Chat Support · Admin Panel" };
 export const dynamic = "force-dynamic";
 
 type TabKey = "open" | "pending" | "closed" | "all";
@@ -15,6 +17,8 @@ export default async function ChatInboxPage(props: {
   searchParams: Promise<{ status?: string }>;
 }) {
   await requireRole(["admin", "agent"]);
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
   const sp = await props.searchParams;
   const validTabs: TabKey[] = ["open", "pending", "closed", "all"];
   const active = (validTabs.includes(sp.status as TabKey) ? sp.status : "open") as TabKey;
@@ -56,16 +60,16 @@ export default async function ChatInboxPage(props: {
       <ChatInboxAutoRefresh />
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">客服会话</h1>
+          <h1 className="text-2xl font-semibold">{t("inbox_title")}</h1>
           <p className="text-sm text-zinc-500 mt-1">
-            新消息实时到达 · 点会话进入对话页 · 问题解决后请点「结束会话」，让收件箱保持清晰
+            {t("inbox_subtitle")}
           </p>
         </div>
         <Link
           href="/admin/chat/retention"
           className="shrink-0 text-xs text-zinc-400 hover:text-zinc-700 mt-1"
         >
-          保留策略设置 →
+          {t("inbox_retentionLink")}
         </Link>
       </div>
 
@@ -73,15 +77,15 @@ export default async function ChatInboxPage(props: {
       <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-cyan-100 border border-cyan-200 inline-block" />
-          有客服正在查看
+          {t("inbox_legend_viewing")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-yellow-50 border border-yellow-200 inline-block" />
-          等待超过 5 分钟
+          {t("inbox_legend_warn")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-red-100 border border-red-300 inline-block" />
-          等待超过 8 分钟
+          {t("inbox_legend_critical")}
         </span>
       </div>
 

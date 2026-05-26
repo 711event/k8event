@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateRetentionSettingsAction } from "./actions";
+import { tBo } from "@/lib/i18n";
 
 interface Props {
   defaults: {
@@ -11,6 +12,7 @@ interface Props {
     warn_after_minutes: number;
     critical_after_minutes: number;
   };
+  locale?: import("@/lib/i18n").BoLocale;
 }
 
 function NumberInput({
@@ -54,7 +56,8 @@ function NumberInput({
   );
 }
 
-export function RetentionForm({ defaults }: Props) {
+export function RetentionForm({ defaults, locale }: Props) {
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale ?? "zh", k, vars);
   const [messageDays, setMessageDays] = useState(String(defaults.message_retention_days));
   const [mediaDays, setMediaDays] = useState(String(defaults.media_retention_days));
   const [archiveDays, setArchiveDays] = useState(String(defaults.archive_closed_threads_after_days));
@@ -86,32 +89,32 @@ export function RetentionForm({ defaults }: Props) {
       {/* Section 1: Data retention */}
       <div className="space-y-5">
         <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">
-          数据保留
+          {t("retention_data_title")}
         </h2>
         <NumberInput
-          label="消息保留天数"
-          hint="文字消息"
+          label={t("retention_msg_label")}
+          hint={t("retention_msg_hint")}
           value={messageDays}
           onChange={setMessageDays}
-          unit="天"
+          unit={t("retention_msg_unit")}
           min={1}
           max={3650}
         />
         <NumberInput
-          label="媒体保留天数"
-          hint="图片/文件"
+          label={t("retention_media_label")}
+          hint={t("retention_media_hint")}
           value={mediaDays}
           onChange={setMediaDays}
-          unit="天"
+          unit={t("retention_media_unit")}
           min={1}
           max={3650}
         />
         <NumberInput
-          label="已关闭会话归档天数"
-          hint="关闭后多少天自动归档"
+          label={t("retention_archive_label")}
+          hint={t("retention_archive_hint")}
           value={archiveDays}
           onChange={setArchiveDays}
-          unit="天"
+          unit={t("retention_archive_unit")}
           min={1}
           max={365}
         />
@@ -123,21 +126,21 @@ export function RetentionForm({ defaults }: Props) {
       <div className="space-y-5">
         <div>
           <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">
-            收件箱颜色预警
+            {t("retention_warn_title")}
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
-            会员最后一条消息发出后，超过以下时间仍未回复时，该会话行变色提醒。
+            {t("retention_warn_subtitle")}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="w-4 h-4 rounded-sm bg-yellow-50 border border-yellow-200 shrink-0" />
           <NumberInput
-            label="浅黄色预警"
-            hint="超过此时间显示浅黄"
+            label={t("retention_yellow_label")}
+            hint={t("retention_yellow_hint")}
             value={warnMin}
             onChange={setWarnMin}
-            unit="分钟"
+            unit={t("retention_yellow_unit")}
             min={1}
             max={120}
           />
@@ -146,11 +149,11 @@ export function RetentionForm({ defaults }: Props) {
         <div className="flex items-center gap-3">
           <span className="w-4 h-4 rounded-sm bg-red-100 border border-red-300 shrink-0" />
           <NumberInput
-            label="深红色预警"
-            hint="超过此时间显示深红"
+            label={t("retention_red_label")}
+            hint={t("retention_red_hint")}
             value={criticalMin}
             onChange={setCriticalMin}
-            unit="分钟"
+            unit={t("retention_red_unit")}
             min={1}
             max={120}
           />
@@ -158,10 +161,10 @@ export function RetentionForm({ defaults }: Props) {
       </div>
 
       {result?.ok && (
-        <p className="text-sm text-emerald-600">✓ 已保存</p>
+        <p className="text-sm text-emerald-600">{t("retention_saved_msg")}</p>
       )}
       {result?.error && (
-        <p className="text-sm text-red-600">错误: {result.error}</p>
+        <p className="text-sm text-red-600">{t("retention_error", { msg: result.error })}</p>
       )}
 
       <button
@@ -169,7 +172,7 @@ export function RetentionForm({ defaults }: Props) {
         disabled={saving}
         className="px-4 py-2 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition"
       >
-        {saving ? "保存中…" : "保存设置"}
+        {saving ? t("retention_saving") : t("retention_save")}
       </button>
     </form>
   );

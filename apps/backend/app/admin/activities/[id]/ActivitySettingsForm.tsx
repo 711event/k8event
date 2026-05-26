@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { updateActivityAction } from "../actions";
 
 interface Props {
@@ -35,6 +37,9 @@ const LOCALE_TABS: { key: Locale; label: string }[] = [
 ];
 
 export function ActivitySettingsForm({ activity }: Props) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
   const s = activity.settings;
 
   // zh — top-level columns
@@ -96,7 +101,7 @@ export function ActivitySettingsForm({ activity }: Props) {
         settings: mergedSettings,
       });
       if (r.error) { toast.error(r.error); return; }
-      toast.success("活动设置已保存");
+      toast.success(t("activity_settings_saved"));
     });
   }
 
@@ -129,22 +134,22 @@ export function ActivitySettingsForm({ activity }: Props) {
       {activeLocale === "zh" && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">活动名称 *</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_name")}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">活动说明</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_desc")}</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={textareaCls} />
           </div>
           <div>
             <div className="flex items-baseline justify-between mb-1">
-              <label className="block text-sm font-medium">Banner 图片 URL</label>
-              <span className="text-xs text-zinc-400">推荐：750 × 300 px（5:2，JPG/WebP，&lt;200 KB）</span>
+              <label className="block text-sm font-medium">{t("activity_settings_banner")}</label>
+              <span className="text-xs text-zinc-400">{t("activity_settings_banner_hint")}</span>
             </div>
             <input type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://..." className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">活动规则</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_rules")}</label>
             <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={4} className={textareaCls} />
           </div>
         </div>
@@ -153,7 +158,7 @@ export function ActivitySettingsForm({ activity }: Props) {
       {/* EN fields */}
       {activeLocale === "en" && (
         <div className="space-y-4">
-          <p className="text-xs text-zinc-400">留空则前端自动显示中文版内容。</p>
+          <p className="text-xs text-zinc-400">{t("activity_settings_zh_note")}</p>
           <div>
             <label className="block text-sm font-medium mb-1">Activity Name (EN)</label>
             <input type="text" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="e.g. Daily Check-in Event" className={inputCls} />
@@ -206,37 +211,37 @@ export function ActivitySettingsForm({ activity }: Props) {
       <div className="border-t border-zinc-100 pt-4 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Slug（URL 标识）</label>
-            <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="例：daily-checkin" className={`${inputCls} font-mono`} />
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_slug")}</label>
+            <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder={locale === "zh" ? "例：daily-checkin" : "e.g. daily-checkin"} className={`${inputCls} font-mono`} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">开始时间 (GMT+8)</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_start")}</label>
             <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">结束时间 (GMT+8)</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_end")}</label>
             <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} className={inputCls} />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">排序</label>
+            <label className="block text-sm font-medium mb-1">{t("activity_settings_sort")}</label>
             <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className={inputCls} />
           </div>
           <div className="flex items-end pb-1">
             <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded" />
-              活动开启
+              {t("activity_settings_active")}
             </label>
           </div>
           <div className="flex items-end pb-1">
             <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
               <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 rounded" />
-              前台显示
+              {t("activity_settings_visible")}
             </label>
           </div>
         </div>
@@ -247,7 +252,7 @@ export function ActivitySettingsForm({ activity }: Props) {
         disabled={pending}
         className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium disabled:opacity-60"
       >
-        {pending ? "保存中…" : "保存设置"}
+        {pending ? t("activity_settings_saving") : t("activity_settings_save")}
       </button>
     </form>
   );

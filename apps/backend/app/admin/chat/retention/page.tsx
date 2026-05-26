@@ -3,12 +3,16 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getGroupId } from "@/lib/get-group";
 import { RetentionForm } from "./RetentionForm";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 
-export const metadata = { title: "聊天保留策略 · 管理后台" };
+export const metadata = { title: "Chat Retention Policy · Admin Panel" };
 export const dynamic = "force-dynamic";
 
 export default async function ChatRetentionPage() {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
   const supabase = await createSupabaseServerClient();
 
   const { data: settings } = await supabase
@@ -29,21 +33,21 @@ export default async function ChatRetentionPage() {
     <div className="max-w-xl space-y-6">
       <div>
         <Link href="/admin/chat" className="text-sm text-zinc-500 hover:text-zinc-800">
-          ← 返回客服会话
+          {t("retention_back")}
         </Link>
-        <h1 className="text-2xl font-semibold mt-2">聊天保留策略</h1>
+        <h1 className="text-2xl font-semibold mt-2">{t("retention_title")}</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          设置聊天记录保留天数和收件箱颜色预警阈值。
+          {t("retention_subtitle")}
         </p>
       </div>
 
       <div className="rounded-lg border border-zinc-200 bg-white p-6">
-        <RetentionForm defaults={defaults} />
+        <RetentionForm defaults={defaults} locale={locale} />
       </div>
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 space-y-1">
-        <p className="font-medium">⚠ 注意</p>
-        <p>自动清理任务尚未启用，保留天数设置仅供记录与规划用途。实际数据不会被自动删除。</p>
+        <p className="font-medium">{t("retention_notice_title")}</p>
+        <p>{t("retention_notice_body")}</p>
       </div>
     </div>
   );

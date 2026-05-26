@@ -2,16 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { createActivityAction, type ActivityType } from "./actions";
-
-const TYPE_OPTIONS: { value: ActivityType; label: string }[] = [
-  { value: "worldcup_prediction", label: "世界杯竞猜" },
-  { value: "daily_checkin", label: "每日签到" },
-  { value: "lucky_draw", label: "幸运抽奖" },
-  { value: "spin_wheel", label: "转盘" },
-  { value: "deposit_mission", label: "充值任务" },
-  { value: "referral_mission", label: "推荐任务" },
-];
 
 const DEFAULT_SETTINGS: Record<ActivityType, Record<string, unknown>> = {
   worldcup_prediction: { token_reward: 10 },
@@ -23,6 +16,18 @@ const DEFAULT_SETTINGS: Record<ActivityType, Record<string, unknown>> = {
 };
 
 export function ActivitiesManager() {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
+  const ACTIVITY_TYPE_OPTIONS: { value: ActivityType; label: string }[] = [
+    { value: "worldcup_prediction", label: t("activity_type_worldcup") },
+    { value: "daily_checkin", label: t("activity_type_checkin") },
+    { value: "lucky_draw", label: t("activity_type_lucky") },
+    { value: "spin_wheel", label: t("activity_type_spin") },
+    { value: "deposit_mission", label: t("activity_type_deposit") },
+    { value: "referral_mission", label: t("activity_type_referral") },
+  ];
+
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<ActivityType>("daily_checkin");
   const [name, setName] = useState("");
@@ -32,7 +37,7 @@ export function ActivitiesManager() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { toast.error("请填写活动名称"); return; }
+    if (!name.trim()) { toast.error(t("activity_create_name_required")); return; }
     startTransition(async () => {
       const r = await createActivityAction({
         type,
@@ -44,7 +49,7 @@ export function ActivitiesManager() {
         settings: DEFAULT_SETTINGS[type] ?? {},
       });
       if (r.error) { toast.error(r.error); return; }
-      toast.success("活动已创建");
+      toast.success(t("activity_create_success"));
       setOpen(false);
       setName("");
       setDescription("");
@@ -58,7 +63,7 @@ export function ActivitiesManager() {
         onClick={() => setOpen(true)}
         className="h-9 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium"
       >
-        + 新建活动
+        + {t("activities_create")}
       </button>
     );
   }
@@ -67,19 +72,19 @@ export function ActivitiesManager() {
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium mb-1">活动类型</label>
+          <label className="block text-sm font-medium mb-1">{t("activity_create_type_label")}</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as ActivityType)}
             className="w-full h-9 px-3 rounded-md border border-zinc-300 bg-white text-sm"
           >
-            {TYPE_OPTIONS.map((o) => (
+            {ACTIVITY_TYPE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">排序</label>
+          <label className="block text-sm font-medium mb-1">{t("activity_create_sort_label")}</label>
           <input
             type="number"
             value={sortOrder}
@@ -89,17 +94,17 @@ export function ActivitiesManager() {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">活动名称 *</label>
+        <label className="block text-sm font-medium mb-1">{t("activity_create_name_label")}</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="例：每日签到奖励"
+          placeholder={t("activity_create_name_hint")}
           className="w-full h-9 px-3 rounded-md border border-zinc-300 bg-white text-sm"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">活动说明</label>
+        <label className="block text-sm font-medium mb-1">{t("activity_create_desc_label")}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -113,14 +118,14 @@ export function ActivitiesManager() {
           disabled={pending}
           className="h-9 px-4 rounded-md bg-zinc-900 text-white text-sm font-medium disabled:opacity-60"
         >
-          {pending ? "创建中…" : "创建活动"}
+          {pending ? t("activity_create_creating") : t("activity_create_btn")}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="h-9 px-4 rounded-md border border-zinc-300 text-sm"
         >
-          取消
+          {t("activity_create_cancel")}
         </button>
       </div>
     </form>

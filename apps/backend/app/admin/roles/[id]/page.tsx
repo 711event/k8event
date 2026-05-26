@@ -3,29 +3,33 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { RoleEditForm } from "./RoleEditForm";
 
-export const metadata = { title: "编辑角色 · 管理后台" };
-
-const MODULE_LABELS: Record<string, string> = {
-  overview: "总览",
-  players: "玩家管理",
-  recharge: "充值导入",
-  activities: "活动管理",
-  rewards: "奖品",
-  redemptions: "兑换审核",
-  checkins: "签到记录",
-  chat: "客服会话",
-  quick_replies: "快速回复",
-  staff: "后台账号",
-  roles: "角色权限",
-};
+export const metadata = { title: "Edit Role · Admin Panel" };
 
 export default async function RoleDetailPage(props: { params: Promise<{ id: string }> }) {
   const user = await requireRole(["admin"]);
   if (!hasPermission(user, "roles")) notFound();
 
   const { id } = await props.params;
+  const locale = await getBoLocale();
+
+  const MODULE_LABELS: Record<string, string> = {
+    overview:      tBo(locale, "module_overview"),
+    players:       tBo(locale, "module_players"),
+    recharge:      tBo(locale, "module_recharge"),
+    activities:    tBo(locale, "module_activities"),
+    rewards:       tBo(locale, "module_rewards"),
+    redemptions:   tBo(locale, "module_redemptions"),
+    checkins:      tBo(locale, "module_checkins"),
+    chat:          tBo(locale, "module_chat"),
+    quick_replies: tBo(locale, "module_quick_replies"),
+    staff:         tBo(locale, "module_staff"),
+    roles:         tBo(locale, "module_roles"),
+  };
+
   const supabase = await createSupabaseServerClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +52,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-3">
         <Link href="/admin/roles" className="text-sm text-zinc-500 hover:text-zinc-900 underline">
-          ← 返回角色列表
+          {tBo(locale, "role_edit_back")}
         </Link>
       </div>
 
@@ -57,14 +61,14 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           <h1 className="text-2xl font-semibold">{role.name}</h1>
           {role.is_system && (
             <span className="text-xs uppercase tracking-wide bg-amber-100 text-amber-700 rounded px-2 py-0.5">
-              系统内置
+              {tBo(locale, "role_edit_system")}
             </span>
           )}
         </div>
         <p className="text-sm text-zinc-500 mt-1">
           Slug: <code className="font-mono">{role.slug}</code>
           {assignedCount != null && assignedCount > 0 && (
-            <span className="ml-3">已分配 {assignedCount} 位账号</span>
+            <span className="ml-3">{tBo(locale, "role_edit_assigned", { count: assignedCount })}</span>
           )}
         </p>
       </div>

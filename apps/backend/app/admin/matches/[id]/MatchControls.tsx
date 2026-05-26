@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import {
   deleteMatchAction,
   setMatchStatusAction,
@@ -24,6 +26,8 @@ export function MatchControls({
   homeName: string;
   awayName: string;
 }) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [pending, startTransition] = useTransition();
   const [chosen, setChosen] = useState<Result | "">("");
   const router = useRouter();
@@ -31,7 +35,7 @@ export function MatchControls({
   function run(fn: () => Promise<{ error?: string } | { ok: true } | undefined>, ok: string) {
     startTransition(async () => {
       const r = await fn();
-      if (r && "error" in r) toast.error(r.error ?? "操作失败");
+      if (r && "error" in r) toast.error(r.error ?? t("match_controls_op_failed"));
       else toast.success(ok);
     });
   }
@@ -45,71 +49,72 @@ export function MatchControls({
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "locked"), "已锁定竞猜")}
+            onClick={() => run(() => setMatchStatusAction(id, "locked"), t("match_controls_locked"))}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            锁定竞猜
+            {t("match_controls_lock")}
           </button>
         )}
         {status === "locked" && (
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "scheduled"), "已解锁竞猜")}
+            onClick={() => run(() => setMatchStatusAction(id, "scheduled"), t("match_controls_unlocked"))}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            解锁竞猜
+            {t("match_controls_unlock")}
           </button>
         )}
         {settleable && (
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => setMatchStatusAction(id, "cancelled"), "比赛已取消")}
+            onClick={() => run(() => setMatchStatusAction(id, "cancelled"), t("match_controls_cancelled"))}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            取消比赛
+            {t("match_controls_cancel")}
           </button>
         )}
         <button
           type="button"
           disabled={pending}
           onClick={() => {
-            if (!confirm("确认删除此比赛？相关竞猜记录也将一并删除。")) return;
+            if (!confirm(t("match_controls_delete_confirm"))) return;
             startTransition(async () => {
               const r = await deleteMatchAction(id);
-              if (r && "error" in r) toast.error(r.error ?? "操作失败");
+              if (r && "error" in r) toast.error(r.error ?? t("match_controls_op_failed"));
               else {
-                toast.success("比赛已删除");
+                toast.success(t("match_controls_deleted"));
                 router.push("/admin/matches");
               }
             });
           }}
           className="h-10 px-4 rounded-md border border-red-500/30 text-sm font-medium text-red-600 disabled:opacity-60"
         >
-          删除比赛
+          {t("match_controls_delete")}
         </button>
       </div>
 
       {settleable && (
         <div className="rounded-md border border-zinc-200 p-4 space-y-3">
-          <div className="text-sm font-medium">选择结果并结算</div>
+          <div className="text-sm font-medium">{t("match_controls_settle_title")}</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <ResultChoice value="home" current={chosen} onPick={setChosen} label={`主队胜`} sublabel={homeName} color="blue" />
-            <ResultChoice value="away" current={chosen} onPick={setChosen} label={`客队胜`} sublabel={awayName} color="green" />
-            <ResultChoice value="draw" current={chosen} onPick={setChosen} label="平局" sublabel="不发放奖励" color="amber" />
+            <ResultChoice value="home" current={chosen} onPick={setChosen} label={t("match_result_home")} sublabel={homeName} color="blue" />
+            <ResultChoice value="away" current={chosen} onPick={setChosen} label={t("match_result_away")} sublabel={awayName} color="green" />
+            <ResultChoice value="draw" current={chosen} onPick={setChosen} label={t("match_result_draw")} sublabel={t("match_controls_draw_sublabel")} color="amber" />
           </div>
           <button
             type="button"
             disabled={pending || !chosen}
             onClick={() => {
               if (!chosen) return;
-              if (!confirm(`确认以"${chosen === "home" ? "主队胜" : chosen === "away" ? "客队胜" : "平局"}"结算此比赛？Token 将发放给预测正确的玩家，此操作不可撤销。`)) return;
-              run(() => settleMatchAction(id, chosen as Result), "比赛已结算");
+              const resultLabel = chosen === "home" ? t("match_result_home") : chosen === "away" ? t("match_result_away") : t("match_result_draw");
+              if (!confirm(t("match_controls_settle_confirm", { result: resultLabel }))) return;
+              run(() => settleMatchAction(id, chosen as Result), t("match_controls_settled"));
             }}
             className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium disabled:opacity-60"
           >
-            {pending ? "结算中…" : "确认结算"}
+            {pending ? t("match_controls_settling") : t("match_controls_settle_btn")}
           </button>
         </div>
       )}

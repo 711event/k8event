@@ -2,15 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { ActivitySettingsForm } from "./ActivitySettingsForm";
 import { CheckinRewardsForm } from "./CheckinRewardsForm";
 
-export const metadata = { title: "活动设置 · 管理后台" };
+export const metadata = { title: "Activity Settings · Admin Panel" };
 
 export default async function ActivityDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const { id } = await props.params;
   const supabase = await createSupabaseServerClient();
 
@@ -26,7 +30,7 @@ export default async function ActivityDetailPage(props: {
     <div className="space-y-8 max-w-2xl">
       <div className="flex items-center gap-3">
         <Link href="/admin/activities" className="text-sm text-zinc-500 hover:text-zinc-900 underline">
-          ← 返回活动列表
+          {t("activity_setting_back")}
         </Link>
       </div>
       <h1 className="text-2xl font-semibold">{activity.name}</h1>
@@ -34,19 +38,19 @@ export default async function ActivityDetailPage(props: {
       {/* World Cup shortcuts */}
       {activity.type === "worldcup_prediction" && (
         <section className="rounded-lg border border-zinc-200 p-5">
-          <h2 className="text-lg font-medium mb-3">World Cup 管理</h2>
+          <h2 className="text-lg font-medium mb-3">{t("activity_setting_wc_title")}</h2>
           <div className="flex gap-3">
             <Link
               href="/admin/teams"
               className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
             >
-              🏳️ 管理球队
+              {t("activity_setting_teams")}
             </Link>
             <Link
               href="/admin/matches"
               className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
             >
-              ⚽ 管理比赛
+              {t("activity_setting_matches")}
             </Link>
           </div>
         </section>
@@ -55,15 +59,15 @@ export default async function ActivityDetailPage(props: {
       {/* Daily check-in reward config */}
       {activity.type === "daily_checkin" && (
         <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
-          <h2 className="text-lg font-medium">签到奖励设置</h2>
-          <p className="text-sm text-zinc-500">设置每天签到获得的 Token 数量。</p>
+          <h2 className="text-lg font-medium">{t("activity_setting_checkin_title")}</h2>
+          <p className="text-sm text-zinc-500">{locale === "zh" ? "设置每天签到获得的 Token 数量。" : "Set the Token rewards for each day of check-in."}</p>
           <CheckinRewardsForm activityId={id} settings={activity.settings as Record<string, unknown>} />
         </section>
       )}
 
       {/* General settings */}
       <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
-        <h2 className="text-lg font-medium">基本设置</h2>
+        <h2 className="text-lg font-medium">{t("activity_setting_basic")}</h2>
         <ActivitySettingsForm activity={{ ...activity, settings: (activity.settings as Record<string, unknown>) ?? {} }} />
       </section>
     </div>

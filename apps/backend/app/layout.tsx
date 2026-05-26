@@ -16,8 +16,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "711event 管理后台",
-  description: "k8event 内部运营管理系统。",
+  title: "711event Admin Panel",
+  description: "k8event internal operations management system.",
   robots: { index: false, follow: false },
 };
 

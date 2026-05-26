@@ -2,9 +2,13 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { seedMatchesAction, resetSeedMatchesAction, seedKnockoutMatchesAction } from "../seed/actions";
 
 export function SeedMatchesButton() {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [seedPending, startSeed] = useTransition();
   const [knockoutPending, startKnockout] = useTransition();
   const [resetPending, startReset] = useTransition();
@@ -16,37 +20,32 @@ export function SeedMatchesButton() {
       if (r && "error" in r) {
         toast.error(r.error);
       } else if (r && "ok" in r) {
-        toast.success(`✅ 已生成 ${r.inserted} 场小组赛赛程（2026-06-11 起）`);
+        toast.success(t("seed_matches_success", { inserted: r.inserted }));
       }
     });
   }
 
   function handleReset() {
-    if (
-      !confirm(
-        "确认清除所有 scheduled 比赛？\n\n此操作会删除所有状态为「scheduled」的比赛。已锁定、已结算或已取消的比赛不受影响。",
-      )
-    )
-      return;
+    if (!confirm(t("seed_reset_confirm"))) return;
 
     startReset(async () => {
       const r = await resetSeedMatchesAction();
       if (r && "error" in r) {
         toast.error(r.error);
       } else if (r && "ok" in r) {
-        toast.success(`已清除 ${r.skipped} 场 scheduled 比赛`);
+        toast.success(t("seed_reset_success", { count: r.skipped }));
       }
     });
   }
 
   function handleKnockout() {
-    if (!confirm("将创建 32 场淘汰赛占位（待定 vs 待定）。\n确认继续？")) return;
+    if (!confirm(t("seed_knockout_confirm"))) return;
     startKnockout(async () => {
       const r = await seedKnockoutMatchesAction();
       if (r && "error" in r) {
         toast.error(r.error);
       } else if (r && "ok" in r) {
-        toast.success(`✅ 已创建 ${r.inserted} 场淘汰赛（待定 vs 待定）`);
+        toast.success(t("seed_knockout_success", { inserted: r.inserted }));
       }
     });
   }
@@ -57,28 +56,28 @@ export function SeedMatchesButton() {
         type="button"
         disabled={pending}
         onClick={handleSeed}
-        title="生成 72 场 WC 2026 小组赛（需先导入球队）"
+        title={t("seed_matches_btn_hint")}
         className="h-9 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {seedPending ? "生成中…" : "⚽ 一键生成世界杯赛程"}
+        {seedPending ? t("seed_matches_generating") : t("seed_matches_btn")}
       </button>
       <button
         type="button"
         disabled={pending}
         onClick={handleKnockout}
-        title="创建 32 场淘汰赛（RO32→决赛），主客队先用「待定」占位，确定后到比赛详情页修改"
+        title={t("seed_knockout_hint")}
         className="h-9 px-4 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {knockoutPending ? "创建中…" : "🏆 创建淘汰赛（待定占位）"}
+        {knockoutPending ? t("seed_knockout_creating") : t("seed_knockout_btn")}
       </button>
       <button
         type="button"
         disabled={pending}
         onClick={handleReset}
-        title="删除所有 scheduled 比赛（方便重新 Seed）"
+        title={t("seed_reset_hint")}
         className="h-9 px-4 rounded-md border border-red-500/30 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {resetPending ? "清除中…" : "🗑 清除已排期比赛"}
+        {resetPending ? t("seed_reset_clearing") : t("seed_reset_btn")}
       </button>
     </div>
   );

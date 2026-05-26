@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import Papa from "papaparse";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import {
   importRechargeAction,
   previewRechargeAction,
@@ -12,7 +14,7 @@ import {
 type ParsedRow = { date: string; username: string; amount: number };
 
 // ─── CSV parser ───────────────────────────────────────────────────────────────
-function parseCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
+function parseCsv(text: string, locale: string): { rows: ParsedRow[]; errors: string[] } {
   const errors: string[] = [];
   const out: ParsedRow[] = [];
   const parsed = Papa.parse<string[]>(text.trim(), { skipEmptyLines: true });
@@ -25,16 +27,16 @@ function parseCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
     if (i === 0 && /^date$/i.test(c0) && /^username$/i.test(c1)) continue;
 
     if (!c0 || !c1 || !c2) {
-      errors.push(`第 ${i + 1} 行：缺少字段`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行：缺少字段` : `Row ${i + 1}: missing field`);
       continue;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(c0)) {
-      errors.push(`第 ${i + 1} 行：日期格式错误 "${c0}"（需要 YYYY-MM-DD）`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行：日期格式错误 "${c0}"（需要 YYYY-MM-DD）` : `Row ${i + 1}: invalid date format "${c0}" (expected YYYY-MM-DD)`);
       continue;
     }
     const amt = Number(c2);
     if (!Number.isFinite(amt) || amt < 0) {
-      errors.push(`第 ${i + 1} 行：金额无效 "${c2}"`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行：金额无效 "${c2}"` : `Row ${i + 1}: invalid amount "${c2}"`);
       continue;
     }
     out.push({ date: c0, username: c1, amount: amt });
@@ -69,14 +71,14 @@ function excelDateToString(val: unknown): string | null {
 // ─── Excel parser (SheetJS) ───────────────────────────────────────────────────
 // Expected columns: Date, Superid, In  (Max In / Out / P/L are ignored)
 // Header detection is case-insensitive, so column order doesn't matter.
-async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; errors: string[] }> {
+async function parseExcel(buffer: ArrayBuffer, locale: string): Promise<{ rows: ParsedRow[]; errors: string[] }> {
   const { read, utils } = await import("xlsx");
   const workbook = read(buffer, { type: "array", cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet) return { rows: [], errors: ["Excel 文件没有工作表"] };
+  if (!sheet) return { rows: [], errors: [locale === "zh" ? "Excel 文件没有工作表" : "Excel file has no worksheets"] };
 
   const raw: unknown[][] = utils.sheet_to_json(sheet, { header: 1, defval: "" });
-  if (raw.length < 2) return { rows: [], errors: ["Excel 没有数据行"] };
+  if (raw.length < 2) return { rows: [], errors: [locale === "zh" ? "Excel 没有数据行" : "Excel has no data rows"] };
 
   const headers = (raw[0] as unknown[]).map((h) => String(h ?? "").trim().toLowerCase());
   const dateIdx    = headers.findIndex((h) => h === "date");
@@ -88,7 +90,7 @@ async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; err
   if (superidIdx === -1) missing.push("Superid");
   if (inIdx      === -1) missing.push("In");
   if (missing.length) {
-    return { rows: [], errors: [`Excel 缺少列: ${missing.join(", ")}（需要 Date、Superid、In 三列）`] };
+    return { rows: [], errors: [locale === "zh" ? `Excel 缺少列: ${missing.join(", ")}（需要 Date、Superid、In 三列）` : `Excel missing columns: ${missing.join(", ")} (need Date, Superid, In)`] };
   }
 
   const errors: string[] = [];
@@ -105,19 +107,19 @@ async function parseExcel(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; err
 
     const date = excelDateToString(rawDate);
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      errors.push(`第 ${i + 1} 行: 日期无法识别 "${rawDate}"`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行: 日期无法识别 "${rawDate}"` : `Row ${i + 1}: unrecognized date "${rawDate}"`);
       continue;
     }
 
     const username = String(rawUser ?? "").trim();
     if (!username) {
-      errors.push(`第 ${i + 1} 行: Superid 为空`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行: Superid 为空` : `Row ${i + 1}: Superid is empty`);
       continue;
     }
 
     const amount = Number(rawAmount);
     if (!Number.isFinite(amount) || amount < 0) {
-      errors.push(`第 ${i + 1} 行: In 金额无效 "${rawAmount}"`);
+      errors.push(locale === "zh" ? `第 ${i + 1} 行: In 金额无效 "${rawAmount}"` : `Row ${i + 1}: invalid In amount "${rawAmount}"`);
       continue;
     }
     if (amount === 0) continue; // skip zero-recharge rows
@@ -155,14 +157,17 @@ async function downloadExcelSample() {
   writeFile(wb, "sample-recharge.xlsx");
 }
 
-const GROUP_LABELS: Record<string, string> = {
-  new: "新增",
-  overwrite: "覆盖",
-  unchanged: "无变化",
-  unknown_user: "用户不存在",
-};
-
 export function RechargeImporter() {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
+  const STATUS_LABEL: Record<string, string> = {
+    new: t("recharge_status_new"),
+    overwrite: t("recharge_status_overwrite"),
+    unchanged: t("recharge_status_unchanged"),
+    unknown_user: t("recharge_status_unknown_user"),
+  };
+
   const [text, setText] = useState("");
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
@@ -184,10 +189,10 @@ export function RechargeImporter() {
       const reader = new FileReader();
       reader.onload = async () => {
         const buffer = reader.result as ArrayBuffer;
-        const { rows, errors } = await parseExcel(buffer);
+        const { rows, errors } = await parseExcel(buffer, locale);
         setParseErrors(errors);
         if (!rows.length && !errors.length) {
-          toast.error("Excel 没有找到有效数据");
+          toast.error(t("recharge_no_valid"));
           return;
         }
         if (!rows.length) {
@@ -212,7 +217,7 @@ export function RechargeImporter() {
   }
 
   function runPreview() {
-    const { rows, errors } = parseCsv(text);
+    const { rows, errors } = parseCsv(text, locale);
     setParseErrors(errors);
     if (!rows.length) {
       setPreview([]);
@@ -236,7 +241,7 @@ export function RechargeImporter() {
       .filter((r) => (r.status === "ok" || r.status === "overwrite") && r.playerId)
       .map((r) => ({ date: r.date, amount: r.amount, playerId: r.playerId as string }));
     if (!toSend.length) {
-      toast.error("没有可导入的数据");
+      toast.error(t("recharge_no_importable"));
       return;
     }
     startTransition(async () => {
@@ -245,7 +250,7 @@ export function RechargeImporter() {
         toast.error(r.error);
         return;
       }
-      toast.success(`已成功导入 ${r.inserted} 条记录`);
+      toast.success(t("recharge_success", { count: r.inserted }));
       setText("");
       setPreview(null);
       setSummary(null);
@@ -267,7 +272,7 @@ export function RechargeImporter() {
     <div className="space-y-4">
       {/* Sample download links */}
       <div className="flex items-center gap-3 text-xs text-zinc-500">
-        <span>下载样本文件：</span>
+        <span>{t("recharge_sample")}</span>
         <button
           type="button"
           onClick={downloadExcelSample}
@@ -284,13 +289,13 @@ export function RechargeImporter() {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={"从 Excel 直接复制粘贴（Tab 分隔）：\n2026-05-20\tplayer001\t1000\n2026-05-20\tplayer002\t500\n2026-05-20\tplayer003\t250"}
+          placeholder={t("recharge_paste_placeholder")}
           rows={6}
           className="w-full px-3 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent font-mono text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
         />
         <div className="flex flex-col gap-2">
           <label className="cursor-pointer">
-            <span className="block text-xs text-zinc-500 mb-1">或上传文件：</span>
+            <span className="block text-xs text-zinc-500 mb-1">{t("recharge_upload_label")}</span>
             <div className="flex items-center gap-2 h-10 px-4 rounded-md border border-dashed border-zinc-400 dark:border-zinc-600 hover:border-zinc-600 dark:hover:border-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-sm font-medium whitespace-nowrap">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-zinc-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -310,17 +315,17 @@ export function RechargeImporter() {
             disabled={pending || !text.trim()}
             className="h-10 px-4 rounded-md border border-foreground/20 text-sm font-medium disabled:opacity-60"
           >
-            {pending ? "处理中…" : "预览"}
+            {pending ? t("recharge_processing") : t("recharge_preview_btn")}
           </button>
         </div>
       </div>
 
       {parseErrors.length > 0 && (
         <div className="text-sm text-amber-600 dark:text-amber-400">
-          共 {parseErrors.length} 条解析警告：
+          {t("recharge_parse_warnings", { count: parseErrors.length })}
           <ul className="list-disc list-inside mt-1">
             {parseErrors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
-            {parseErrors.length > 5 && <li>… 还有 {parseErrors.length - 5} 条</li>}
+            {parseErrors.length > 5 && <li>{t("recharge_parse_more", { count: parseErrors.length - 5 })}</li>}
           </ul>
         </div>
       )}
@@ -328,16 +333,16 @@ export function RechargeImporter() {
       {grouped && summary && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-3 text-sm">
-            <Chip color="green" label={`${summary.ok} 条新增`} />
-            <Chip color="amber" label={`${summary.overwrite} 条覆盖`} />
-            <Chip color="zinc" label={`${summary.unchanged} 条无变化`} />
-            <Chip color="red" label={`${summary.unknown_user} 条用户不存在`} />
+            <Chip color="green" label={t("recharge_summary_new", { count: summary.ok })} />
+            <Chip color="amber" label={t("recharge_summary_overwrite", { count: summary.overwrite })} />
+            <Chip color="zinc" label={t("recharge_summary_unchanged", { count: summary.unchanged })} />
+            <Chip color="red" label={t("recharge_summary_unknown", { count: summary.unknown_user })} />
           </div>
 
-          <PreviewTable group="new" rows={grouped.ok} />
-          <PreviewTable group="overwrite" rows={grouped.overwrite} />
-          <PreviewTable group="unchanged" rows={grouped.unchanged} />
-          <PreviewTable group="unknown_user" rows={grouped.unknown_user} />
+          <PreviewTable group="new" rows={grouped.ok} statusLabel={STATUS_LABEL} t={t} />
+          <PreviewTable group="overwrite" rows={grouped.overwrite} statusLabel={STATUS_LABEL} t={t} />
+          <PreviewTable group="unchanged" rows={grouped.unchanged} statusLabel={STATUS_LABEL} t={t} />
+          <PreviewTable group="unknown_user" rows={grouped.unknown_user} statusLabel={STATUS_LABEL} t={t} />
 
           <button
             type="button"
@@ -345,7 +350,7 @@ export function RechargeImporter() {
             disabled={pending || (summary.ok + summary.overwrite === 0)}
             className="h-10 px-5 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
-            {pending ? "导入中…" : `导入 ${summary.ok + summary.overwrite} 条记录`}
+            {pending ? t("recharge_importing") : t("recharge_import_btn", { count: summary.ok + summary.overwrite })}
           </button>
         </div>
       )}
@@ -363,21 +368,31 @@ function Chip({ color, label }: { color: "green" | "amber" | "zinc" | "red"; lab
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[color]}`}>{label}</span>;
 }
 
-function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
+function PreviewTable({
+  group,
+  rows,
+  statusLabel,
+  t,
+}: {
+  group: string;
+  rows: PreviewRow[];
+  statusLabel: Record<string, string>;
+  t: (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => string;
+}) {
   if (!rows.length) return null;
-  const label = GROUP_LABELS[group] ?? group;
+  const label = statusLabel[group] ?? group;
   return (
     <details className="rounded-md border border-zinc-200">
       <summary className="px-3 py-2 cursor-pointer text-sm font-medium">
-        {label}（{rows.length} 条）
+        {t("recharge_table_count", { label, count: rows.length })}
       </summary>
       <table className="w-full text-sm">
         <thead className="bg-zinc-50 text-left">
           <tr>
-            <th className="px-3 py-2 font-medium">日期</th>
-            <th className="px-3 py-2 font-medium">用户名</th>
-            <th className="px-3 py-2 font-medium text-right">金额</th>
-            <th className="px-3 py-2 font-medium text-right">现有金额</th>
+            <th className="px-3 py-2 font-medium">{t("recharge_col_date")}</th>
+            <th className="px-3 py-2 font-medium">{t("recharge_col_username")}</th>
+            <th className="px-3 py-2 font-medium text-right">{t("recharge_col_amount_th")}</th>
+            <th className="px-3 py-2 font-medium text-right">{t("recharge_col_existing")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200">
@@ -392,7 +407,7 @@ function PreviewTable({ group, rows }: { group: string; rows: PreviewRow[] }) {
             </tr>
           ))}
           {rows.length > 50 && (
-            <tr><td colSpan={4} className="px-3 py-2 text-zinc-500">… 还有 {rows.length - 50} 条</td></tr>
+            <tr><td colSpan={4} className="px-3 py-2 text-zinc-500">{t("recharge_table_more", { count: rows.length - 50 })}</td></tr>
           )}
         </tbody>
       </table>

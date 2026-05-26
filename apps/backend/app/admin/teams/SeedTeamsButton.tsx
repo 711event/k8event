@@ -2,9 +2,13 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { seedTeamsAction, resetAndSeedTeamsAction } from "../seed/actions";
 
 export function SeedTeamsButton() {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [pending, startTransition] = useTransition();
 
   function handleSeed() {
@@ -14,22 +18,23 @@ export function SeedTeamsButton() {
         toast.error(r.error);
       } else if (r && "ok" in r) {
         if (r.inserted === 0) {
-          toast.success(`48 支球队已是最新，无需重复插入`);
+          toast.success(t("seed_teams_up_to_date"));
         } else {
-          toast.success(`✅ 新增 ${r.inserted} 支球队${r.skipped > 0 ? `，跳过 ${r.skipped} 支已存在` : ""}`);
+          const skipped_msg = r.skipped > 0 ? (locale === "zh" ? `，跳过 ${r.skipped} 支已存在` : `, skipped ${r.skipped} existing`) : "";
+          toast.success(t("seed_teams_inserted", { inserted: r.inserted, skipped_msg }));
         }
       }
     });
   }
 
   function handleReset() {
-    if (!confirm("⚠️ 将删除所有球队并重新导入 48 支正确球队。\n请先确认已清除所有比赛！\n\n继续？")) return;
+    if (!confirm(t("seed_teams_reset_confirm"))) return;
     startTransition(async () => {
       const r = await resetAndSeedTeamsAction();
       if (r && "error" in r) {
         toast.error(r.error);
       } else if (r && "ok" in r) {
-        toast.success(`✅ 已重置并导入 ${r.inserted} 支世界杯 2026 球队`);
+        toast.success(t("seed_teams_reset_success", { inserted: r.inserted }));
       }
     });
   }
@@ -40,19 +45,19 @@ export function SeedTeamsButton() {
         type="button"
         disabled={pending}
         onClick={handleSeed}
-        title="仅新增缺少的球队，不影响已有球队"
+        title={t("seed_teams_import_hint")}
         className="h-9 px-4 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {pending ? "处理中…" : "🌍 导入世界杯球队"}
+        {pending ? t("seed_teams_importing") : t("seed_teams_import_btn")}
       </button>
       <button
         type="button"
         disabled={pending}
         onClick={handleReset}
-        title="删除所有旧球队，重新导入 48 支正确球队（需先清除比赛）"
+        title={t("seed_teams_reset_hint")}
         className="h-9 px-4 rounded-md border border-red-300 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60 whitespace-nowrap"
       >
-        {pending ? "处理中…" : "🔄 重置球队数据"}
+        {pending ? t("seed_teams_importing") : t("seed_teams_reset_btn")}
       </button>
     </div>
   );

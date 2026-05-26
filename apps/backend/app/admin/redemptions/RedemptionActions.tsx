@@ -2,14 +2,10 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { decideRedemptionAction } from "./actions";
 import type { RedemptionStatus } from "@k8event/shared/supabase/types";
-
-const DECIDED_LABEL: Record<"approved" | "fulfilled" | "rejected", string> = {
-  approved:  "已批准",
-  fulfilled: "已发放",
-  rejected:  "已拒绝",
-};
 
 export function RedemptionActions({
   id,
@@ -18,10 +14,11 @@ export function RedemptionActions({
   id: string;
   status: RedemptionStatus;
 }) {
+  const { locale } = useLang();
   const [pending, startTransition] = useTransition();
 
   if (status === "fulfilled" || status === "rejected") {
-    return <span className="text-xs text-zinc-500">已完结</span>;
+    return <span className="text-xs text-zinc-500">{tBo(locale, "redemption_completed")}</span>;
   }
 
   function decide(next: "approved" | "fulfilled" | "rejected", confirmMsg?: string) {
@@ -29,7 +26,14 @@ export function RedemptionActions({
     startTransition(async () => {
       const r = await decideRedemptionAction(id, next);
       if (r && "error" in r) toast.error(r.error);
-      else toast.success(DECIDED_LABEL[next]);
+      else {
+        const labelMap: Record<"approved" | "fulfilled" | "rejected", string> = {
+          approved:  tBo(locale, "redemption_status_approved"),
+          fulfilled: tBo(locale, "redemption_status_fulfilled"),
+          rejected:  tBo(locale, "redemption_status_rejected"),
+        };
+        toast.success(labelMap[next]);
+      }
     });
   }
 
@@ -42,7 +46,7 @@ export function RedemptionActions({
           onClick={() => decide("approved")}
           className="h-8 px-3 rounded-md border border-foreground/20 text-xs font-medium disabled:opacity-60"
         >
-          批准
+          {tBo(locale, "redemption_approve")}
         </button>
       )}
       {(status === "pending" || status === "approved") && (
@@ -52,7 +56,7 @@ export function RedemptionActions({
           onClick={() => decide("fulfilled")}
           className="h-8 px-3 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium disabled:opacity-60"
         >
-          标记已发放
+          {tBo(locale, "redemption_fulfil")}
         </button>
       )}
       {status === "pending" && (
@@ -60,11 +64,11 @@ export function RedemptionActions({
           type="button"
           disabled={pending}
           onClick={() =>
-            decide("rejected", "确认拒绝此申请并退还 Token？")
+            decide("rejected", tBo(locale, "redemption_reject_confirm"))
           }
           className="h-8 px-3 rounded-md border border-red-500/30 text-red-600 text-xs font-medium disabled:opacity-60"
         >
-          拒绝（退还Token）
+          {tBo(locale, "redemption_reject")}
         </button>
       )}
     </div>

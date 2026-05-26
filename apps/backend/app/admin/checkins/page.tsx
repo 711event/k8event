@@ -2,8 +2,10 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia, malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { getGroupId } from "@/lib/get-group";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 
-export const metadata = { title: "签到记录 · 管理后台" };
+export const metadata = { title: "Check-ins · Admin Panel" };
 
 type Mode = "today" | "this_month" | "last_month" | "range";
 
@@ -31,6 +33,8 @@ export default async function CheckinsPage(props: {
   }>;
 }) {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const sp = await props.searchParams;
 
   const mode: Mode =
@@ -134,9 +138,9 @@ export default async function CheckinsPage(props: {
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-semibold">签到记录</h1>
+        <h1 className="text-2xl font-semibold">{t("checkins_title")}</h1>
         <span className="text-sm text-zinc-500">
-          {rangeLabel} · 共 {count ?? 0} 条
+          {t("checkins_range_count", { range: rangeLabel, count: count ?? 0 })}
         </span>
       </div>
 
@@ -148,25 +152,25 @@ export default async function CheckinsPage(props: {
             href="?mode=today"
             className={`${tabBase} ${mode === "today" ? tabActive : tabIdle} inline-flex items-center`}
           >
-            今天
+            {t("checkins_filter_today")}
           </a>
           <a
             href="?mode=this_month"
             className={`${tabBase} ${mode === "this_month" ? tabActive : tabIdle} inline-flex items-center`}
           >
-            本月
+            {t("checkins_filter_month")}
           </a>
           <a
             href="?mode=last_month"
             className={`${tabBase} ${mode === "last_month" ? tabActive : tabIdle} inline-flex items-center`}
           >
-            上个月
+            {t("checkins_filter_last_month")}
           </a>
           <a
             href="?mode=range"
             className={`${tabBase} ${mode === "range" ? tabActive : tabIdle} inline-flex items-center`}
           >
-            自定义日期
+            {t("checkins_filter_custom")}
           </a>
         </div>
 
@@ -175,7 +179,7 @@ export default async function CheckinsPage(props: {
           {mode === "today" && (
             <>
               <input type="hidden" name="mode" value="today" />
-              <label className="text-sm text-zinc-600">日期</label>
+              <label className="text-sm text-zinc-600">{t("checkins_date_label")}</label>
               <input
                 type="date"
                 name="date"
@@ -188,14 +192,14 @@ export default async function CheckinsPage(props: {
           {mode === "range" && (
             <>
               <input type="hidden" name="mode" value="range" />
-              <label className="text-sm text-zinc-600">从</label>
+              <label className="text-sm text-zinc-600">{t("checkins_from_label")}</label>
               <input
                 type="date"
                 name="from"
                 defaultValue={rangeFrom}
                 className="h-9 px-3 rounded-md border border-zinc-300 bg-white text-sm"
               />
-              <label className="text-sm text-zinc-600">到</label>
+              <label className="text-sm text-zinc-600">{t("checkins_to_label")}</label>
               <input
                 type="date"
                 name="to"
@@ -206,12 +210,12 @@ export default async function CheckinsPage(props: {
           )}
 
           {/* Member search — always visible */}
-          <label className="text-sm text-zinc-600">搜索会员</label>
+          <label className="text-sm text-zinc-600">{t("checkins_search_label")}</label>
           <input
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="用户名 / 昵称"
+            placeholder={t("checkins_search_hint")}
             className="h-9 px-3 rounded-md border border-zinc-300 bg-white text-sm w-44"
           />
 
@@ -219,7 +223,7 @@ export default async function CheckinsPage(props: {
             type="submit"
             className="h-9 px-5 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition"
           >
-            查询
+            {t("checkins_search_btn")}
           </button>
 
           {(q || mode !== "today" || singleDate !== today) && (
@@ -227,7 +231,7 @@ export default async function CheckinsPage(props: {
               href="/admin/checkins"
               className="h-9 px-4 rounded-md border border-zinc-300 text-sm text-zinc-600 hover:bg-zinc-50 inline-flex items-center"
             >
-              重置
+              {t("checkins_reset_btn")}
             </a>
           )}
         </div>
@@ -238,18 +242,18 @@ export default async function CheckinsPage(props: {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">玩家</th>
-              <th className="px-4 py-3 font-medium">签到日期</th>
-              <th className="px-4 py-3 font-medium text-center">连续天数</th>
-              <th className="px-4 py-3 font-medium text-right">获得 Token</th>
-              <th className="px-4 py-3 font-medium">记录时间</th>
+              <th className="px-4 py-3 font-medium">{t("checkins_col_player")}</th>
+              <th className="px-4 py-3 font-medium">{t("checkins_col_date")}</th>
+              <th className="px-4 py-3 font-medium text-center">{t("checkins_col_streak")}</th>
+              <th className="px-4 py-3 font-medium text-right">{t("checkins_col_tokens")}</th>
+              <th className="px-4 py-3 font-medium">{t("checkins_col_time")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!records?.length ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-zinc-400 text-center">
-                  {q ? `未找到匹配「${q}」的签到记录。` : "该时段暂无签到记录。"}
+                  {q ? t("checkins_empty_q", { q }) : t("checkins_empty")}
                 </td>
               </tr>
             ) : (
@@ -268,7 +272,7 @@ export default async function CheckinsPage(props: {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-600">
-                        🔥 第 {r.streak_day} 天
+                        {t("checkins_streak_day", { day: r.streak_day })}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-green-600">
@@ -293,18 +297,18 @@ export default async function CheckinsPage(props: {
               href={`?mode=${mode}&date=${singleDate}&from=${rangeFrom}&to=${rangeTo}&q=${q}&page=${page - 1}`}
               className="h-8 px-3 rounded border border-zinc-300 flex items-center hover:bg-zinc-50"
             >
-              上一页
+              {t("checkins_prev")}
             </a>
           )}
           <span className="text-zinc-500">
-            第 {page} / {totalPages} 页
+            {t("checkins_page", { page, total: totalPages })}
           </span>
           {page < totalPages && (
             <a
               href={`?mode=${mode}&date=${singleDate}&from=${rangeFrom}&to=${rangeTo}&q=${q}&page=${page + 1}`}
               className="h-8 px-3 rounded border border-zinc-300 flex items-center hover:bg-zinc-50"
             >
-              下一页
+              {t("checkins_next")}
             </a>
           )}
         </div>

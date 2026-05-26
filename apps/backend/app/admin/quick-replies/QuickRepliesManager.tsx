@@ -11,6 +11,8 @@ import {
   updateQuickReplyAction,
   type QRState,
 } from "./actions";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
 type QR = {
   id: string;
@@ -24,31 +26,33 @@ type QR = {
 const isButton = (title: string) => title.trim().startsWith("++");
 
 export function QuickRepliesManager({ replies }: { replies: QR[] }) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [modalState, setModalState] = useState<{ mode: "create" } | { mode: "edit"; qr: QR } | null>(null);
 
   return (
     <>
       <div className="rounded-lg border border-zinc-200 bg-white">
         <div className="px-5 py-3 flex items-center justify-between border-b border-zinc-200">
-          <div className="text-sm text-zinc-500">共 {replies.length} 条</div>
+          <div className="text-sm text-zinc-500">{t("quick_replies_count", { count: replies.length })}</div>
           <button
             type="button"
             onClick={() => setModalState({ mode: "create" })}
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
           >
             <Plus size={15} />
-            新建
+            {t("quick_replies_create")}
           </button>
         </div>
 
         {replies.length === 0 ? (
           <div className="px-5 py-12 text-center text-sm text-zinc-500">
-            还没有快速回复 · 点右上角 <span className="text-blue-600">新建</span> 添加第一条
+            {t("quick_replies_empty")} · {t("quick_replies_empty3")}
           </div>
         ) : (
           <ul className="divide-y divide-zinc-200">
             {replies.map((qr) => (
-              <QRRow key={qr.id} qr={qr} onEdit={() => setModalState({ mode: "edit", qr })} />
+              <QRRow key={qr.id} qr={qr} locale={locale} onEdit={() => setModalState({ mode: "edit", qr })} />
             ))}
           </ul>
         )}
@@ -58,6 +62,7 @@ export function QuickRepliesManager({ replies }: { replies: QR[] }) {
         <QRModal
           mode={modalState.mode}
           qr={modalState.mode === "edit" ? modalState.qr : undefined}
+          locale={locale}
           onClose={() => setModalState(null)}
         />
       )}
@@ -65,9 +70,10 @@ export function QuickRepliesManager({ replies }: { replies: QR[] }) {
   );
 }
 
-function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
+function QRRow({ qr, locale, onEdit }: { qr: QR; locale: import("@/lib/i18n").BoLocale; onEdit: () => void }) {
   const [delPending, startDel] = useTransition();
   const [togglePending, startToggle] = useTransition();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const button = isButton(qr.title);
 
   return (
@@ -89,7 +95,7 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
           </span>
           {button && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">
-              快速按钮
+              {t("quick_replies_chip")}
             </span>
           )}
         </div>
@@ -100,7 +106,7 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={qr.image_url}
-            alt="附图"
+            alt={t("quick_replies_attach")}
             className="mt-1.5 h-12 w-12 rounded object-cover border border-zinc-200"
           />
         )}
@@ -109,8 +115,8 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
       <div className="flex items-center gap-0.5 flex-shrink-0">
         <button
           type="button"
-          aria-label={qr.is_active ? "停用" : "启用"}
-          title={qr.is_active ? "停用" : "启用"}
+          aria-label={qr.is_active ? t("quick_replies_disable") : t("quick_replies_enable")}
+          title={qr.is_active ? t("quick_replies_disable") : t("quick_replies_enable")}
           disabled={togglePending}
           onClick={() =>
             startToggle(async () => {
@@ -129,8 +135,8 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
         </button>
         <button
           type="button"
-          aria-label="编辑"
-          title="编辑"
+          aria-label={t("quick_replies_edit")}
+          title={t("quick_replies_edit")}
           onClick={onEdit}
           className="h-8 w-8 rounded inline-flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition"
         >
@@ -138,15 +144,15 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
         </button>
         <button
           type="button"
-          aria-label="删除"
-          title="删除"
+          aria-label={t("quick_replies_delete")}
+          title={t("quick_replies_delete")}
           disabled={delPending}
           onClick={() => {
-            if (!confirm(`确认删除 "${qr.title}" ?`)) return;
+            if (!confirm(t("quick_replies_delete_confirm", { title: qr.title }))) return;
             startDel(async () => {
               const r = await deleteQuickReplyAction(qr.id);
               if (r && "error" in r) toast.error(r.error);
-              else toast.success("已删除");
+              else toast.success(t("quick_replies_deleted"));
             });
           }}
           className="h-8 w-8 rounded inline-flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition disabled:opacity-50"
@@ -161,12 +167,15 @@ function QRRow({ qr, onEdit }: { qr: QR; onEdit: () => void }) {
 function QRModal({
   mode,
   qr,
+  locale,
   onClose,
 }: {
   mode: "create" | "edit";
   qr?: QR;
+  locale: import("@/lib/i18n").BoLocale;
   onClose: () => void;
 }) {
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const boundAction =
     mode === "edit" && qr
       ? (prev: QRState, fd: FormData) => updateQuickReplyAction(qr.id, prev, fd)
@@ -180,7 +189,7 @@ function QRModal({
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success(mode === "edit" ? "已保存" : "已添加");
+      toast.success(mode === "edit" ? t("quick_replies_saved") : t("quick_replies_added"));
       onClose();
     } else if (state && "error" in state) {
       toast.error(state.error);
@@ -199,7 +208,7 @@ function QRModal({
       const { data } = sb.storage.from("chat-images").getPublicUrl(path);
       setImageUrl(data.publicUrl);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "图片上传失败");
+      toast.error(e instanceof Error ? e.message : t("quick_replies_upload_failed"));
     } finally {
       setImageUploading(false);
     }
@@ -209,32 +218,32 @@ function QRModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <button
         type="button"
-        aria-label="关闭"
+        aria-label={t("quick_replies_cancel")}
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
       <div className="relative w-full max-w-md rounded-lg bg-white shadow-xl">
         <div className="px-5 py-4 border-b border-zinc-200">
           <h2 className="text-base font-semibold text-zinc-900">
-            {mode === "edit" ? "编辑快速回复" : "新建快速回复"}
+            {mode === "edit" ? t("quick_replies_edit_title") : t("quick_replies_new_title")}
           </h2>
         </div>
         <form action={formAction} className="px-5 py-4 space-y-4">
           <label className="block">
             <span className="text-sm font-medium text-zinc-700">
-              标题 <span className="text-xs text-zinc-400 ml-1">(以 ++ 开头将显示为按钮)</span>
+              {t("quick_replies_field_title")} <span className="text-xs text-zinc-400 ml-1">{t("quick_replies_field_title_hint")}</span>
             </span>
             <input
               name="title"
               required
               defaultValue={qr?.title ?? ""}
               maxLength={80}
-              placeholder="例如  WELCOME  或  ++welcome"
+              placeholder={t("quick_replies_field_title_placeholder")}
               className="mt-1.5 w-full h-10 px-3 rounded-md border border-zinc-300 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-zinc-700">内容</span>
+            <span className="text-sm font-medium text-zinc-700">{t("quick_replies_field_body")}</span>
             <textarea
               name="body"
               required
@@ -248,7 +257,7 @@ function QRModal({
           {/* Image attachment */}
           <div>
             <span className="text-sm font-medium text-zinc-700">
-              附图 <span className="text-xs font-normal text-zinc-400">（可选 · 发送时图片先于文字发出）</span>
+              {t("quick_replies_field_image")} <span className="text-xs font-normal text-zinc-400">{t("quick_replies_field_image_note")}</span>
             </span>
             <div className="mt-1.5 flex items-start gap-2">
               {imageUrl ? (
@@ -256,7 +265,7 @@ function QRModal({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
-                    alt="附图预览"
+                    alt={t("quick_replies_field_image")}
                     className="h-20 w-20 rounded-lg object-cover border border-zinc-200"
                   />
                   <button
@@ -275,11 +284,11 @@ function QRModal({
                   className="h-20 w-20 rounded-lg border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:border-blue-400 hover:text-blue-500 transition disabled:opacity-60"
                 >
                   {imageUploading ? (
-                    <span className="text-[10px]">上传中…</span>
+                    <span className="text-[10px]">{t("quick_replies_uploading")}</span>
                   ) : (
                     <>
                       <ImagePlus size={18} />
-                      <span className="text-[10px]">添加图片</span>
+                      <span className="text-[10px]">{t("quick_replies_add_image")}</span>
                     </>
                   )}
                 </button>
@@ -302,7 +311,7 @@ function QRModal({
 
           <div className="grid grid-cols-2 gap-3 items-end">
             <label className="block">
-              <span className="text-sm font-medium text-zinc-700">排序</span>
+              <span className="text-sm font-medium text-zinc-700">{t("quick_replies_field_sort")}</span>
               <input
                 name="sort_order"
                 type="number"
@@ -319,7 +328,7 @@ function QRModal({
                 className="sr-only"
               />
               {isActive ? <Eye size={15} /> : <EyeOff size={15} />}
-              {isActive ? "启用" : "停用"}
+              {isActive ? t("quick_replies_active") : t("quick_replies_inactive")}
             </label>
           </div>
 
@@ -330,14 +339,14 @@ function QRModal({
               disabled={pending}
               className="h-9 px-4 rounded-md border border-zinc-300 bg-white text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
             >
-              取消
+              {t("quick_replies_cancel")}
             </button>
             <button
               type="submit"
               disabled={pending || imageUploading}
               className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
             >
-              {pending ? "保存中…" : "保存"}
+              {pending ? t("quick_replies_saving") : t("quick_replies_save")}
             </button>
           </div>
         </form>

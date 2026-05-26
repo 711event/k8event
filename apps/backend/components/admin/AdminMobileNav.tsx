@@ -24,6 +24,8 @@ import {
 import type { AdminNavItem } from "./AdminSidebar";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 import { useChatUnread } from "./ChatUnreadProvider";
+import { useLang } from "./LangProvider";
+import { tBo } from "@/lib/i18n";
 
 const iconMap = {
   LayoutDashboard,
@@ -55,13 +57,15 @@ export function AdminMobileNav({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="打开菜单"
+        aria-label={t("mobile_nav_open")}
         className="md:hidden relative h-9 w-9 rounded border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50"
       >
         <Menu size={18} />
@@ -83,14 +87,14 @@ export function AdminMobileNav({
                     <div className="h-7 w-7 rounded bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 flex items-center justify-center font-bold text-[10px] tracking-tight flex-shrink-0">
                       711
                     </div>
-                    <span className="font-semibold text-sm">{branding.company_name} 后台</span>
+                    <span className="font-semibold text-sm">{t("mobile_nav_backend", { name: branding.company_name })}</span>
                   </>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="关闭"
+                aria-label={t("mobile_nav_close")}
                 className="h-8 w-8 rounded hover:bg-zinc-800 flex items-center justify-center"
               >
                 <X size={16} />

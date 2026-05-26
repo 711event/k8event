@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { updateActivityAction } from "../actions";
 
 interface Props {
@@ -12,6 +14,9 @@ interface Props {
 const DEFAULT_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
 export function CheckinRewardsForm({ activityId, settings }: Props) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
   const existingRewards = (settings.day_rewards as number[] | undefined) ?? DEFAULT_REWARDS;
   const [rewards, setRewards] = useState<number[]>(existingRewards);
   const [resetOnMiss, setResetOnMiss] = useState<boolean>((settings.reset_on_miss as boolean) ?? true);
@@ -35,18 +40,18 @@ export function CheckinRewardsForm({ activityId, settings }: Props) {
         },
       });
       if (r.error) { toast.error(r.error); return; }
-      toast.success("签到奖励已保存");
+      toast.success(t("checkin_rewards_saved"));
     });
   }
 
   return (
     <form onSubmit={handleSave} className="space-y-5">
       <div>
-        <div className="text-sm font-medium mb-2">每日签到 Token 奖励</div>
+        <div className="text-sm font-medium mb-2">{t("checkin_rewards_daily_label")}</div>
         <div className="grid grid-cols-7 gap-2">
           {rewards.slice(0, 7).map((val, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-zinc-500">第 {i + 1} 天</span>
+              <span className="text-xs text-zinc-500">{t("checkin_rewards_day", { day: i + 1 })}</span>
               <input
                 type="number"
                 min={0}
@@ -67,7 +72,7 @@ export function CheckinRewardsForm({ activityId, settings }: Props) {
             onChange={(e) => setResetOnMiss(e.target.checked)}
             className="h-4 w-4 rounded"
           />
-          断签重置（中断一天后从第 1 天重新开始）
+          {t("checkin_rewards_reset")}
         </label>
         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
@@ -76,7 +81,7 @@ export function CheckinRewardsForm({ activityId, settings }: Props) {
             onChange={(e) => setCycleAfterDay7(e.target.checked)}
             className="h-4 w-4 rounded"
           />
-          7天后循环（第 7 天后重新从第 1 天开始）
+          {t("checkin_rewards_cycle")}
         </label>
       </div>
 
@@ -85,7 +90,7 @@ export function CheckinRewardsForm({ activityId, settings }: Props) {
         disabled={pending}
         className="h-9 px-4 rounded-md bg-zinc-900 text-white text-sm font-medium disabled:opacity-60"
       >
-        {pending ? "保存中…" : "保存签到设置"}
+        {pending ? t("checkin_rewards_saving") : t("checkin_rewards_save")}
       </button>
     </form>
   );

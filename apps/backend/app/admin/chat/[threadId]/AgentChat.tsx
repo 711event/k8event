@@ -262,7 +262,7 @@ export function AgentChat({
     const clientId = uuid();
     setMessages((prev) => [
       ...prev,
-      { id: clientId, sender: "agent", kind: "text", body: `📎 ${file.name}（上传中…）`, imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
+      { id: clientId, sender: "agent", kind: "text", body: tBo(locale, "agent_chat_upload_pending", { name: file.name }), imageUrl: null, width: null, height: null, createdAt: new Date().toISOString(), pending: true },
     ]);
     try {
       const { createSupabaseBrowserClient } = await import("@k8event/shared/supabase/client");
@@ -282,7 +282,7 @@ export function AgentChat({
         prev.map((m) => (m.id === clientId ? { ...m, body, pending: false } : m)),
       );
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "文件上传失败");
+      toast.error(e instanceof Error ? e.message : t("agent_chat_upload_failed"));
       setMessages((prev) => prev.filter((m) => m.id !== clientId));
     }
   }
@@ -318,7 +318,7 @@ export function AgentChat({
           const file = new File([blob], `quick-reply.${ext}`, { type: blob.type });
           setPendingFiles((prev) => [...prev, file]);
         } catch {
-          toast.error("图片加载失败");
+          toast.error(t("agent_chat_image_failed"));
         }
       })();
     }

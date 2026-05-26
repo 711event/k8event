@@ -3,14 +3,18 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { StatusBadge } from "../StatusBadge";
 import { MatchControls } from "./MatchControls";
 import { EditMatchTeamsForm } from "./EditMatchTeamsForm";
 
-export const metadata = { title: "比赛详情 · 管理后台" };
+export const metadata = { title: "Match Detail · Admin Panel" };
 
 export default async function MatchDetailPage(props: { params: Promise<{ id: string }> }) {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const { id } = await props.params;
   const supabase = await createSupabaseServerClient();
 
@@ -40,22 +44,22 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
     <div className="space-y-8 max-w-4xl">
       <div>
         <Link href="/admin/matches" className="text-sm text-zinc-500 hover:underline">
-          ← 所有比赛
+          {t("match_detail_back")}
         </Link>
         <h1 className="text-2xl font-semibold mt-2">
           {home?.name ?? "?"} <span className="text-zinc-500 mx-2">vs</span> {away?.name ?? "?"}
         </h1>
         <div className="mt-2 flex items-center gap-3 text-sm text-zinc-500">
-          <span>开赛时间：{formatMalaysia(match.kickoff_at)} (GMT+8)</span>
+          <span>{t("match_detail_kickoff")}{formatMalaysia(match.kickoff_at)} (GMT+8)</span>
           <span>·</span>
-          <span>Token 奖励：{match.token_reward}</span>
+          <span>{t("match_detail_reward")}{match.token_reward}</span>
           <span>·</span>
           <StatusBadge status={match.status} result={match.result} />
         </div>
       </div>
 
       <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
-        <h2 className="text-lg font-medium">操作</h2>
+        <h2 className="text-lg font-medium">{t("match_detail_actions")}</h2>
         {match.status === "scheduled" && allTeams && allTeams.length >= 2 && (
           <EditMatchTeamsForm
             matchId={match.id}
@@ -67,27 +71,27 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
         <MatchControls
           id={match.id}
           status={match.status}
-          homeName={home?.name ?? "主队"}
-          awayName={away?.name ?? "客队"}
+          homeName={home?.name ?? t("match_detail_home_default")}
+          awayName={away?.name ?? t("match_detail_away_default")}
         />
       </section>
 
       <section className="rounded-lg border border-zinc-200 overflow-x-auto">
         <h2 className="px-5 py-3 text-lg font-medium border-b border-zinc-200">
-          竞猜记录（{predictions?.length ?? 0} 条）
+          {t("match_detail_predictions", { count: predictions?.length ?? 0 })}
         </h2>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">玩家</th>
-              <th className="px-4 py-3 font-medium">竞猜选择</th>
-              <th className="px-4 py-3 font-medium">结果</th>
-              <th className="px-4 py-3 font-medium">已发奖励</th>
+              <th className="px-4 py-3 font-medium">{t("match_detail_col_player")}</th>
+              <th className="px-4 py-3 font-medium">{t("match_detail_col_pick")}</th>
+              <th className="px-4 py-3 font-medium">{t("match_detail_col_result")}</th>
+              <th className="px-4 py-3 font-medium">{t("match_detail_col_rewarded")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!predictions?.length ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">暂无竞猜记录</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">{t("match_detail_no_predictions")}</td></tr>
             ) : (
               predictions.map((p, i) => {
                 const player = Array.isArray(p.player) ? p.player[0] : p.player;
@@ -96,7 +100,7 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
                     <td className="px-4 py-3">{player?.display_name ?? "?"} <span className="text-zinc-500">({player?.username})</span></td>
                     <td className="px-4 py-3 font-mono">{p.pick}</td>
                     <td className="px-4 py-3">
-                      {p.is_correct === null ? "—" : p.is_correct ? "✓ 正确" : "✗ 错误"}
+                      {p.is_correct === null ? "—" : p.is_correct ? t("match_detail_correct") : t("match_detail_wrong")}
                     </td>
                     <td className="px-4 py-3 tabular-nums">{p.awarded ?? 0}</td>
                   </tr>

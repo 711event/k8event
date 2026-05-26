@@ -4,29 +4,36 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { notFound } from "next/navigation";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { CreateRoleForm } from "./CreateRoleForm";
 
-export const metadata = { title: "角色权限 · 管理后台" };
+export const metadata = { title: "Roles & Permissions · Admin Panel" };
 
-const MODULE_LABELS: Record<string, string> = {
-  overview: "总览",
-  players: "玩家管理",
-  recharge: "充值导入",
-  activities: "活动管理",
-  rewards: "奖品",
-  redemptions: "兑换审核",
-  checkins: "签到记录",
-  chat: "客服会话",
-  quick_replies: "快速回复",
-  staff: "后台账号",
-  roles: "角色权限",
-};
-
-export const ALL_MODULES = Object.keys(MODULE_LABELS);
+export const ALL_MODULES = [
+  "overview", "players", "recharge", "activities", "rewards",
+  "redemptions", "checkins", "chat", "quick_replies", "staff", "roles",
+];
 
 export default async function RolesPage() {
   const user = await requireRole(["admin"]);
   if (!hasPermission(user, "roles")) notFound();
+
+  const locale = await getBoLocale();
+
+  const MODULE_LABELS: Record<string, string> = {
+    overview:      tBo(locale, "module_overview"),
+    players:       tBo(locale, "module_players"),
+    recharge:      tBo(locale, "module_recharge"),
+    activities:    tBo(locale, "module_activities"),
+    rewards:       tBo(locale, "module_rewards"),
+    redemptions:   tBo(locale, "module_redemptions"),
+    checkins:      tBo(locale, "module_checkins"),
+    chat:          tBo(locale, "module_chat"),
+    quick_replies: tBo(locale, "module_quick_replies"),
+    staff:         tBo(locale, "module_staff"),
+    roles:         tBo(locale, "module_roles"),
+  };
 
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,8 +46,8 @@ export default async function RolesPage() {
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">角色权限</h1>
-          <p className="text-sm text-zinc-500 mt-1">定义角色及其可访问的功能模块，再分配给后台账号。</p>
+          <h1 className="text-2xl font-semibold">{tBo(locale, "roles_title")}</h1>
+          <p className="text-sm text-zinc-500 mt-1">{tBo(locale, "roles_subtitle")}</p>
         </div>
       </div>
 
@@ -49,16 +56,16 @@ export default async function RolesPage() {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">角色名称</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "roles_col_name")}</th>
               <th className="px-4 py-3 font-medium">Slug</th>
-              <th className="px-4 py-3 font-medium">可访问模块</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "roles_col_modules")}</th>
               <th className="px-4 py-3 font-medium w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!roles?.length ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-zinc-500">暂无角色</td>
+                <td colSpan={4} className="px-4 py-6 text-zinc-500">{tBo(locale, "roles_empty")}</td>
               </tr>
             ) : (
               roles.map((role: {
@@ -77,7 +84,7 @@ export default async function RolesPage() {
                         <span className="font-medium">{role.name}</span>
                         {role.is_system && (
                           <span className="text-[10px] uppercase tracking-wide bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">
-                            系统
+                            {tBo(locale, "roles_system")}
                           </span>
                         )}
                       </div>
@@ -87,10 +94,10 @@ export default async function RolesPage() {
                       <div className="flex flex-wrap gap-1">
                         {enabledModules.length === ALL_MODULES.length ? (
                           <span className="text-xs bg-emerald-100 text-emerald-700 rounded px-2 py-0.5">
-                            全部模块
+                            {tBo(locale, "roles_all_modules")}
                           </span>
                         ) : enabledModules.length === 0 ? (
-                          <span className="text-xs text-zinc-400">无</span>
+                          <span className="text-xs text-zinc-400">{tBo(locale, "roles_none")}</span>
                         ) : (
                           enabledModules.map(m => (
                             <span key={m} className="text-xs bg-zinc-100 text-zinc-600 rounded px-1.5 py-0.5">
@@ -105,7 +112,7 @@ export default async function RolesPage() {
                         href={`/admin/roles/${role.id}`}
                         className="text-xs px-2.5 py-1.5 rounded border border-zinc-300 hover:border-zinc-400 text-zinc-600 hover:text-zinc-800 transition"
                       >
-                        编辑
+                        {tBo(locale, "roles_edit")}
                       </Link>
                     </td>
                   </tr>
@@ -120,7 +127,7 @@ export default async function RolesPage() {
       <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Plus size={16} className="text-zinc-500" />
-          <h2 className="text-lg font-medium">创建新角色</h2>
+          <h2 className="text-lg font-medium">{tBo(locale, "roles_create_title")}</h2>
         </div>
         <CreateRoleForm modules={MODULE_LABELS} />
       </section>

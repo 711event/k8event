@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useViewedThreadIds } from "./ChatPresenceContext";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import type { ChatThreadStatus } from "@k8event/shared/supabase/types";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
 type ChatKind = "text" | "image";
 type ChatSender = "guest" | "agent" | "system";
@@ -20,25 +22,24 @@ export interface ThreadRow {
   created_at: string;
 }
 
-const STATUS_LABEL: Record<ChatThreadStatus, string> = {
-  open: "未处理",
-  claimed: "未处理",
-  pending: "跟进中",
-  closed: "已关闭",
-};
-
 function MessagePreview({
   kind,
   body,
   sender,
+  noMsg,
+  agentPrefix,
+  imageLabel,
 }: {
   kind: ChatKind | null;
   body: string | null;
   sender: ChatSender | null;
+  noMsg: string;
+  agentPrefix: string;
+  imageLabel: string;
 }) {
-  if (!kind) return <span className="italic text-zinc-400">暂无消息</span>;
-  const prefix = sender === "agent" ? "客服: " : "";
-  if (kind === "image") return <span>{prefix}📷 图片</span>;
+  if (!kind) return <span className="italic text-zinc-400">{noMsg}</span>;
+  const prefix = sender === "agent" ? agentPrefix : "";
+  if (kind === "image") return <span>{prefix}{imageLabel}</span>;
   const text = body ?? "";
   const truncated = text.length > 60 ? text.slice(0, 60) + "…" : text;
   return <span>{prefix}{truncated}</span>;
@@ -84,6 +85,14 @@ export function ThreadListClient({
   warnAfterMinutes?: number;
   criticalAfterMinutes?: number;
 }) {
+  const { locale } = useLang();
+  const tr = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
+  const STATUS_LABEL: Record<ChatThreadStatus, string> = {
+    open: tr("status_open"),
+    claimed: tr("status_claimed"),
+    pending: tr("status_pending"),
+    closed: tr("status_closed"),
+  };
   const viewedIds = useViewedThreadIds();
   // Force a re-render every 30 s so the time-based colours update
   // without waiting for the next server refresh (router.refresh every 8 s
@@ -97,35 +106,38 @@ export function ThreadListClient({
 
   if (!threads.length) {
     return (
-      <li className="px-4 py-8 text-center text-zinc-500 text-sm">暂无会话</li>
+      <li className="px-4 py-8 text-center text-zinc-500 text-sm">{tr("thread_list_empty")}</li>
     );
   }
 
   return (
     <>
-      {threads.map((t) => {
-        const rowBg = getRowBg(t, viewedIds, warnAfterMinutes, criticalAfterMinutes);
+      {threads.map((item) => {
+        const rowBg = getRowBg(item, viewedIds, warnAfterMinutes, criticalAfterMinutes);
         return (
-          <li key={t.id} className={rowBg ? `${rowBg} transition-colors` : "transition-colors"}>
+          <li key={item.id} className={rowBg ? `${rowBg} transition-colors` : "transition-colors"}>
             <Link
-              href={`/admin/chat/${t.id}`}
+              href={`/admin/chat/${item.id}`}
               className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-black/[0.04]"
             >
               {/* Left: name + preview */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium truncate">
-                    {t.guest_name ?? "访客"}
+                    {item.guest_name ?? tr("thread_list_guest")}
                   </span>
                   <span className="text-xs text-zinc-400 font-mono shrink-0">
-                    {t.id.slice(0, 8)}
+                    {item.id.slice(0, 8)}
                   </span>
                 </div>
                 <div className="text-sm text-zinc-500 truncate mt-0.5">
                   <MessagePreview
-                    kind={t.last_message_kind}
-                    body={t.last_message_body}
-                    sender={t.last_message_sender}
+                    kind={item.last_message_kind}
+                    body={item.last_message_body}
+                    sender={item.last_message_sender}
+                    noMsg={tr("thread_list_no_msg")}
+                    agentPrefix={tr("thread_list_agent_prefix")}
+                    imageLabel={tr("thread_list_image")}
                   />
                 </div>
               </div>
@@ -135,19 +147,19 @@ export function ThreadListClient({
                 <span
                   className={
                     "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " +
-                    (t.status === "closed"
+                    (item.status === "closed"
                       ? "bg-zinc-500/15 text-zinc-600"
-                      : t.status === "pending"
+                      : item.status === "pending"
                       ? "bg-blue-500/15 text-blue-700"
                       : "bg-amber-500/15 text-amber-700")
                   }
                 >
-                  {STATUS_LABEL[t.status]}
+                  {STATUS_LABEL[item.status]}
                 </span>
                 <span className="text-xs text-zinc-400 whitespace-nowrap">
-                  {t.last_message_at
-                    ? formatMalaysia(t.last_message_at)
-                    : formatMalaysia(t.created_at)}
+                  {item.last_message_at
+                    ? formatMalaysia(item.last_message_at)
+                    : formatMalaysia(item.created_at)}
                 </span>
               </div>
             </Link>

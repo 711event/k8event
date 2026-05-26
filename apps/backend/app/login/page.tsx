@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { LoginForm } from "./LoginForm";
 import { getGroupBranding } from "@/lib/get-branding";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 
-export const metadata = { title: "员工登录 · 711event 管理后台", robots: { index: false, follow: false } };
+export const metadata = { title: "Staff Login · 711event Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLoginPage() {
@@ -14,6 +16,8 @@ export default async function AdminLoginPage() {
     // role=player accidentally hitting backend login while still authed — clear them.
   }
   const branding = await getGroupBranding();
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
   return (
     <div
       data-theme="player"
@@ -40,14 +44,14 @@ export default async function AdminLoginPage() {
             <img src={branding.logo_url} alt={branding.company_name} className="h-14 w-auto object-contain max-w-[200px] mx-auto mb-3" />
           )}
           <h1 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-bold tracking-tight">
-            {branding.company_name} 管理后台
+            {branding.company_name} {t("login_admin_panel")}
           </h1>
-          <p className="text-sm text-[var(--text-mid)] mt-1.5">员工登录</p>
+          <p className="text-sm text-[var(--text-mid)] mt-1.5">{t("login_staff_login")}</p>
         </div>
         <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
-          <LoginForm />
+          <LoginForm locale={locale} />
         </div>
-        <p className="text-center text-[11px] text-[var(--text-lo)]">仅限授权员工 · 此页未对外公开</p>
+        <p className="text-center text-[11px] text-[var(--text-lo)]">{t("login_notice")}</p>
       </div>
     </div>
   );

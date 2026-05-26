@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { updateRoleAction, deleteRoleAction } from "../actions";
 
 const ALL_MODULES_ORDERED = [
@@ -19,6 +21,7 @@ interface Props {
 }
 
 export function RoleEditForm({ id, initialName, initialPermissions, isSystem, modules }: Props) {
+  const { locale } = useLang();
   const [name, setName] = useState(initialName);
   const [permissions, setPermissions] = useState<Record<string, boolean>>(
     Object.fromEntries(ALL_MODULES_ORDERED.map(m => [m, initialPermissions[m] ?? false]))
@@ -40,16 +43,16 @@ export function RoleEditForm({ id, initialName, initialPermissions, isSystem, mo
     startTransition(async () => {
       const r = await updateRoleAction(id, name, permissions);
       if ("error" in r) { toast.error(r.error); return; }
-      toast.success("角色已保存");
+      toast.success(tBo(locale, "role_edit_saved"));
     });
   }
 
   function handleDelete() {
-    if (!confirm(`确认删除角色「${name}」？此操作不可撤销。`)) return;
+    if (!confirm(tBo(locale, "role_edit_delete_confirm", { name }))) return;
     startDeleting(async () => {
       const r = await deleteRoleAction(id);
       if ("error" in r) { toast.error(r.error); return; }
-      toast.success("角色已删除");
+      toast.success(tBo(locale, "role_edit_deleted"));
       router.push("/admin/roles");
     });
   }
@@ -58,7 +61,7 @@ export function RoleEditForm({ id, initialName, initialPermissions, isSystem, mo
     <form onSubmit={handleSave} className="space-y-6">
       {/* Role name */}
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">角色名称 <span className="text-red-500">*</span></span>
+        <span className="font-medium">{tBo(locale, "role_edit_name")} <span className="text-red-500">*</span></span>
         <input
           type="text"
           value={name}
@@ -71,10 +74,10 @@ export function RoleEditForm({ id, initialName, initialPermissions, isSystem, mo
       {/* Permission matrix */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">可访问模块</span>
+          <span className="text-sm font-medium">{tBo(locale, "role_edit_modules")}</span>
           <div className="flex gap-2 text-xs">
-            <button type="button" onClick={() => toggleAll(true)} className="text-zinc-500 hover:text-zinc-800 underline">全选</button>
-            <button type="button" onClick={() => toggleAll(false)} className="text-zinc-500 hover:text-zinc-800 underline">清空</button>
+            <button type="button" onClick={() => toggleAll(true)} className="text-zinc-500 hover:text-zinc-800 underline">{tBo(locale, "role_edit_select_all")}</button>
+            <button type="button" onClick={() => toggleAll(false)} className="text-zinc-500 hover:text-zinc-800 underline">{tBo(locale, "role_edit_clear")}</button>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -107,7 +110,7 @@ export function RoleEditForm({ id, initialName, initialPermissions, isSystem, mo
           disabled={pending}
           className="h-10 px-6 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium disabled:opacity-60"
         >
-          {pending ? "保存中…" : "保存设置"}
+          {pending ? tBo(locale, "role_edit_saving") : tBo(locale, "role_edit_save")}
         </button>
 
         {!isSystem && (
@@ -117,11 +120,11 @@ export function RoleEditForm({ id, initialName, initialPermissions, isSystem, mo
             disabled={deleting}
             className="h-10 px-4 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium disabled:opacity-60 transition"
           >
-            {deleting ? "删除中…" : "删除此角色"}
+            {deleting ? tBo(locale, "role_edit_deleting") : tBo(locale, "role_edit_delete")}
           </button>
         )}
         {isSystem && (
-          <p className="text-xs text-zinc-400">系统内置角色不可删除</p>
+          <p className="text-xs text-zinc-400">{tBo(locale, "role_edit_system_note")}</p>
         )}
       </div>
     </form>

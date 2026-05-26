@@ -2,14 +2,18 @@ import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { CreateMatchForm } from "./CreateMatchForm";
 import { StatusBadge } from "./StatusBadge";
 import { SeedMatchesButton } from "./SeedMatchesButton";
 
-export const metadata = { title: "比赛 · 管理后台" };
+export const metadata = { title: "Matches · Admin Panel" };
 
 export default async function MatchesPage() {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const supabase = await createSupabaseServerClient();
 
   const [{ data: matches }, { data: teams }] = await Promise.all([
@@ -26,31 +30,32 @@ export default async function MatchesPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">比赛管理</h1>
-        <span className="text-sm text-zinc-500">共 {matches?.length ?? 0} 场比赛</span>
+        <h1 className="text-2xl font-semibold">{t("matches_title")}</h1>
+        <span className="text-sm text-zinc-500">{t("matches_count", { count: matches?.length ?? 0 })}</span>
       </div>
 
       <section className="rounded-lg border border-zinc-200 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-medium">生成赛程</h2>
+          <h2 className="text-lg font-medium">{t("matches_generate")}</h2>
           <SeedMatchesButton />
         </div>
         <div className="border-t border-zinc-200 pt-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium">创建比赛</h2>
+          <h2 className="text-lg font-medium">{t("matches_create")}</h2>
           <a
             href="https://worldcupkickofftimes.com/schedule/sgt"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-blue-600 hover:underline whitespace-nowrap"
           >
-            🌐 世界杯完整赛程表 →
+            {t("matches_world_cup_schedule")}
           </a>
         </div>
         {(!teams || teams.length < 2) ? (
           <p className="text-sm text-zinc-500">
-            请先在{" "}
-            <Link href="/admin/teams" className="underline">球队管理</Link> 页面添加至少 2 支队伍。
+            {t("matches_no_teams")}{" "}
+            <Link href="/admin/teams" className="underline">{t("matches_no_teams_link")}</Link>{" "}
+            {t("matches_no_teams_suffix")}
           </p>
         ) : (
           <CreateMatchForm teams={teams} />
@@ -62,17 +67,17 @@ export default async function MatchesPage() {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">开赛时间 (GMT+8)</th>
-              <th className="px-4 py-3 font-medium">赛阶</th>
-              <th className="px-4 py-3 font-medium">比赛</th>
-              <th className="px-4 py-3 font-medium">奖励</th>
-              <th className="px-4 py-3 font-medium">状态</th>
+              <th className="px-4 py-3 font-medium">{t("matches_col_kickoff")}</th>
+              <th className="px-4 py-3 font-medium">{t("matches_col_stage")}</th>
+              <th className="px-4 py-3 font-medium">{t("matches_col_match")}</th>
+              <th className="px-4 py-3 font-medium">{t("matches_col_reward")}</th>
+              <th className="px-4 py-3 font-medium">{t("matches_col_status")}</th>
               <th className="px-4 py-3 font-medium w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!matches?.length ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">暂无比赛记录</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">{t("matches_empty")}</td></tr>
             ) : (
               matches.map((m) => {
                 const home = Array.isArray(m.home) ? m.home[0] : m.home;
@@ -106,7 +111,7 @@ export default async function MatchesPage() {
                     <td className="px-4 py-3"><StatusBadge status={m.status} result={m.result} /></td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/admin/matches/${m.id}`} className="text-sm underline">
-                        查看
+                        {t("matches_view")}
                       </Link>
                     </td>
                   </tr>

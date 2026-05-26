@@ -1,12 +1,15 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getGroupId } from "@/lib/get-group";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { RewardsManager } from "./RewardsManager";
 
-export const metadata = { title: "奖品管理 · 管理后台" };
+export const metadata = { title: "Rewards · Admin Panel" };
 
 export default async function RewardsPage() {
   await requireRole("admin");
+  const locale = await getBoLocale();
   const supabase = await createSupabaseServerClient();
   const { data: items } = await supabase
     .from("reward_items")
@@ -17,8 +20,8 @@ export default async function RewardsPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">奖品管理</h1>
-        <span className="text-sm text-zinc-500">共 {items?.length ?? 0} 件奖品</span>
+        <h1 className="text-2xl font-semibold">{tBo(locale, "rewards_title")}</h1>
+        <span className="text-sm text-zinc-500">{tBo(locale, "rewards_count", { count: items?.length ?? 0 })}</span>
       </div>
       <RewardsManager items={items ?? []} />
     </div>

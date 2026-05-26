@@ -3,25 +3,12 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { getGroupPlayerIds } from "@/lib/get-group";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { RedemptionActions } from "./RedemptionActions";
 import type { RedemptionStatus } from "@k8event/shared/supabase/types";
 
-export const metadata = { title: "兑换审核 · 管理后台" };
-
-const tabs: { key: RedemptionStatus | "all"; label: string }[] = [
-  { key: "pending",   label: "待处理" },
-  { key: "approved",  label: "已批准" },
-  { key: "fulfilled", label: "已发放" },
-  { key: "rejected",  label: "已拒绝" },
-  { key: "all",       label: "全部"   },
-];
-
-const STATUS_LABEL: Record<RedemptionStatus, string> = {
-  pending:   "待处理",
-  approved:  "已批准",
-  fulfilled: "已发放",
-  rejected:  "已拒绝",
-};
+export const metadata = { title: "Redemptions · Admin Panel" };
 
 const STATUS_COLOR: Record<RedemptionStatus, string> = {
   pending:   "bg-amber-500/15 text-amber-600",
@@ -34,6 +21,23 @@ export default async function RedemptionsPage(props: {
   searchParams: Promise<{ status?: string }>;
 }) {
   await requireRole("admin");
+  const locale = await getBoLocale();
+
+  const tabs: { key: RedemptionStatus | "all"; label: string }[] = [
+    { key: "pending",   label: tBo(locale, "redemption_status_pending") },
+    { key: "approved",  label: tBo(locale, "redemption_status_approved") },
+    { key: "fulfilled", label: tBo(locale, "redemption_status_fulfilled") },
+    { key: "rejected",  label: tBo(locale, "redemption_status_rejected") },
+    { key: "all",       label: tBo(locale, "redemption_status_all") },
+  ];
+
+  const STATUS_LABEL: Record<RedemptionStatus, string> = {
+    pending:   tBo(locale, "redemption_status_pending"),
+    approved:  tBo(locale, "redemption_status_approved"),
+    fulfilled: tBo(locale, "redemption_status_fulfilled"),
+    rejected:  tBo(locale, "redemption_status_rejected"),
+  };
+
   const sp = await props.searchParams;
   const active = (tabs.find((t) => t.key === sp.status)?.key ?? "pending") as RedemptionStatus | "all";
 
@@ -55,7 +59,7 @@ export default async function RedemptionsPage(props: {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold">兑换审核</h1>
+      <h1 className="text-2xl font-semibold">{tBo(locale, "redemptions_title")}</h1>
 
       <div className="flex gap-2 border-b border-zinc-200">
         {tabs.map((t) => (
@@ -78,17 +82,17 @@ export default async function RedemptionsPage(props: {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">申请时间 (GMT+8)</th>
-              <th className="px-4 py-3 font-medium">玩家</th>
-              <th className="px-4 py-3 font-medium">奖品</th>
-              <th className="px-4 py-3 font-medium text-right">费用</th>
-              <th className="px-4 py-3 font-medium">状态</th>
-              <th className="px-4 py-3 font-medium w-72">操作</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "redemptions_col_time")}</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "redemptions_col_player")}</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "redemptions_col_reward")}</th>
+              <th className="px-4 py-3 font-medium text-right">{tBo(locale, "redemptions_col_cost")}</th>
+              <th className="px-4 py-3 font-medium">{tBo(locale, "redemptions_col_status")}</th>
+              <th className="px-4 py-3 font-medium w-72">{tBo(locale, "redemptions_col_actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {!rows?.length ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">暂无兑换记录</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-zinc-500">{tBo(locale, "redemptions_empty")}</td></tr>
             ) : (
               rows.map((r) => {
                 const item = Array.isArray(r.item) ? r.item[0] : r.item;

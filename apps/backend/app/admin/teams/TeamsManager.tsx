@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 import { createTeamAction, deleteTeamAction, type TeamFormState } from "./actions";
 
 type Team = {
@@ -12,6 +14,8 @@ type Team = {
 };
 
 export function TeamsManager({ teams }: { teams: Team[] }) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [state, formAction, pending] = useActionState<TeamFormState, FormData>(
     createTeamAction,
     undefined,
@@ -20,27 +24,28 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success("队伍已创建");
+      toast.success(t("teams_created"));
       formRef.current?.reset();
     } else if (state && "error" in state) {
       toast.error(state.error);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   return (
     <>
       <section className="rounded-lg border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium mb-3">添加队伍</h2>
+        <h2 className="text-lg font-medium mb-3">{t("teams_add")}</h2>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-          <Field name="name" label="名称" placeholder="例如：阿根廷" />
-          <Field name="shortCode" label="简称" placeholder="ARG" required={false} />
-          <Field name="logoUrl" label="队徽 URL" placeholder="https://..." required={false} />
+          <Field name="name" label={t("teams_field_name")} placeholder={t("teams_field_name_hint")} />
+          <Field name="shortCode" label={t("teams_field_short")} placeholder="ARG" required={false} />
+          <Field name="logoUrl" label={t("teams_field_logo")} placeholder="https://..." required={false} />
           <button
             type="submit"
             disabled={pending}
             className="h-10 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 font-medium disabled:opacity-60"
           >
-            {pending ? "保存中…" : "添加"}
+            {pending ? t("teams_saving") : t("teams_add_btn")}
           </button>
         </form>
       </section>
@@ -49,17 +54,17 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">名称</th>
-              <th className="px-4 py-3 font-medium">简称</th>
-              <th className="px-4 py-3 font-medium">队徽</th>
+              <th className="px-4 py-3 font-medium">{t("teams_col_name")}</th>
+              <th className="px-4 py-3 font-medium">{t("teams_col_short")}</th>
+              <th className="px-4 py-3 font-medium">{t("teams_col_logo")}</th>
               <th className="px-4 py-3 font-medium w-24"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {teams.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">暂无队伍</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">{t("teams_empty")}</td></tr>
             ) : (
-              teams.map((t) => <TeamRow key={t.id} team={t} />)
+              teams.map((team) => <TeamRow key={team.id} team={team} locale={locale} />)
             )}
           </tbody>
         </table>
@@ -68,7 +73,8 @@ export function TeamsManager({ teams }: { teams: Team[] }) {
   );
 }
 
-function TeamRow({ team }: { team: Team }) {
+function TeamRow({ team, locale }: { team: Team; locale: Parameters<typeof tBo>[0] }) {
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [pending, startTransition] = useTransition();
   return (
     <tr>
@@ -87,16 +93,16 @@ function TeamRow({ team }: { team: Team }) {
           type="button"
           disabled={pending}
           onClick={() => {
-            if (!confirm(`确认删除"${team.name}"？`)) return;
+            if (!confirm(t("teams_delete_confirm", { name: team.name }))) return;
             startTransition(async () => {
               const r = await deleteTeamAction(team.id);
               if (r && "error" in r) toast.error(r.error);
-              else toast.success("已删除");
+              else toast.success(t("teams_deleted"));
             });
           }}
           className="text-sm text-red-600 hover:underline disabled:opacity-50"
         >
-          删除
+          {t("teams_delete_btn")}
         </button>
       </td>
     </tr>

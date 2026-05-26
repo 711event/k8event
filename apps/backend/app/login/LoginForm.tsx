@@ -2,15 +2,17 @@
 
 import { useActionState } from "react";
 import { signInAction } from "./actions";
+import { tBo, type BoLocale } from "@/lib/i18n";
 
-export function LoginForm() {
+export function LoginForm({ locale = "zh" }: { locale?: BoLocale }) {
   const [state, formAction, pending] = useActionState(signInAction, undefined);
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
 
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="username" className="text-xs uppercase tracking-wider text-[var(--text-lo)]">
-          员工账号
+          {t("login_username_label")}
         </label>
         <input
           id="username"
@@ -24,7 +26,7 @@ export function LoginForm() {
       </div>
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-xs uppercase tracking-wider text-[var(--text-lo)]">
-          密码
+          {t("login_password_label")}
         </label>
         <input
           id="password"
@@ -45,7 +47,7 @@ export function LoginForm() {
         disabled={pending}
         className="w-full h-11 rounded-full bg-gradient-to-b from-[var(--gold-300)] to-[var(--gold-500)] text-[var(--text-on-gold)] font-semibold disabled:opacity-60 hover:brightness-110 active:scale-[0.99] transition"
       >
-        {pending ? "登录中…" : "进入后台"}
+        {pending ? t("login_submitting") : t("login_submit")}
       </button>
     </form>
   );

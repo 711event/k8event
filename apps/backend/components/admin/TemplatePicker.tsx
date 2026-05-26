@@ -2,6 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FileText, ChevronDown, Search, X } from "lucide-react";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
 type Template = { id: string; title: string; body: string; image_url?: string | null };
 
@@ -12,6 +14,9 @@ export function TemplatePicker({
   templates: Template[];
   onPick: (body: string, imageUrl?: string | null) => void;
 }) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
   const btnRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -55,8 +60,8 @@ export function TemplatePicker({
   // Focus search on open; reset query on close.
   useEffect(() => {
     if (open) {
-      const t = setTimeout(() => searchRef.current?.focus(), 30);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => searchRef.current?.focus(), 30);
+      return () => clearTimeout(timer);
     } else {
       setQuery("");
     }
@@ -76,7 +81,7 @@ export function TemplatePicker({
     const q = query.trim().toLowerCase();
     if (!q) return templates;
     return templates.filter(
-      (t) => t.title.toLowerCase().includes(q) || t.body.toLowerCase().includes(q),
+      (tmpl) => tmpl.title.toLowerCase().includes(q) || tmpl.body.toLowerCase().includes(q),
     );
   }, [templates, query]);
 
@@ -89,10 +94,10 @@ export function TemplatePicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white border border-zinc-300 text-zinc-700 text-xs font-medium hover:bg-zinc-50 hover:border-zinc-400 transition whitespace-nowrap flex-shrink-0"
-        title="选择回复模板插入到输入框"
+        title={t("template_picker_hint")}
       >
         <FileText size={12} />
-        模板 · {templates.length}
+        {t("template_picker_title", { count: templates.length })}
         <ChevronDown size={11} />
       </button>
 
@@ -101,7 +106,7 @@ export function TemplatePicker({
           {/* click-outside backdrop */}
           <button
             type="button"
-            aria-label="关闭"
+            aria-label={t("template_picker_close")}
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-[60] cursor-default"
           />
@@ -127,7 +132,7 @@ export function TemplatePicker({
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="搜索标题或内容…"
+                  placeholder={t("template_picker_search")}
                   className="w-full h-8 pl-7 pr-7 rounded-md border border-zinc-200 bg-zinc-50 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 focus:bg-white"
                 />
                 {query && (
@@ -137,7 +142,7 @@ export function TemplatePicker({
                       setQuery("");
                       searchRef.current?.focus();
                     }}
-                    aria-label="清空"
+                    aria-label={t("template_picker_clear")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
                   >
                     <X size={12} />
@@ -145,41 +150,43 @@ export function TemplatePicker({
                 )}
               </div>
               <div className="px-1 pt-1.5 text-[10px] text-zinc-500 tabular-nums">
-                {query ? `匹配 ${filtered.length} / ${templates.length}` : `共 ${templates.length} 条 · 点击插入到输入框`}
+                {query
+                  ? t("template_picker_match", { matched: filtered.length, total: templates.length })
+                  : t("template_picker_count", { count: templates.length })}
               </div>
             </div>
 
             {/* List */}
             <div className="overflow-y-auto flex-1 min-h-0">
               {filtered.length === 0 ? (
-                <div className="px-3 py-6 text-center text-xs text-zinc-400">没有匹配的模板</div>
+                <div className="px-3 py-6 text-center text-xs text-zinc-400">{t("template_picker_empty")}</div>
               ) : (
                 <ul className="divide-y divide-zinc-100">
-                  {filtered.map((t) => (
-                    <li key={t.id}>
+                  {filtered.map((tmpl) => (
+                    <li key={tmpl.id}>
                       <button
                         type="button"
                         onClick={() => {
-                          onPick(t.body, t.image_url);
+                          onPick(tmpl.body, tmpl.image_url);
                           setOpen(false);
                         }}
                         className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 transition"
                       >
                         <div className="flex items-start gap-2">
-                          {t.image_url && (
+                          {tmpl.image_url && (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              src={t.image_url}
+                              src={tmpl.image_url}
                               alt=""
                               className="h-10 w-10 rounded object-cover border border-zinc-200 flex-shrink-0 mt-0.5"
                             />
                           )}
                           <div className="min-w-0">
                             <div className="text-xs font-semibold text-zinc-900 truncate">
-                              <Highlight text={t.title} query={query} />
+                              <Highlight text={tmpl.title} query={query} />
                             </div>
                             <div className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2 whitespace-pre-wrap break-words">
-                              <Highlight text={t.body} query={query} />
+                              <Highlight text={tmpl.body} query={query} />
                             </div>
                           </div>
                         </div>

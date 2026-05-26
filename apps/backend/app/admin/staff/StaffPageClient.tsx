@@ -12,21 +12,22 @@ import {
   changeStaffPasswordAction,
   deleteStaffAction,
 } from "./actions";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
-const MODULE_LABELS: Record<string, string> = {
-  overview: "总览",
-  players: "玩家管理",
-  recharge: "充值导入",
-  activities: "活动管理",
-  rewards: "奖品",
-  redemptions: "兑换审核",
-  checkins: "签到记录",
-  chat: "客服会话",
-  quick_replies: "快速回复",
-  staff: "后台账号",
-  roles: "角色权限",
-};
-const ALL_MODULES = Object.keys(MODULE_LABELS);
+const ALL_MODULES = [
+  "overview",
+  "players",
+  "recharge",
+  "activities",
+  "rewards",
+  "redemptions",
+  "checkins",
+  "chat",
+  "quick_replies",
+  "staff",
+  "roles",
+];
 
 type StaffRow = {
   user_id: string;
@@ -61,6 +62,8 @@ export function StaffPageClient({
   defaultTab: "accounts" | "roles";
 }) {
   const router = useRouter();
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const [activeTab, setActiveTab] = useState<"accounts" | "roles">(defaultTab);
 
   function switchTab(tab: "accounts" | "roles") {
@@ -73,8 +76,8 @@ export function StaffPageClient({
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-semibold">账号管理</h1>
-        <p className="text-sm text-zinc-500 mt-1">管理后台账号及角色权限</p>
+        <h1 className="text-2xl font-semibold">{t("staff_title")}</h1>
+        <p className="text-sm text-zinc-500 mt-1">{t("staff_subtitle")}</p>
       </div>
 
       {showTabs && (
@@ -87,7 +90,7 @@ export function StaffPageClient({
                 : "border-transparent text-zinc-500 hover:text-zinc-700"
             }`}
           >
-            后台账号
+            {t("staff_tab_accounts")}
           </button>
           <button
             onClick={() => switchTab("roles")}
@@ -97,16 +100,16 @@ export function StaffPageClient({
                 : "border-transparent text-zinc-500 hover:text-zinc-700"
             }`}
           >
-            角色权限
+            {t("staff_tab_roles")}
           </button>
         </div>
       )}
 
       {activeTab === "accounts" && canSeeStaff && (
-        <AccountsTab staffList={staffList} roles={roles} />
+        <AccountsTab staffList={staffList} roles={roles} locale={locale} />
       )}
       {activeTab === "roles" && canSeeRoles && (
-        <RolesTab roles={roles} />
+        <RolesTab roles={roles} locale={locale} />
       )}
     </div>
   );
@@ -114,21 +117,22 @@ export function StaffPageClient({
 
 // ─── Tab 1: Accounts ────────────────────────────────────────────────────────
 
-function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleRow[] }) {
+function AccountsTab({ staffList, roles, locale }: { staffList: StaffRow[]; roles: RoleRow[]; locale: import("@/lib/i18n").BoLocale }) {
   const [showCreate, setShowCreate] = useState(false);
   const [changePwUserId, setChangePwUserId] = useState<string | null>(null);
   const router = useRouter();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-500">{staffList.length} 条记录</p>
+        <p className="text-sm text-zinc-500">{t("staff_count", { count: staffList.length })}</p>
         <button
           onClick={() => setShowCreate(v => !v)}
           className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition"
         >
           <Plus size={15} />
-          新建账号
+          {t("staff_create")}
         </button>
       </div>
 
@@ -136,17 +140,17 @@ function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleR
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">用户名</th>
-              <th className="px-4 py-3 font-medium">角色</th>
-              <th className="px-4 py-3 font-medium">创建时间</th>
-              <th className="px-4 py-3 font-medium w-24">操作</th>
+              <th className="px-4 py-3 font-medium">{t("staff_col_username")}</th>
+              <th className="px-4 py-3 font-medium">{t("staff_col_role")}</th>
+              <th className="px-4 py-3 font-medium">{t("staff_col_created")}</th>
+              <th className="px-4 py-3 font-medium w-24">{t("staff_col_actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {staffList.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-zinc-400 text-center">
-                  暂无后台账号
+                  {t("staff_empty")}
                 </td>
               </tr>
             ) : (
@@ -155,6 +159,7 @@ function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleR
                   key={row.user_id}
                   row={row}
                   roles={roles}
+                  locale={locale}
                   onChangePw={() => setChangePwUserId(row.user_id)}
                   onRefresh={() => router.refresh()}
                 />
@@ -167,6 +172,7 @@ function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleR
       {showCreate && (
         <CreateStaffForm
           roles={roles}
+          locale={locale}
           onCreated={() => { setShowCreate(false); router.refresh(); }}
           onCancel={() => setShowCreate(false)}
         />
@@ -175,6 +181,7 @@ function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleR
       {changePwUserId && (
         <ChangePwModal
           userId={changePwUserId}
+          locale={locale}
           onClose={() => setChangePwUserId(null)}
         />
       )}
@@ -183,20 +190,22 @@ function AccountsTab({ staffList, roles }: { staffList: StaffRow[]; roles: RoleR
 }
 
 function StaffRowItem({
-  row, roles, onChangePw, onRefresh,
+  row, roles, locale, onChangePw, onRefresh,
 }: {
   row: StaffRow;
   roles: RoleRow[];
+  locale: import("@/lib/i18n").BoLocale;
   onChangePw: () => void;
   onRefresh: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [editRole, setEditRole] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState(row.admin_role_id ?? "");
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   const systemBadge = row.role === "admin"
-    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">超级管理员</span>
-    : <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">代理</span>;
+    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{t("staff_role_admin")}</span>
+    : <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{t("staff_role_agent")}</span>;
 
   const customRoleName = row.admin_roles?.name ?? null;
 
@@ -205,11 +214,11 @@ function StaffRowItem({
   });
 
   function handleDelete() {
-    if (!confirm(`确认删除账号 "${row.username ?? row.display_name}"？`)) return;
+    if (!confirm(t("staff_delete_confirm", { name: row.username ?? row.display_name }))) return;
     startTransition(async () => {
       const r = await deleteStaffAction(row.user_id);
       if (r?.error) { toast.error(r.error); return; }
-      toast.success("已删除");
+      toast.success(t("staff_deleted"));
       onRefresh();
     });
   }
@@ -218,7 +227,7 @@ function StaffRowItem({
     startTransition(async () => {
       const r = await assignRoleAction(row.user_id, selectedRoleId || null);
       if (r?.error) { toast.error(r.error); return; }
-      toast.success("角色已更新");
+      toast.success(t("staff_role_updated"));
       setEditRole(false);
       onRefresh();
     });
@@ -240,7 +249,7 @@ function StaffRowItem({
               onClick={() => setEditRole(v => !v)}
               className="text-[11px] text-zinc-400 hover:text-zinc-700 underline"
             >
-              {editRole ? "取消" : "改角色"}
+              {editRole ? t("staff_cancel") : t("staff_change_role")}
             </button>
           </div>
         </td>
@@ -249,7 +258,7 @@ function StaffRowItem({
           <div className="flex items-center gap-1">
             <button
               onClick={onChangePw}
-              title="修改密码"
+              title={t("staff_change_pw_title")}
               className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded transition"
             >
               <KeyRound size={14} />
@@ -257,7 +266,7 @@ function StaffRowItem({
             <button
               onClick={handleDelete}
               disabled={pending}
-              title="删除"
+              title={t("staff_deleted")}
               className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded transition"
             >
               <Trash2 size={14} />
@@ -274,7 +283,7 @@ function StaffRowItem({
                 onChange={e => setSelectedRoleId(e.target.value)}
                 className="h-9 px-3 rounded border border-zinc-300 text-sm bg-white"
               >
-                <option value="">无自定义角色</option>
+                <option value="">{t("staff_no_custom_role")}</option>
                 {roles.map(r => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
@@ -284,7 +293,7 @@ function StaffRowItem({
                 disabled={pending}
                 className="h-9 px-4 rounded bg-zinc-900 text-white text-sm font-medium disabled:opacity-60"
               >
-                {pending ? "保存中…" : "确认"}
+                {pending ? t("staff_saving") : t("staff_confirm")}
               </button>
             </div>
           </td>
@@ -294,16 +303,17 @@ function StaffRowItem({
   );
 }
 
-function ChangePwModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+function ChangePwModal({ userId, locale, onClose }: { userId: string; locale: import("@/lib/i18n").BoLocale; onClose: () => void }) {
   const [pw, setPw] = useState("");
   const [pending, startTransition] = useTransition();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
       const r = await changeStaffPasswordAction(userId, pw);
       if (r?.error) { toast.error(r.error); return; }
-      toast.success("密码已更改");
+      toast.success(t("staff_pw_changed"));
       onClose();
     });
   }
@@ -312,7 +322,7 @@ function ChangePwModal({ userId, onClose }: { userId: string; onClose: () => voi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-sm bg-white rounded-xl shadow-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">修改密码</h2>
+          <h2 className="font-semibold">{t("staff_change_pw_title")}</h2>
           <button onClick={onClose} className="p-1 hover:bg-zinc-100 rounded"><X size={16} /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -320,7 +330,7 @@ function ChangePwModal({ userId, onClose }: { userId: string; onClose: () => voi
             type="password"
             value={pw}
             onChange={e => setPw(e.target.value)}
-            placeholder="新密码（至少 8 位）"
+            placeholder={t("staff_pw_placeholder")}
             minLength={8}
             required
             autoFocus
@@ -331,7 +341,7 @@ function ChangePwModal({ userId, onClose }: { userId: string; onClose: () => voi
             disabled={pending}
             className="w-full h-10 rounded bg-zinc-900 text-white text-sm font-medium disabled:opacity-60"
           >
-            {pending ? "保存中…" : "确认修改"}
+            {pending ? t("staff_pw_saving") : t("staff_pw_save")}
           </button>
         </form>
       </div>
@@ -341,16 +351,19 @@ function ChangePwModal({ userId, onClose }: { userId: string; onClose: () => voi
 
 function CreateStaffForm({
   roles,
+  locale,
   onCreated,
   onCancel,
 }: {
   roles: RoleRow[];
+  locale: import("@/lib/i18n").BoLocale;
   onCreated: () => void;
   onCancel: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [newCreds, setNewCreds] = useState<{ username: string; password: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -367,14 +380,14 @@ function CreateStaffForm({
   if (newCreds) {
     return (
       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 space-y-3">
-        <p className="text-sm font-medium text-emerald-800">✓ 账号已创建 — 请将以下信息告知员工（密码只显示一次）</p>
+        <p className="text-sm font-medium text-emerald-800">{t("staff_created_msg")}</p>
         <div className="grid grid-cols-2 gap-3 font-mono text-sm">
           <div>
-            <div className="text-xs text-emerald-600 mb-1">用户名</div>
+            <div className="text-xs text-emerald-600 mb-1">{t("staff_created_username")}</div>
             <div className="bg-white rounded px-3 py-2 border border-emerald-200 select-all">{newCreds.username}</div>
           </div>
           <div>
-            <div className="text-xs text-emerald-600 mb-1">初始密码</div>
+            <div className="text-xs text-emerald-600 mb-1">{t("staff_created_pw")}</div>
             <div className="bg-white rounded px-3 py-2 border border-emerald-200 select-all">{newCreds.password}</div>
           </div>
         </div>
@@ -382,7 +395,7 @@ function CreateStaffForm({
           onClick={onCreated}
           className="h-9 px-4 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition"
         >
-          完成
+          {t("staff_done")}
         </button>
       </div>
     );
@@ -392,7 +405,7 @@ function CreateStaffForm({
     <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-medium flex items-center gap-2">
-          <Plus size={16} className="text-zinc-500" />新建后台账号
+          <Plus size={16} className="text-zinc-500" />{t("staff_new_title")}
         </h2>
         <button onClick={onCancel} className="p-1 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded">
           <X size={16} />
@@ -401,42 +414,42 @@ function CreateStaffForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">用户名 <span className="text-red-500">*</span></span>
+            <span className="font-medium">{t("staff_new_username")} <span className="text-red-500">*</span></span>
             <input
               name="username"
               required
-              placeholder="仅字母、数字、下划线"
+              placeholder={t("staff_new_username_hint")}
               className="h-10 px-3 rounded border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">显示名称</span>
+            <span className="font-medium">{t("staff_new_display")}</span>
             <input
               name="displayName"
-              placeholder="（留空则与用户名相同）"
+              placeholder={t("staff_new_display_hint")}
               className="h-10 px-3 rounded border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
             />
           </label>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">系统角色</span>
+            <span className="font-medium">{t("staff_new_role")}</span>
             <select
               name="role"
               defaultValue="agent"
               className="h-10 px-3 rounded border border-zinc-300 text-sm bg-white"
             >
-              <option value="agent">代理（Agent）</option>
-              <option value="admin">超级管理员（Admin）</option>
+              <option value="agent">{t("staff_role_agent")} (Agent)</option>
+              <option value="admin">{t("staff_role_admin")} (Admin)</option>
             </select>
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">自定义角色</span>
+            <span className="font-medium">{t("staff_new_custom_role")}</span>
             <select
               name="adminRoleId"
               className="h-10 px-3 rounded border border-zinc-300 text-sm bg-white"
             >
-              <option value="">不指定</option>
+              <option value="">{t("staff_new_no_role")}</option>
               {roles.map(r => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
@@ -449,7 +462,7 @@ function CreateStaffForm({
           disabled={pending}
           className="h-10 px-6 rounded bg-zinc-900 text-white text-sm font-medium disabled:opacity-60 hover:bg-zinc-700 transition"
         >
-          {pending ? "创建中…" : "创建账号（系统自动生成密码）"}
+          {pending ? t("staff_new_creating") : t("staff_new_create")}
         </button>
       </form>
     </section>
@@ -458,12 +471,27 @@ function CreateStaffForm({
 
 // ─── Tab 2: Roles ────────────────────────────────────────────────────────────
 
-function RolesTab({ roles }: { roles: RoleRow[] }) {
+function RolesTab({ roles, locale }: { roles: RoleRow[]; locale: import("@/lib/i18n").BoLocale }) {
   const router = useRouter();
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
     roles[0]?.id ?? null
   );
   const [showCreate, setShowCreate] = useState(false);
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
+  const MODULE_LABEL: Record<string, string> = {
+    overview: t("module_overview"),
+    players: t("module_players"),
+    recharge: t("module_recharge"),
+    activities: t("module_activities"),
+    rewards: t("module_rewards"),
+    redemptions: t("module_redemptions"),
+    checkins: t("module_checkins"),
+    chat: t("module_chat"),
+    quick_replies: t("module_quick_replies"),
+    staff: t("module_staff"),
+    roles: t("module_roles"),
+  };
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) ?? null;
 
@@ -472,14 +500,14 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
       {/* Create new role — at top */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-zinc-500">
-          设置每个角色可访问的功能模块。超级管理员始终拥有全部权限。
+          {t("staff_roles_subtitle")}
         </p>
         <button
           onClick={() => setShowCreate(v => !v)}
           className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition shrink-0"
         >
           <Plus size={15} />
-          创建新角色
+          {t("staff_roles_create")}
         </button>
       </div>
 
@@ -487,7 +515,7 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
         <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-medium flex items-center gap-2">
-              <Plus size={16} className="text-zinc-500" />创建新角色
+              <Plus size={16} className="text-zinc-500" />{t("staff_roles_create")}
             </h2>
             <button
               onClick={() => setShowCreate(false)}
@@ -497,7 +525,7 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
             </button>
           </div>
           <CreateRoleForm
-            modules={MODULE_LABELS}
+            modules={MODULE_LABEL}
             onCreated={() => {
               setShowCreate(false);
               router.refresh();
@@ -521,7 +549,7 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
             >
               {r.name}
               {r.is_system && (
-                <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-60">系统</span>
+                <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-60">{t("staff_role_system")}</span>
               )}
             </button>
           ))}
@@ -533,6 +561,8 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
         <RoleEditor
           key={selectedRole.id}
           role={selectedRole}
+          moduleLabel={MODULE_LABEL}
+          locale={locale}
           onSaved={() => router.refresh()}
           onDeleted={() => {
             const next = roles.find(r => r.id !== selectedRole.id);
@@ -547,10 +577,14 @@ function RolesTab({ roles }: { roles: RoleRow[] }) {
 
 function RoleEditor({
   role,
+  moduleLabel,
+  locale,
   onSaved,
   onDeleted,
 }: {
   role: RoleRow;
+  moduleLabel: Record<string, string>;
+  locale: import("@/lib/i18n").BoLocale;
   onSaved: () => void;
   onDeleted: () => void;
 }) {
@@ -559,6 +593,7 @@ function RoleEditor({
     Object.fromEntries(ALL_MODULES.map(m => [m, role.permissions[m] ?? false]))
   );
   const [pending, startTransition] = useTransition();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
   function toggle(m: string) {
     setPermissions(p => ({ ...p, [m]: !p[m] }));
@@ -568,17 +603,17 @@ function RoleEditor({
     startTransition(async () => {
       const r = await updateRoleAction(role.id, name, permissions);
       if ("error" in r) { toast.error(r.error); return; }
-      toast.success("角色已保存");
+      toast.success(t("staff_role_saved"));
       onSaved();
     });
   }
 
   function handleDelete() {
-    if (!confirm(`确认删除角色「${role.name}」？已分配该角色的账号将失去自定义权限。`)) return;
+    if (!confirm(t("staff_role_delete_confirm", { name: role.name }))) return;
     startTransition(async () => {
       const r = await deleteRoleAction(role.id);
       if ("error" in r) { toast.error(r.error); return; }
-      toast.success("角色已删除");
+      toast.success(t("staff_role_deleted"));
       onDeleted();
     });
   }
@@ -591,7 +626,7 @@ function RoleEditor({
           <h2 className="font-medium">{role.name}</h2>
           {role.is_system && (
             <span className="text-[10px] uppercase tracking-wide bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">
-              系统
+              {t("staff_role_system")}
             </span>
           )}
         </div>
@@ -601,13 +636,13 @@ function RoleEditor({
             disabled={pending}
             className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50"
           >
-            删除角色
+            {t("staff_role_delete_btn")}
           </button>
         )}
       </div>
 
       <label className="flex flex-col gap-1.5 text-sm max-w-xs">
-        <span className="text-xs font-medium text-zinc-500">角色名称</span>
+        <span className="text-xs font-medium text-zinc-500">{t("staff_role_name_label")}</span>
         <input
           value={name}
           onChange={e => setName(e.target.value)}
@@ -617,7 +652,7 @@ function RoleEditor({
       </label>
 
       <div>
-        <div className="text-xs font-medium text-zinc-500 mb-2">可访问模块</div>
+        <div className="text-xs font-medium text-zinc-500 mb-2">{t("staff_role_modules_label")}</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {ALL_MODULES.map(m => (
             <label
@@ -633,7 +668,7 @@ function RoleEditor({
                 disabled={role.is_system}
                 className="h-4 w-4 rounded"
               />
-              <span>{MODULE_LABELS[m] ?? m}</span>
+              <span>{moduleLabel[m] ?? m}</span>
             </label>
           ))}
         </div>
@@ -645,7 +680,7 @@ function RoleEditor({
           disabled={pending}
           className="h-9 px-5 rounded bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition disabled:opacity-60"
         >
-          {pending ? "保存中…" : "保存"}
+          {pending ? t("staff_saving") : t("staff_role_save_btn")}
         </button>
       )}
     </div>

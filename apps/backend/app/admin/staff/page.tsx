@@ -4,7 +4,7 @@ import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { StaffPageClient } from "./StaffPageClient";
 
-export const metadata = { title: "账号管理 · 管理后台" };
+export const metadata = { title: "Account Management · Admin Panel" };
 export const dynamic = "force-dynamic";
 
 export default async function StaffPage(props: {
