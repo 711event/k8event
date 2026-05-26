@@ -442,7 +442,7 @@ export function ChatRoom({ agentLogoUrl, agentName }: { agentLogoUrl: string | n
         disabled={!session}
         pendingFiles={pendingFiles}
         onRemoveFile={(idx) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
-        leftSlot={<AttachMenu onFiles={handleFiles} disabled={!session} />}
+        leftSlot={<AttachMenu onFiles={handleFiles} disabled={!session} strings={{ camera: t("chat_attach_camera"), gallery: t("chat_attach_gallery"), file: t("chat_attach_file") }} />}
         placeholder={t("chat_placeholder")}
       />
     </>

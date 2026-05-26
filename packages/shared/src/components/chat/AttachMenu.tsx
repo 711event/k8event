@@ -3,12 +3,20 @@
 import { useRef, useState } from "react";
 import { Camera, Image as ImageIcon, Paperclip, Plus } from "lucide-react";
 
+export interface AttachMenuStrings {
+  camera?: string;
+  gallery?: string;
+  file?: string;
+}
+
 export function AttachMenu({
   onFiles,
   disabled,
+  strings,
 }: {
   onFiles: (files: File[]) => void | Promise<void>;
   disabled?: boolean;
+  strings?: AttachMenuStrings;
 }) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -44,17 +52,17 @@ export function AttachMenu({
           >
             <MenuItem
               icon={<Camera size={15} />}
-              label="相机"
+              label={strings?.camera ?? "相机"}
               onClick={() => { setOpen(false); cameraRef.current?.click(); }}
             />
             <MenuItem
               icon={<ImageIcon size={15} />}
-              label="选相册"
+              label={strings?.gallery ?? "选相册"}
               onClick={() => { setOpen(false); galleryRef.current?.click(); }}
             />
             <MenuItem
               icon={<Paperclip size={15} />}
-              label="选文件"
+              label={strings?.file ?? "选文件"}
               onClick={() => { setOpen(false); fileRef.current?.click(); }}
             />
           </div>
