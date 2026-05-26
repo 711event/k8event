@@ -528,7 +528,7 @@ export const feTranslations = {
     chat_sending: "Menghantar…",
     chat_download: "Muat turun",
     chat_attach_camera: "Kamera",
-    chat_attach_gallery: "Pustaka Foto",
+    chat_attach_gallery: "Pilih Gambar",
     chat_attach_file: "Pilih Fail",
     countdown_started: "Bermula",
     countdown_day: "h",
