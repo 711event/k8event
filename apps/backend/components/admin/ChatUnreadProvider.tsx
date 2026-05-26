@@ -194,7 +194,7 @@ export function ChatUnreadProvider({ children, groupId }: { children: React.Reac
 }
 
 /**
- * Polite two-tone notification via Web Audio. No asset file needed.
+ * Fanfare notification via Web Audio. No asset file needed.
  * Silently no-ops if the AudioContext cannot start (e.g. browser blocked it before any user gesture).
  */
 function playDing(primed: boolean) {
@@ -207,23 +207,26 @@ function playDing(primed: boolean) {
     const ctx = new AudioCtor();
     const now = ctx.currentTime;
 
-    const tone = (freq: number, start: number, dur: number) => {
+    const tone = (freq: number, start: number, dur: number, vol: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.type = "sine";
+      osc.type = "square";
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, now + start);
-      gain.gain.linearRampToValueAtTime(0.18, now + start + 0.01);
+      gain.gain.linearRampToValueAtTime(vol, now + start + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
       osc.start(now + start);
       osc.stop(now + start + dur + 0.01);
     };
 
-    tone(988, 0, 0.18); // B5
-    tone(1319, 0.12, 0.22); // E6
-    setTimeout(() => ctx.close().catch(() => {}), 700);
+    // Fanfare: C5→E5→G5→C6→G5→C6 ascending melody
+    const melody: [number, number][] = [
+      [523, 0], [659, 0.12], [784, 0.24], [1047, 0.38], [784, 0.54], [1047, 0.66],
+    ];
+    melody.forEach(([freq, start]) => tone(freq, start, 0.14, 0.28));
+    setTimeout(() => ctx.close().catch(() => {}), 1200);
   } catch {
     /* ignored — browser may block until user interacts */
   }
