@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FeLocale } from "@/lib/i18n";
 import { tFe } from "@/lib/i18n";
 import { AvatarMenu } from "./AvatarMenu";
+import { LangSwitcher } from "./LangSwitcher";
 
 interface Props {
   locale: FeLocale;
@@ -30,6 +31,7 @@ export function PlayerHeader({ locale, user, branding, tokenBalance }: Props) {
         </Link>
 
         <div className="flex items-center gap-2">
+          <LangSwitcher />
           {user && tokenBalance !== null ? (
             <Link
               href="/tokens"
