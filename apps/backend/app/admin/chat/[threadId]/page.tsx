@@ -4,20 +4,17 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { getGroupId } from "@/lib/get-group";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 import { AgentChat } from "./AgentChat";
 
-export const metadata = { title: "会话 · 管理后台" };
-
-const STATUS_LABEL: Record<string, string> = {
-  open: "未处理",
-  claimed: "未处理",
-  pending: "跟进中",
-  closed: "已关闭",
-};
+export const metadata = { title: "Chat Thread · Admin Panel" };
 
 export default async function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
   const user = await requireRole(["admin", "agent"]);
   const { threadId } = await props.params;
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
   const supabase = await createSupabaseServerClient();
 
   const [{ data: thread }, { data: messages }, { data: quickReplies }] = await Promise.all([
@@ -51,14 +48,14 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       <header className="border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
         <div>
           <Link href="/admin/chat" className="text-xs text-zinc-500 hover:underline">
-            ← 返回收件箱
+            {t("thread_back")}
           </Link>
           <h1 className="font-semibold mt-1">
-            {thread.guest_name ?? "访客"}{" "}
+            {thread.guest_name ?? t("thread_guest")}{" "}
             <span className="text-xs text-zinc-500 font-mono">{thread.id.slice(0, 8)}</span>
           </h1>
           <p className="text-xs text-zinc-500">
-            创建于 {formatMalaysia(thread.created_at)} · 状态 {STATUS_LABEL[thread.status]}
+            {t("thread_created_at")} {formatMalaysia(thread.created_at)} · {t("thread_status_label")} {tBo(locale, `status_${thread.status}` as Parameters<typeof tBo>[1])}
           </p>
         </div>
       </header>
@@ -67,6 +64,7 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
         threadId={thread.id}
         status={thread.status}
         userId={user.id}
+        locale={locale}
         initialMessages={(messages ?? []).map((r) => ({
           id: r.id,
           sender: r.sender,

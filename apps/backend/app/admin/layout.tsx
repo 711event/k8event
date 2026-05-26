@@ -69,7 +69,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <LangProvider locale={locale}>
       <ChatUnreadProvider groupId={groupId}>
         <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
-          <AdminSidebar items={links} userLabel={user.displayName} userRole={roleLabel} branding={branding} />
+          <AdminSidebar items={links} userLabel={user.displayName} userRole={roleLabel} branding={branding} subtitle={t("sidebar_subtitle")} />
 
           <div className="flex-1 flex flex-col min-w-0">
             <header className="sticky top-0 z-20 bg-white border-b border-zinc-200 h-14 px-4 sm:px-6 flex items-center justify-between gap-3">

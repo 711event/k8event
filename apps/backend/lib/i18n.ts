@@ -60,6 +60,23 @@ export const boTranslations = {
     players_col_displayName: "显示名称",
     players_col_createdAt: "创建时间 (GMT+8)",
     players_empty: "暂无玩家",
+    // Sidebar
+    sidebar_subtitle: "管理后台",
+    // Thread page
+    thread_back: "← 返回收件箱",
+    thread_guest: "访客",
+    thread_created_at: "创建于",
+    thread_status_label: "状态",
+    // Toast messages
+    toast_closed: "会话已结束",
+    toast_markPending: "已转为跟进中",
+    toast_resolved: "已解决，会话已关闭",
+    // Attachment menu
+    attach_camera: "相机",
+    attach_gallery: "选相册",
+    attach_file: "选文件",
+    // Chat input
+    chat_placeholder: "输入消息…",
   },
   en: {
     nav_overview: "Overview",
@@ -110,6 +127,23 @@ export const boTranslations = {
     players_col_displayName: "Display Name",
     players_col_createdAt: "Created (GMT+8)",
     players_empty: "No players found",
+    // Sidebar
+    sidebar_subtitle: "Admin Panel",
+    // Thread page
+    thread_back: "← Back to Inbox",
+    thread_guest: "Guest",
+    thread_created_at: "Created",
+    thread_status_label: "Status",
+    // Toast messages
+    toast_closed: "Thread closed",
+    toast_markPending: "Marked as pending",
+    toast_resolved: "Resolved and closed",
+    // Attachment menu
+    attach_camera: "Camera",
+    attach_gallery: "Photo Library",
+    attach_file: "Choose File",
+    // Chat input
+    chat_placeholder: "Type a message…",
   },
 } as const satisfies Record<BoLocale, Record<string, string>>;
 

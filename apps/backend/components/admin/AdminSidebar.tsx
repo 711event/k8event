@@ -48,11 +48,13 @@ export function AdminSidebar({
   userLabel,
   userRole,
   branding,
+  subtitle,
 }: {
   items: AdminNavItem[];
   userLabel: string;
   userRole: string;
   branding: { company_name: string; logo_url: string | null };
+  subtitle?: string;
 }) {
   const pathname = usePathname();
 
@@ -68,7 +70,7 @@ export function AdminSidebar({
             </div>
             <div className="leading-tight min-w-0">
               <div className="text-sm font-semibold truncate">{branding.company_name}</div>
-              <div className="text-[10px] text-zinc-400 uppercase tracking-wider">管理后台</div>
+              <div className="text-[10px] text-zinc-400 uppercase tracking-wider">{subtitle ?? "Admin Panel"}</div>
             </div>
           </>
         )}
