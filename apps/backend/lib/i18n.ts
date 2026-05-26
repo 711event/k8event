@@ -367,6 +367,10 @@ export const boTranslations = {
     checkin_rewards_saving: "保存中…",
     checkin_rewards_save: "保存签到设置",
     checkin_rewards_saved: "签到奖励已保存",
+    checkin_cycle_label: "签到周期",
+    checkin_cycle_days: "{n} 天",
+    checkin_cycle_reset: "断签重置（中断后从第1天重新开始）",
+    checkin_cycle_loop: "周期结束后循环（完成后重新从第1天开始）",
 
     // Rewards page
     rewards_title: "奖品管理",
@@ -973,6 +977,10 @@ export const boTranslations = {
     checkin_rewards_saving: "Saving…",
     checkin_rewards_save: "Save Check-in Settings",
     checkin_rewards_saved: "Check-in rewards saved",
+    checkin_cycle_label: "Check-in Cycle",
+    checkin_cycle_days: "{n} Days",
+    checkin_cycle_reset: "Reset on missed day (restart from Day 1)",
+    checkin_cycle_loop: "Loop after cycle ends (restart from Day 1)",
 
     // Rewards page
     rewards_title: "Reward Management",

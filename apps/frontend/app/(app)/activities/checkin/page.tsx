@@ -61,6 +61,7 @@ export default async function CheckinPage() {
   }
 
   const settings = activity.settings as Record<string, unknown>;
+  const cycleLength: number = (settings.cycle_length as number | undefined) ?? 7;
   const dayRewards = (settings.day_rewards as number[] | undefined) ?? DEFAULT_REWARDS;
 
   // Localized content — fallback to zh (top-level columns) if not set
@@ -105,7 +106,7 @@ export default async function CheckinPage() {
         .eq("player_id", user.id)
         .eq("activity_id", activity.id)
         .order("checkin_date", { ascending: false })
-        .limit(7),
+        .limit(cycleLength),
     ]);
     checkedInToday = !!todayQ.data;
     recentCheckins = recentQ.data ?? [];
@@ -123,7 +124,7 @@ export default async function CheckinPage() {
   // Next check-in streak day
   const nextStreakDay = checkedInToday
     ? currentStreak
-    : currentStreak >= 7
+    : currentStreak >= cycleLength
     ? 1
     : currentStreak + 1;
   const todayTokens = dayRewards[nextStreakDay - 1] ?? dayRewards[0];
@@ -178,14 +179,21 @@ export default async function CheckinPage() {
         </div>
       )}
 
-      {/* 7-day reward bar */}
+      {/* N-day reward grid (rows of 7) */}
       <div className="rounded-2xl border border-white/10 bg-[var(--bg-elevated)] p-4">
-        <div className="text-xs text-zinc-500 mb-3 text-center uppercase tracking-wider">{t("checkin_rewards_title")}</div>
+        <div className="text-xs text-zinc-500 mb-3 text-center uppercase tracking-wider">{t("checkin_rewards_title", { n: cycleLength })}</div>
         <div className="grid grid-cols-7 gap-1.5">
-          {dayRewards.slice(0, 7).map((tokens, i) => {
+          {dayRewards.slice(0, cycleLength).map((tokens, i) => {
             const day = i + 1;
-            const isToday = !checkedInToday && day === nextStreakDay;
-            const isPast = checkedInToday && day <= currentStreak;
+            // Position within the current cycle (1-based)
+            const cyclePos = checkedInToday
+              ? ((currentStreak - 1 + cycleLength) % cycleLength) + 1
+              : nextStreakDay;
+            const isToday = !checkedInToday && day === cyclePos;
+            // Highlight days already completed in this cycle pass
+            const isPast = checkedInToday && day <= currentStreak && currentStreak <= cycleLength
+              ? day <= currentStreak
+              : false;
             const isActive = isToday;
 
             return (
@@ -244,7 +252,7 @@ export default async function CheckinPage() {
         <div className="rounded-2xl border border-white/10 bg-[var(--bg-elevated)] p-4">
           <div className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">{t("checkin_recent")}</div>
           <div className="space-y-2">
-            {recentCheckins.slice(0, 7).map((c) => (
+            {recentCheckins.slice(0, cycleLength).map((c) => (
               <div key={c.checkin_date} className="flex items-center justify-between text-sm">
                 <span className="text-zinc-400">{c.checkin_date}</span>
                 <span className="text-zinc-500">{t("checkin_day", { day: c.streak_day })}</span>
