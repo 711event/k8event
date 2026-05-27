@@ -418,6 +418,7 @@ export type Database = {
           min_recharge_amount: number;
           referrer_token_reward: number;
           share_mode: string;
+          share_message: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -427,6 +428,7 @@ export type Database = {
           min_recharge_amount?: number;
           referrer_token_reward?: number;
           share_mode?: string;
+          share_message?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["referral_settings"]["Insert"]>;

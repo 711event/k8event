@@ -8,16 +8,16 @@ interface Props {
   username: string;
   companyName: string;
   showCard: boolean;
+  shareMessage: string | null;
   locale: FeLocale;
 }
 
-export function ReferralClient({ referralUrl, username, companyName, showCard, locale }: Props) {
+export function ReferralClient({ referralUrl, username, companyName, showCard, shareMessage, locale }: Props) {
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
   const [copied, setCopied] = useState(false);
 
   function copyLink() {
     navigator.clipboard.writeText(referralUrl).catch(() => {
-      // fallback for older browsers
       const el = document.createElement("textarea");
       el.value = referralUrl;
       document.body.appendChild(el);
@@ -29,21 +29,24 @@ export function ReferralClient({ referralUrl, username, companyName, showCard, l
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // Use admin-configured message if set, otherwise fall back to i18n default
+  function buildShareText() {
+    const msg = shareMessage?.trim() || t("referral_share_msg", { company: companyName });
+    return `${msg}\n${referralUrl}`;
+  }
+
   function shareWhatsApp() {
-    const msg = encodeURIComponent(
-      `${t("referral_share_msg", { company: companyName })}\n${referralUrl}`
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildShareText())}`, "_blank");
   }
 
   function shareTelegram() {
-    const msg = encodeURIComponent(`${t("referral_share_msg", { company: companyName })}\n${referralUrl}`);
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${msg}`, "_blank");
+    const text = buildShareText();
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(text)}`, "_blank");
   }
 
   function shareOther() {
     if (navigator.share) {
-      navigator.share({ title: companyName, url: referralUrl }).catch(() => {});
+      navigator.share({ title: companyName, text: buildShareText(), url: referralUrl }).catch(() => {});
     } else {
       copyLink();
     }
@@ -95,7 +98,7 @@ export function ReferralClient({ referralUrl, username, companyName, showCard, l
           <p className="text-xs text-[var(--text-lo)] px-1">{t("referral_card_hint")}</p>
           <div className="rounded-2xl overflow-hidden border border-[var(--border-strong)]">
             <div className="bg-gradient-to-br from-[#1a1f2e] to-[#0d1117] p-6 text-center space-y-3">
-              <div className="text-3xl">⚽</div>
+              <div className="text-3xl">🎁</div>
               <div className="font-bold text-xl text-[var(--gold-300)]">{companyName}</div>
               <div className="inline-flex items-center gap-2 bg-[var(--gold-500)]/20 border border-[var(--gold-500)]/30 rounded-full px-4 py-1.5 text-sm font-semibold text-[var(--gold-300)]">
                 🎁 {t("referral_card_invite")}

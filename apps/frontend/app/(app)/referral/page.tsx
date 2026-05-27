@@ -34,7 +34,7 @@ export default async function ReferralPage() {
   // Fetch referral settings
   const { data: settings } = await supabase
     .from("referral_settings")
-    .select("enabled, trigger_type, min_recharge_amount, referrer_token_reward, share_mode")
+    .select("enabled, trigger_type, min_recharge_amount, referrer_token_reward, share_mode, share_message")
     .eq("group_id", groupId)
     .maybeSingle();
 
@@ -43,6 +43,7 @@ export default async function ReferralPage() {
   const minRecharge = settings?.min_recharge_amount ?? 0;
   const referrerReward = settings?.referrer_token_reward ?? 50;
   const showCard = (settings?.share_mode ?? "link_and_card") === "link_and_card";
+  const shareMessage = settings?.share_message ?? null;
 
   // Referral stats
   const { data: requests } = await supabase
@@ -109,6 +110,7 @@ export default async function ReferralPage() {
           username={user.username ?? user.id}
           companyName={branding.company_name}
           showCard={showCard}
+          shareMessage={shareMessage}
           locale={locale}
         />
       ) : (

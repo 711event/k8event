@@ -78,7 +78,7 @@ export default async function JoinPage(props: {
         {/* Perks */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: "⚽", title: t("join_perk_predict_title"), body: t("join_perk_predict_body") },
+            { icon: "🔥", title: t("join_perk_streak_title"), body: t("join_perk_streak_body") },
             { icon: "📅", title: t("join_perk_checkin_title"), body: t("join_perk_checkin_body") },
             { icon: "🪙", title: t("join_perk_token_title"), body: t("join_perk_token_body") },
             { icon: "🎁", title: t("join_perk_reward_title"), body: t("join_perk_reward_body") },
