@@ -487,6 +487,7 @@ function RolesTab({ roles, locale }: { roles: RoleRow[]; locale: import("@/lib/i
     rewards: t("module_rewards"),
     redemptions: t("module_redemptions"),
     checkins: t("module_checkins"),
+    referrals: t("module_referrals"),
     chat: t("module_chat"),
     quick_replies: t("module_quick_replies"),
     staff: t("module_staff"),

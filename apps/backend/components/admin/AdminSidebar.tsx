@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   UserCog,
   Settings2,
+  UserPlus,
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 
@@ -35,6 +36,7 @@ const iconMap = {
   ShieldCheck,
   UserCog,
   Settings2,
+  UserPlus,
 };
 
 export type AdminNavItem = {

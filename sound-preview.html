@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>通知音效预览 — 选一个你喜欢的</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #f0f0f0; padding: 32px; }
+  h1 { font-size: 20px; margin-bottom: 6px; color: #facc15; }
+  p  { font-size: 13px; color: #888; margin-bottom: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .card {
+    background: #1c1c1e; border: 1px solid #333; border-radius: 12px;
+    padding: 18px 20px; display: flex; align-items: center; gap: 16px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+    user-select: none;
+  }
+  .card:hover  { border-color: #facc15; background: #242420; }
+  .card.active { border-color: #4ade80; background: #18261e; }
+  .num  { font-size: 26px; width: 36px; text-align: center; flex-shrink: 0; }
+  .info { flex: 1; }
+  .name { font-weight: 600; font-size: 15px; }
+  .desc { font-size: 12px; color: #888; margin-top: 3px; }
+  .play { font-size: 22px; }
+  .footer { margin-top: 32px; font-size: 13px; color: #666; }
+  .footer span { color: #facc15; font-weight: 600; }
+  #selected { margin-top: 24px; padding: 14px 18px; background: #1a2a1a; border: 1px solid #4ade80;
+              border-radius: 10px; font-size: 14px; display: none; }
+  #selected strong { color: #4ade80; }
+</style>
+</head>
+<body>
+<h1>🔔 通知音效预览</h1>
+<p>点击每个卡片试听，选好后把编号告诉 Claude 就好。</p>
+<div class="grid" id="grid"></div>
+<div id="selected"></div>
+<div class="footer">当前用的是 <span>#1 轻柔叮叮</span>（原版）</div>
+
+<script>
+const sounds = [
+  {
+    name: "轻柔叮叮（原版）",
+    desc: "B5→E6 两声 sine 波，安静",
+    play(ctx) {
+      tone(ctx, "sine", 988,  0,    0.18, 0.18);
+      tone(ctx, "sine", 1319, 0.12, 0.22, 0.18);
+    }
+  },
+  {
+    name: "三连上扬",
+    desc: "C6→E6→G6 三连上扬，活泼",
+    play(ctx) {
+      tone(ctx, "sine", 1047, 0,    0.15, 0.22);
+      tone(ctx, "sine", 1319, 0.13, 0.15, 0.22);
+      tone(ctx, "sine", 1568, 0.26, 0.28, 0.22);
+    }
+  },
+  {
+    name: "游戏胜利",
+    desc: "快速上行琶音，像获得奖励",
+    play(ctx) {
+      [523, 659, 784, 1047, 1319].forEach((f,i) =>
+        tone(ctx, "square", f, i*0.07, 0.12, 0.28*(1-i*0.05)));
+    }
+  },
+  {
+    name: "收银机",
+    desc: "硬币叮一声，爽快清脆",
+    play(ctx) {
+      tone(ctx, "square", 1800, 0,    0.04, 0.45);
+      tone(ctx, "sine",   1200, 0.03, 0.18, 0.30);
+    }
+  },
+  {
+    name: "充能上扬",
+    desc: "频率快速扫升，科技感强",
+    play(ctx) {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(1800, now + 0.4);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.22, now + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      osc.start(now); osc.stop(now + 0.41);
+    }
+  },
+  {
+    name: "门铃叮咚",
+    desc: "G5→E5 经典门铃，亲切",
+    play(ctx) {
+      tone(ctx, "sine", 784, 0,   0.35, 0.30);
+      tone(ctx, "sine", 659, 0.3, 0.45, 0.28);
+    }
+  },
+  {
+    name: "急促警报",
+    desc: "三声快速短响，紧迫感",
+    play(ctx) {
+      [0, 0.15, 0.3].forEach(s =>
+        tone(ctx, "square", 1500, s, 0.08, 0.32));
+    }
+  },
+  {
+    name: "深沉鸣钟",
+    desc: "低频共鸣，厚重有力",
+    play(ctx) {
+      tone(ctx, "sine", 220, 0, 1.2, 0.35);
+      tone(ctx, "sine", 440, 0, 0.6, 0.20);
+      tone(ctx, "sine", 880, 0, 0.3, 0.10);
+    }
+  },
+  {
+    name: "欢庆号角",
+    desc: "小号风格短旋律，庆典感",
+    play(ctx) {
+      const melody = [[523,0],[659,0.12],[784,0.24],[1047,0.38],[784,0.54],[1047,0.66]];
+      melody.forEach(([f,s]) => tone(ctx, "square", f, s, 0.14, 0.28));
+    }
+  },
+  {
+    name: "霸气双连击",
+    desc: "低→高两声冲击，强势",
+    play(ctx) {
+      tone(ctx, "sawtooth", 440,  0,    0.12, 0.40);
+      tone(ctx, "sawtooth", 1760, 0.14, 0.20, 0.38);
+    }
+  },
+];
+
+function tone(ctx, type, freq, start, dur, vol) {
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.connect(g); g.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0, now + start);
+  g.gain.linearRampToValueAtTime(vol, now + start + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+  osc.start(now + start);
+  osc.stop(now + start + dur + 0.01);
+}
+
+let selectedIdx = null;
+const grid = document.getElementById("grid");
+const selectedBox = document.getElementById("selected");
+
+sounds.forEach((s, i) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="num">${i+1}</div>
+    <div class="info">
+      <div class="name">${s.name}</div>
+      <div class="desc">${s.desc}</div>
+    </div>
+    <div class="play">▶</div>`;
+  card.addEventListener("click", () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      s.play(ctx);
+      setTimeout(() => ctx.close(), 2000);
+    } catch(e) { alert("浏览器阻止了音频，请先点击页面任意地方"); }
+
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("active"));
+    card.classList.add("active");
+    selectedIdx = i + 1;
+    selectedBox.style.display = "block";
+    selectedBox.innerHTML = `✅ 你选了 <strong>#${i+1} ${s.name}</strong> — 告诉 Claude 编号 <strong>${i+1}</strong> 就好！`;
+  });
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

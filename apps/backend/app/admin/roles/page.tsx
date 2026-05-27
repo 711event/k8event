@@ -29,6 +29,7 @@ export default async function RolesPage() {
     rewards:       tBo(locale, "module_rewards"),
     redemptions:   tBo(locale, "module_redemptions"),
     checkins:      tBo(locale, "module_checkins"),
+    referrals:     tBo(locale, "module_referrals"),
     chat:          tBo(locale, "module_chat"),
     quick_replies: tBo(locale, "module_quick_replies"),
     staff:         tBo(locale, "module_staff"),

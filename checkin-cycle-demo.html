@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>签到周期设计 Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #f0f0f0; }
+
+  /* ===== TABS ===== */
+  .tabs { display: flex; border-bottom: 1px solid #333; background: #1a1a1a; }
+  .tab { padding: 14px 28px; cursor: pointer; font-size: 14px; color: #888; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab.active { color: #facc15; border-bottom-color: #facc15; }
+  .tab:hover:not(.active) { color: #ccc; }
+
+  .panel { display: none; padding: 32px; max-width: 900px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ===== ADMIN PANEL ===== */
+  .admin-wrap { background: #1c1c1e; border: 1px solid #333; border-radius: 12px; padding: 28px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .section-desc { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+  .cycle-label { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .cycle-options { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+  .cycle-btn {
+    padding: 8px 22px; border-radius: 8px; border: 2px solid #444;
+    background: #2a2a2a; color: #ccc; cursor: pointer; font-size: 14px; font-weight: 600;
+    transition: all .15s;
+  }
+  .cycle-btn:hover { border-color: #facc15; color: #facc15; }
+  .cycle-btn.active { border-color: #facc15; background: #2a2500; color: #facc15; }
+
+  .rewards-label { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .rewards-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 24px; }
+  .reward-item { display: flex; flex-direction: column; gap: 6px; }
+  .reward-item label { font-size: 11px; color: #888; text-align: center; }
+  .reward-item input {
+    width: 100%; text-align: center; padding: 8px 4px;
+    background: #2a2a2a; border: 1px solid #444; border-radius: 6px;
+    color: #f0f0f0; font-size: 14px; font-weight: 600;
+    transition: border-color .15s;
+  }
+  .reward-item input:focus { outline: none; border-color: #facc15; }
+  .reward-item.highlight input { border-color: #4ade80; background: #1a2a1a; }
+
+  .toggles { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #facc15; cursor: pointer; }
+
+  .save-btn {
+    background: #facc15; color: #000; font-weight: 700; font-size: 14px;
+    padding: 10px 28px; border: none; border-radius: 8px; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .save-btn:hover { opacity: .85; }
+
+  .note { margin-top: 16px; font-size: 12px; color: #666; }
+
+  /* ===== FRONTEND PANEL ===== */
+  .fe-wrap { background: #111; border-radius: 16px; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #222; }
+  .fe-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .fe-subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+  .cycle-select-row { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .fe-cycle-btn {
+    padding: 6px 16px; border-radius: 20px; border: 1px solid #333;
+    background: #1c1c1e; color: #888; cursor: pointer; font-size: 13px;
+    transition: all .15s;
+  }
+  .fe-cycle-btn.active { border-color: #facc15; background: #2a2500; color: #facc15; font-weight: 600; }
+
+  .streak-label { font-size: 13px; color: #888; margin-bottom: 12px; }
+  .streak-label span { color: #facc15; font-weight: 700; }
+
+  .streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
+  .streak-tile {
+    aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+    border: 2px solid #333; background: #1c1c1e;
+    font-size: 11px; color: #666; transition: all .2s; cursor: default;
+    position: relative;
+  }
+  .streak-tile .day-num { font-size: 9px; color: #555; }
+  .streak-tile .token { font-size: 12px; font-weight: 700; }
+  .streak-tile.done { background: #2a2500; border-color: #facc15; }
+  .streak-tile.done .token { color: #facc15; }
+  .streak-tile.done .day-num { color: #a0820a; }
+  .streak-tile.today {
+    background: #1a2a1a; border-color: #4ade80; border-width: 2px;
+    box-shadow: 0 0 12px rgba(74,222,128,.3);
+  }
+  .streak-tile.today .token { color: #4ade80; }
+  .streak-tile.today .day-num { color: #2d7a3a; }
+  .streak-tile.done::after { content: "✓"; position: absolute; top: 2px; right: 4px; font-size: 8px; color: #facc15; }
+
+  .checkin-btn {
+    width: 100%; padding: 14px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #facc15, #f59e0b);
+    color: #000; font-size: 16px; font-weight: 700; cursor: pointer;
+    margin-bottom: 12px; transition: opacity .15s;
+  }
+  .checkin-btn:hover { opacity: .9; }
+  .checkin-btn.done { background: #2a2a2a; color: #666; cursor: not-allowed; }
+
+  .streak-fire { text-align: center; font-size: 14px; color: #888; margin-top: 8px; }
+  .streak-fire span { color: #f97316; font-weight: 700; }
+
+  .fe-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .fe-sim-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1px solid #444;
+    background: #2a2a2a; color: #aaa; cursor: pointer; font-size: 12px;
+    transition: all .15s;
+  }
+  .fe-sim-btn:hover { border-color: #888; color: #fff; }
+
+  /* ===== SHARED ===== */
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #2a3a2a; color: #4ade80; margin-left: 8px; }
+
+  .page-header { padding: 20px 32px 0; max-width: 900px; margin: 0 auto; }
+  .page-title { font-size: 22px; font-weight: 700; color: #facc15; margin-bottom: 4px; }
+  .page-desc { font-size: 13px; color: #666; margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<div class="page-header" style="padding-top:28px; padding-bottom:20px;">
+  <div class="page-title">🗓️ 签到周期 Demo</div>
+  <div class="page-desc">左边看后台管理员设置，右边看玩家前台效果。点击切换天数、模拟签到进度。</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('admin')">🛠 后台管理（Admin）</div>
+  <div class="tab" onclick="switchTab('frontend')">📱 玩家前台（Frontend）</div>
+  <div class="tab" onclick="switchTab('both')">👁 对比视图</div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="panel-admin" class="panel active">
+  <div class="admin-wrap">
+    <div class="section-title">签到奖励设置</div>
+    <div class="section-desc">选择签到周期天数，设置每天签到获得的 Token 数量。</div>
+
+    <div class="cycle-label">签到周期</div>
+    <div class="cycle-options">
+      <div class="cycle-btn active" onclick="setCycle(7)">7 天</div>
+      <div class="cycle-btn" onclick="setCycle(14)">14 天</div>
+      <div class="cycle-btn" onclick="setCycle(21)">21 天</div>
+      <div class="cycle-btn" onclick="setCycle(28)">28 天</div>
+    </div>
+
+    <div class="rewards-label">每日签到 Token 奖励 <span id="cycle-badge" class="badge">7 天周期</span></div>
+    <div id="rewards-grid" class="rewards-grid"></div>
+
+    <div class="toggles">
+      <label class="toggle-row">
+        <input type="checkbox" id="reset-toggle" checked>
+        断签重置（中断一天后从第 1 天重新开始）
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="cycle-toggle" checked>
+        周期结束后循环（完成后重新从第 1 天开始）
+      </label>
+    </div>
+
+    <button class="save-btn" onclick="simulateSave()">保存签到设置</button>
+    <div id="save-note" class="note" style="display:none; color:#4ade80;">✅ 设置已保存！前台玩家下次签到生效。</div>
+  </div>
+</div>
+
+<!-- FRONTEND PANEL -->
+<div id="panel-frontend" class="panel">
+  <div style="text-align:center; margin-bottom:16px;">
+    <div style="font-size:13px; color:#666; margin-bottom:10px;">模拟玩家进度（点击按钮调整）</div>
+    <div class="fe-controls" style="justify-content:center;">
+      <button class="fe-sim-btn" onclick="setProgress(0)">第0天（新玩家）</button>
+      <button class="fe-sim-btn" onclick="setProgress(3)">已签3天</button>
+      <button class="fe-sim-btn" onclick="setProgress(7)">已签7天</button>
+      <button class="fe-sim-btn" onclick="setProgress(14)">已签14天</button>
+    </div>
+    <div style="font-size:13px; color:#666; margin: 10px 0 4px;">预览周期</div>
+    <div class="cycle-select-row" style="justify-content:center;">
+      <div class="fe-cycle-btn active" onclick="setFeCycle(7)">7 天</div>
+      <div class="fe-cycle-btn" onclick="setFeCycle(14)">14 天</div>
+      <div class="fe-cycle-btn" onclick="setFeCycle(21)">21 天</div>
+      <div class="fe-cycle-btn" onclick="setFeCycle(28)">28 天</div>
+    </div>
+  </div>
+
+  <div class="fe-wrap">
+    <div class="fe-title">每日签到</div>
+    <div class="fe-subtitle" id="fe-subtitle">连续签到奖励更多 Token！</div>
+
+    <div class="streak-label">签到进度 — <span id="streak-text">连续 0 天</span> 🔥</div>
+    <div id="fe-streak-grid" class="streak-grid"></div>
+
+    <button id="checkin-btn" class="checkin-btn" onclick="doCheckin()">立即签到</button>
+    <div class="streak-fire" id="streak-fire"></div>
+  </div>
+</div>
+
+<!-- BOTH PANEL -->
+<div id="panel-both" class="panel">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
+    <div>
+      <div style="font-size:13px; color:#facc15; font-weight:700; margin-bottom:12px; text-align:center;">🛠 后台设置</div>
+      <div class="admin-wrap" style="padding:20px;">
+        <div class="cycle-label" style="margin-bottom:8px;">签到周期</div>
+        <div class="cycle-options" id="both-cycle-opts" style="margin-bottom:16px;"></div>
+        <div class="rewards-label" style="margin-bottom:10px; font-size:13px;">每日 Token 奖励</div>
+        <div id="both-rewards-grid" class="rewards-grid" style="gap:6px;"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px; color:#4ade80; font-weight:700; margin-bottom:12px; text-align:center;">📱 玩家看到的</div>
+      <div class="fe-wrap" style="padding:20px; max-width:100%;">
+        <div class="fe-title" style="font-size:16px;">每日签到</div>
+        <div class="streak-label" style="margin: 8px 0;">已签 <span id="both-streak-text" style="color:#facc15;">3 天</span> 🔥</div>
+        <div id="both-fe-grid" class="streak-grid" style="gap:5px; margin-bottom:16px;"></div>
+        <button class="checkin-btn" style="padding:10px; font-size:14px;" onclick="bothCheckin()">立即签到</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let adminCycle = 7;
+let feCycle = 7;
+let feProgress = 3; // days already checked in
+let todayChecked = false;
+
+const DEFAULT_REWARDS = {
+  7:  [5, 8, 10, 12, 15, 20, 30],
+  14: [5, 8, 10, 12, 15, 18, 20, 22, 25, 28, 30, 35, 40, 50],
+  21: [5, 7, 8, 10, 12, 14, 15, 17, 18, 20, 22, 25, 27, 28, 30, 32, 35, 38, 40, 45, 60],
+  28: [5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,35,38,40,43,46,50,55,80],
+};
+let rewards = { ...DEFAULT_REWARDS };
+
+// ===== TABS =====
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['admin','frontend','both'][i] === t);
+  });
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-' + t).classList.add('active');
+  if (t === 'both') renderBoth();
+}
+
+// ===== ADMIN =====
+function setCycle(n) {
+  adminCycle = n;
+  feCycle = n;
+  document.querySelectorAll('.cycle-btn').forEach((b, i) => {
+    b.classList.toggle('active', [7,14,21,28][i] === n);
+  });
+  document.getElementById('cycle-badge').textContent = n + ' 天周期';
+  renderAdminGrid();
+  renderFeGrid();
+  renderBoth();
+  document.getElementById('save-note').style.display = 'none';
+}
+
+function renderAdminGrid() {
+  const grid = document.getElementById('rewards-grid');
+  const r = rewards[adminCycle];
+  const cols = adminCycle <= 7 ? 7 : adminCycle <= 14 ? 7 : 7;
+  grid.style.gridTemplateColumns = `repeat(${Math.min(adminCycle, 7)}, 1fr)`;
+  grid.innerHTML = '';
+  r.forEach((val, i) => {
+    const div = document.createElement('div');
+    div.className = 'reward-item' + (i === adminCycle - 1 ? ' highlight' : '');
+    div.innerHTML = `
+      <label>第 ${i+1} 天</label>
+      <input type="number" value="${val}" min="0" max="9999"
+             onchange="rewards[adminCycle][${i}] = +this.value; renderBoth();">
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function simulateSave() {
+  document.getElementById('save-note').style.display = 'block';
+  setTimeout(() => document.getElementById('save-note').style.display = 'none', 3000);
+}
+
+// ===== FRONTEND =====
+function setFeCycle(n) {
+  feCycle = n;
+  document.querySelectorAll('.fe-cycle-btn').forEach((b, i) => {
+    b.classList.toggle('active', [7,14,21,28][i] === n);
+  });
+  renderFeGrid();
+}
+
+function setProgress(n) {
+  feProgress = n;
+  todayChecked = false;
+  renderFeGrid();
+}
+
+function renderFeGrid() {
+  const grid = document.getElementById('fe-streak-grid');
+  const r = rewards[feCycle] || DEFAULT_REWARDS[feCycle] || DEFAULT_REWARDS[7];
+  grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+  grid.innerHTML = '';
+
+  // current streak position in cycle
+  const streakInCycle = feProgress % feCycle;
+  const todayTile = todayChecked ? streakInCycle - 1 : streakInCycle; // 0-indexed tile that is "today"
+
+  for (let i = 0; i < feCycle; i++) {
+    const tile = document.createElement('div');
+    const isDone = todayChecked ? i < streakInCycle : i < streakInCycle;
+    const isToday = todayChecked ? i === streakInCycle - 1 : i === streakInCycle;
+    tile.className = 'streak-tile' + (isDone ? ' done' : '') + (isToday && !isDone ? ' today' : '') + (isToday && isDone ? ' done today' : '');
+    const tokenVal = r[i] ?? '?';
+    tile.innerHTML = `<div class="day-num">Day ${i+1}</div><div class="token">+${tokenVal}</div>`;
+    grid.appendChild(tile);
+  }
+
+  // Update streak text
+  const streak = todayChecked ? streakInCycle : streakInCycle;
+  document.getElementById('streak-text').textContent = `连续 ${feProgress} 天`;
+
+  // Update button
+  const btn = document.getElementById('checkin-btn');
+  const todayReward = r[streakInCycle] ?? r[0];
+  if (todayChecked) {
+    btn.textContent = '✓ 今日已签到';
+    btn.className = 'checkin-btn done';
+    document.getElementById('streak-fire').textContent = `已获得 +${r[streakInCycle > 0 ? streakInCycle - 1 : feCycle - 1]} Token 🎉`;
+  } else {
+    btn.textContent = `立即签到（+${todayReward} Token）`;
+    btn.className = 'checkin-btn';
+    document.getElementById('streak-fire').textContent = '';
+  }
+}
+
+function doCheckin() {
+  if (todayChecked) return;
+  feProgress++;
+  todayChecked = true;
+  renderFeGrid();
+}
+
+// ===== BOTH =====
+function renderBoth() {
+  const cycle = adminCycle;
+  const r = rewards[cycle] || DEFAULT_REWARDS[cycle] || DEFAULT_REWARDS[7];
+
+  // cycle buttons
+  const optsEl = document.getElementById('both-cycle-opts');
+  if (optsEl) {
+    optsEl.innerHTML = '';
+    [7,14,21,28].forEach(n => {
+      const b = document.createElement('div');
+      b.className = 'cycle-btn' + (n === cycle ? ' active' : '');
+      b.textContent = n + ' 天';
+      b.style.cursor = 'default';
+      optsEl.appendChild(b);
+    });
+  }
+
+  // admin rewards grid
+  const ag = document.getElementById('both-rewards-grid');
+  if (ag) {
+    ag.style.gridTemplateColumns = `repeat(${Math.min(cycle, 7)}, 1fr)`;
+    ag.innerHTML = '';
+    r.forEach((val, i) => {
+      const div = document.createElement('div');
+      div.className = 'reward-item';
+      div.innerHTML = `<label style="font-size:10px;">D${i+1}</label><input type="number" value="${val}" style="font-size:12px; padding:5px 2px;" readonly>`;
+      ag.appendChild(div);
+    });
+  }
+
+  // fe grid
+  const fg = document.getElementById('both-fe-grid');
+  if (fg) {
+    fg.style.gridTemplateColumns = 'repeat(7, 1fr)';
+    fg.innerHTML = '';
+    const prog = 3; // fixed at 3 for demo
+    for (let i = 0; i < cycle; i++) {
+      const tile = document.createElement('div');
+      const isDone = i < prog;
+      const isToday = i === prog;
+      tile.className = 'streak-tile' + (isDone ? ' done' : '') + (isToday ? ' today' : '');
+      tile.innerHTML = `<div class="day-num" style="font-size:8px;">D${i+1}</div><div class="token" style="font-size:10px;">+${r[i]??'?'}</div>`;
+      fg.appendChild(tile);
+    }
+    document.getElementById('both-streak-text').textContent = '3 天';
+  }
+}
+
+// init
+renderAdminGrid();
+renderFeGrid();
+renderBoth();
+</script>
+</body>
+</html>

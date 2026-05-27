@@ -24,6 +24,7 @@ export default async function TokensPage() {
       case "redeem": return t("tokens_reason_redeem");
       case "admin_adjust": return t("tokens_reason_admin_adjust");
       case "daily_checkin": return t("tokens_reason_checkin");
+      case "referral": return t("tokens_reason_referral");
       default: return reason;
     }
   }

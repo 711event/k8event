@@ -56,6 +56,7 @@ export type Database = {
           display_name: string;
           avatar_url: string | null;
           group_id: string | null;
+          referred_by: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -65,6 +66,7 @@ export type Database = {
           display_name: string;
           avatar_url?: string | null;
           group_id?: string | null;
+          referred_by?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
@@ -408,6 +410,56 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["player_checkins"]["Insert"]>;
         Relationships: [];
       };
+      referral_settings: {
+        Row: {
+          group_id: string;
+          enabled: boolean;
+          trigger_type: string;
+          min_recharge_amount: number;
+          referrer_token_reward: number;
+          share_mode: string;
+          created_at: Timestamp;
+        };
+        Insert: {
+          group_id: string;
+          enabled?: boolean;
+          trigger_type?: string;
+          min_recharge_amount?: number;
+          referrer_token_reward?: number;
+          share_mode?: string;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["referral_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      referral_requests: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          phone: string;
+          ref_username: string;
+          referrer_id: string | null;
+          status: string;
+          player_id: string | null;
+          referrer_rewarded: boolean;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          phone: string;
+          ref_username: string;
+          referrer_id?: string | null;
+          status?: string;
+          player_id?: string | null;
+          referrer_rewarded?: boolean;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["referral_requests"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: {
       token_balances: {
@@ -435,6 +487,10 @@ export type Database = {
       perform_checkin: {
         Args: { p_activity_id: string };
         Returns: { streak_day: number; tokens_awarded: number };
+      };
+      process_referral_rewards: {
+        Args: { p_player_ids: string[] };
+        Returns: undefined;
       };
     };
     Enums: {

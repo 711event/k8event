@@ -9,6 +9,7 @@ const AGENT_PERMISSIONS: AdminPermissions = {
   rewards: false,
   redemptions: false,
   checkins: false,
+  referrals: false,
   chat: true,
   quick_replies: true,
   roles: false,

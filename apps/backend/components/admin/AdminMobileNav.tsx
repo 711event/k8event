@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   UserCog,
   Settings2,
+  UserPlus,
   Menu,
   X,
 } from "lucide-react";
@@ -42,6 +43,7 @@ const iconMap = {
   ShieldCheck,
   UserCog,
   Settings2,
+  UserPlus,
 };
 
 export function AdminMobileNav({

@@ -144,7 +144,14 @@ export async function importRechargeAction(input: unknown): Promise<{ inserted: 
 
   if (error) return { inserted: 0, error: error.message };
 
+  // Trigger referral rewards for players whose recharge was just imported
+  const importedPlayerIds = Array.from(new Set(filteredRows.map((r) => r.playerId)));
+  if (importedPlayerIds.length > 0) {
+    await admin.rpc("process_referral_rewards", { p_player_ids: importedPlayerIds });
+  }
+
   revalidatePath("/admin/recharge");
   revalidatePath("/admin");
+  revalidatePath("/admin/referrals");
   return { inserted: count ?? filteredRows.length };
 }

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推荐系统 Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; padding: 20px 16px; }
+
+/* ── TABS ── */
+h1 { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+.tabs { display: flex; gap: 3px; margin-bottom: 24px; background: #1a1f2e; border-radius: 10px; padding: 4px; width: fit-content; flex-wrap: wrap; }
+.tab { padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
+.tab.active { background: #262d3d; color: #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.panel { display: none; } .panel.active { display: block; }
+
+/* ── SHARED UTIL ── */
+.gold { color: #ecc94b; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.badge-pending { background: #f59e0b22; color: #f59e0b; }
+.badge-approved { background: #22c55e22; color: #4ade80; }
+.badge-rejected { background: #ef444422; color: #f87171; }
+.card { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; }
+btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; border: none; transition: all .15s; }
+
+/* ════════════════ PANEL 1: FRONTEND REFERRAL PAGE ════════════════ */
+.fe-wrap { max-width: 400px; margin: 0 auto; }
+.fe-header { text-align: center; padding: 28px 20px 20px; }
+.fe-header .icon { font-size: 40px; margin-bottom: 8px; }
+.fe-header h2 { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+.fe-header p { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+/* stat strip */
+.stat-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 0 16px 16px; }
+.stat { background: #161b27; border: 1px solid #1e2535; border-radius: 10px; padding: 12px; text-align: center; }
+.stat-val { font-size: 22px; font-weight: 700; color: #ecc94b; line-height: 1; }
+.stat-label { font-size: 10px; color: #64748b; margin-top: 3px; }
+
+/* referral link box */
+.ref-box { margin: 0 16px 14px; background: #161b27; border: 1px solid #1e2535; border-radius: 12px; padding: 14px; }
+.ref-box-title { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.ref-link-row { display: flex; gap-8; align-items: center; gap: 8px; }
+.ref-link { flex: 1; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #94a3b8; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-btn { height: 36px; padding: 0 14px; background: linear-gradient(to bottom, #f6d365, #c8952a); color: #1a0f00; font-size: 12px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.copy-btn:active { opacity: .8; }
+
+/* share buttons */
+.share-row { display: flex; gap: 8px; margin: 0 16px 14px; }
+.share-btn { flex: 1; height: 40px; border: 1px solid #1e2535; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; background: #161b27; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap-6; gap: 6px; transition: all .15s; }
+.share-btn:hover { border-color: #4ade80; color: #4ade80; }
+.share-btn.wa:hover { border-color: #25D366; color: #25D366; }
+.share-btn.tg:hover { border-color: #229ED9; color: #229ED9; }
+
+/* share card preview */
+.share-card { margin: 0 16px 14px; border-radius: 12px; overflow: hidden; }
+.share-card-inner { background: linear-gradient(135deg, #1a1f2e, #0d1117); border: 1px solid #2d3748; border-radius: 12px; padding: 20px; text-align: center; }
+.share-card-logo { font-size: 28px; margin-bottom: 4px; }
+.share-card-brand { font-size: 18px; font-weight: 800; color: #ecc94b; margin-bottom: 8px; }
+.share-card-msg { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px; }
+.share-card-code { background: #0f1117; border: 1px dashed #ecc94b44; border-radius: 8px; padding: 8px 16px; display: inline-block; font-size: 15px; font-weight: 700; color: #ecc94b; letter-spacing: .1em; margin-bottom: 10px; }
+.share-card-url { font-size: 11px; color: #475569; }
+.share-card-badge { display: inline-flex; align-items: center; gap: 5px; background: #ecc94b22; border: 1px solid #ecc94b44; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: #ecc94b; font-weight: 600; margin-bottom: 10px; }
+
+/* history */
+.ref-history { margin: 0 16px 20px; }
+.ref-history-title { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.ref-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #161b27; border: 1px solid #1e2535; border-radius: 10px; margin-bottom: 6px; }
+.ref-item-name { font-size: 13px; font-weight: 500; color: #e2e8f0; }
+.ref-item-date { font-size: 11px; color: #64748b; margin-top: 2px; }
+.ref-item-reward { font-size: 13px; font-weight: 700; color: #4ade80; }
+
+/* ════════════════ PANEL 2: JOIN PAGE ════════════════ */
+.join-wrap { max-width: 400px; margin: 0 auto; }
+.join-hero { background: linear-gradient(135deg, #1a1f2e, #0d1117); border: 1px solid #1e2535; border-radius: 14px; margin: 0 0 16px; padding: 28px 20px; text-align: center; }
+.join-hero-logo { font-size: 36px; margin-bottom: 8px; }
+.join-hero-brand { font-size: 20px; font-weight: 800; color: #ecc94b; margin-bottom: 4px; }
+.join-hero-sub { font-size: 13px; color: #64748b; }
+.join-invite-banner { background: #ecc94b18; border: 1px solid #ecc94b33; border-radius: 10px; padding: 12px 16px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+.join-invite-avatar { width: 36px; height: 36px; border-radius: 999px; background: linear-gradient(135deg, #ecc94b, #c8952a); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #1a0f00; flex-shrink: 0; }
+.join-invite-text { font-size: 13px; color: #94a3b8; }
+.join-invite-text strong { color: #ecc94b; }
+.join-perks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 16px; }
+.perk { background: #161b27; border: 1px solid #1e2535; border-radius: 10px; padding: 12px; text-align: center; }
+.perk-icon { font-size: 22px; margin-bottom: 4px; }
+.perk-text { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+.perk-text strong { color: #e2e8f0; display: block; font-size: 13px; }
+.join-form { background: #161b27; border: 1px solid #1e2535; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.join-form-title { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+.join-form-sub { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; font-weight: 500; color: #94a3b8; margin-bottom: 5px; }
+.field input { width: 100%; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #e2e8f0; outline: none; }
+.field input:focus { border-color: #ecc94b; }
+.field .hint { font-size: 11px; color: #475569; margin-top: 4px; }
+.submit-btn { width: 100%; padding: 13px; background: linear-gradient(to bottom, #f6d365, #c8952a); color: #1a0f00; font-size: 14px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
+.ref-tag { background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.ref-tag span { color: #ecc94b; font-weight: 600; }
+
+/* ════════════════ PANEL 3: BACKEND ════════════════ */
+.bo-wrap { max-width: 860px; }
+.bo-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.bo-title { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+.bo-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+.bo-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.bo-stat { background: #161b27; border: 1px solid #1e2535; border-radius: 10px; padding: 14px 16px; }
+.bo-stat-val { font-size: 24px; font-weight: 700; color: #ecc94b; }
+.bo-stat-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+/* table */
+.bo-table { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+.bo-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bo-table th { text-align: left; padding: 10px 14px; background: #0f1117; color: #64748b; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.bo-table td { padding: 12px 14px; border-top: 1px solid #1e2535; }
+.bo-table tr:hover td { background: #1a1f2e; }
+.referrer-chip { display: inline-flex; align-items: center; gap-5; gap: 5px; background: #ecc94b18; border: 1px solid #ecc94b33; border-radius: 6px; padding: 2px 8px; font-size: 12px; color: #ecc94b; font-weight: 500; }
+.action-btn { height: 30px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.action-approve { background: #22c55e22; color: #4ade80; border: 1px solid #22c55e33; }
+.action-reject { background: #ef444422; color: #f87171; border: 1px solid #ef444433; margin-left: 4px; }
+.action-done { background: #1e2535; color: #475569; }
+
+/* settings card */
+.bo-settings { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; padding: 18px 20px; }
+.bo-settings-title { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 14px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.s-field label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 5px; }
+.s-field input { width: 100%; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 8px 10px; font-size: 14px; color: #e2e8f0; }
+.s-field .s-hint { font-size: 11px; color: #475569; margin-top: 3px; }
+.save-btn { margin-top: 14px; height: 34px; padding: 0 18px; background: #1a2332; border: 1px solid #2d3748; border-radius: 8px; font-size: 12px; font-weight: 600; color: #94a3b8; cursor: pointer; }
+.save-btn:hover { border-color: #ecc94b; color: #ecc94b; }
+
+/* tab label pill */
+.notif { display: inline-flex; align-items: center; justify-content: center; background: #ef4444; color: #fff; border-radius: 999px; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 5px; }
+</style>
+</head>
+<body>
+
+<h1>推荐系统 Demo</h1>
+
+<div class="tabs">
+  <button class="tab active" onclick="sw('fe')">📱 前台 — 会员推荐页</button>
+  <button class="tab" onclick="sw('join')">🔗 前台 — 入会申请页（好友看到的）</button>
+  <button class="tab" onclick="sw('bo')">🖥 后台 — 推荐管理</button>
+</div>
+
+<!-- ══════════ PANEL 1: MEMBER REFERRAL PAGE ══════════ -->
+<div id="fe" class="panel active">
+<div class="fe-wrap">
+  <div class="fe-header">
+    <div class="icon">🎁</div>
+    <h2>邀请好友</h2>
+    <p>成功推荐好友入会并首次充值<br>你和好友都获得 Token 奖励！</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-strip">
+    <div class="stat">
+      <div class="stat-val">3</div>
+      <div class="stat-label">成功推荐</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val gold">150</div>
+      <div class="stat-label">获得 Token</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">1</div>
+      <div class="stat-label">待审核</div>
+    </div>
+  </div>
+
+  <!-- Reward info banner -->
+  <div style="margin:0 16px 14px;background:#161b27;border:1px solid #1e2535;border-radius:12px;padding:14px 16px;">
+    <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">奖励规则</div>
+    <div style="display:flex;gap:16px;">
+      <div style="flex:1;text-align:center;border-right:1px solid #1e2535;padding-right:16px;">
+        <div style="font-size:22px;font-weight:800;color:#ecc94b;">+50</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">你获得 Token</div>
+        <div style="font-size:10px;color:#475569;margin-top:1px;">好友首次充值后</div>
+      </div>
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:22px;font-weight:800;color:#4ade80;">+20</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">好友获得 Token</div>
+        <div style="font-size:10px;color:#475569;margin-top:1px;">入会欢迎奖励</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ref link -->
+  <div class="ref-box">
+    <div class="ref-box-title">你的专属邀请链接</div>
+    <div class="ref-link-row">
+      <div class="ref-link">711event.com/join?ref=johndoe</div>
+      <button class="copy-btn" onclick="this.textContent='✓ 已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+    </div>
+  </div>
+
+  <!-- Share buttons -->
+  <div class="share-row">
+    <button class="share-btn wa">📲 WhatsApp</button>
+    <button class="share-btn tg">✈️ Telegram</button>
+    <button class="share-btn" style="flex:none;width:44px;">⋯</button>
+  </div>
+
+  <!-- Shareable card preview -->
+  <div style="margin:0 16px 10px;font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">可分享邀请卡（长按保存）</div>
+  <div class="share-card">
+    <div class="share-card-inner">
+      <div class="share-card-logo">⚽</div>
+      <div class="share-card-brand">711 EVENT</div>
+      <div class="share-card-badge">🎁 邀请你加入</div>
+      <div class="share-card-msg">World Cup 竞猜 · 签到赚 Token<br>兑换专属奖品！</div>
+      <div class="share-card-code">REF · JOHNDOE</div>
+      <br>
+      <div class="share-card-url">711event.com/join?ref=johndoe</div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="ref-history" style="margin-top:16px;">
+    <div class="ref-history-title">推荐记录</div>
+    <div class="ref-item">
+      <div>
+        <div class="ref-item-name">Ah Ming</div>
+        <div class="ref-item-date">首次充值 · 2026-05-25</div>
+      </div>
+      <div class="ref-item-reward">+50 🪙</div>
+    </div>
+    <div class="ref-item">
+      <div>
+        <div class="ref-item-name">Sarah Lim</div>
+        <div class="ref-item-date">首次充值 · 2026-05-20</div>
+      </div>
+      <div class="ref-item-reward">+50 🪙</div>
+    </div>
+    <div class="ref-item">
+      <div>
+        <div class="ref-item-name">Rizal</div>
+        <div class="ref-item-date" style="color:#f59e0b;">⏳ 申请待审核</div>
+      </div>
+      <div style="font-size:12px;color:#64748b;">—</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PANEL 2: JOIN PAGE ══════════ -->
+<div id="join" class="panel">
+<div class="join-wrap">
+  <div class="join-hero">
+    <div class="join-hero-logo">⚽</div>
+    <div class="join-hero-brand">711 EVENT</div>
+    <div class="join-hero-sub">World Cup 竞猜 · 每日签到 · Token 兑奖</div>
+  </div>
+
+  <!-- Invited by banner -->
+  <div class="join-invite-banner">
+    <div class="join-invite-avatar">J</div>
+    <div class="join-invite-text">
+      <strong>johndoe</strong> 邀请你加入 711 Event！<br>
+      入会即可获得 <strong style="color:#4ade80;">+20 Token 欢迎奖励</strong>
+    </div>
+  </div>
+
+  <!-- Perks -->
+  <div class="join-perks">
+    <div class="perk">
+      <div class="perk-icon">⚽</div>
+      <div class="perk-text"><strong>World Cup 竞猜</strong>每场比赛赢 Token</div>
+    </div>
+    <div class="perk">
+      <div class="perk-icon">📅</div>
+      <div class="perk-text"><strong>每日签到</strong>连续签到奖励更多</div>
+    </div>
+    <div class="perk">
+      <div class="perk-icon">🪙</div>
+      <div class="perk-text"><strong>Token 积分</strong>兑换专属奖品礼品</div>
+    </div>
+    <div class="perk">
+      <div class="perk-icon">🎁</div>
+      <div class="perk-text"><strong>欢迎奖励</strong>入会即得 20 Token</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="join-form">
+    <div class="join-form-title">提交入会申请</div>
+    <div class="join-form-sub">填写以下资料，客服会在 24 小时内联系你并发送账号。</div>
+
+    <!-- Ref tag (auto-filled from URL) -->
+    <div class="ref-tag">🔗 邀请人：<span>johndoe</span> &nbsp;（已自动记录）</div>
+
+    <div class="field">
+      <label>你的名字 *</label>
+      <input type="text" placeholder="例：Ahmad / 小明">
+    </div>
+    <div class="field">
+      <label>WhatsApp 号码 *</label>
+      <input type="tel" placeholder="例：60123456789">
+      <div class="hint">客服将通过此号码联系你并发送账号</div>
+    </div>
+
+    <div style="height:12px;"></div>
+    <button class="submit-btn">提交申请 →</button>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:#475569;padding-bottom:20px;">
+    提交后无需等待，我们会主动联系你 ✦ 账号由客服团队创建
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PANEL 3: BACKEND ══════════ -->
+<div id="bo" class="panel">
+<div class="bo-wrap">
+  <div class="bo-header">
+    <div>
+      <div class="bo-title">推荐管理 <span class="notif">3</span></div>
+      <div class="bo-sub">入会申请 · 推荐奖励自动发放</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="bo-stats">
+    <div class="bo-stat">
+      <div class="bo-stat-val">18</div>
+      <div class="bo-stat-label">本月申请</div>
+    </div>
+    <div class="bo-stat">
+      <div class="bo-stat-val">14</div>
+      <div class="bo-stat-label">成功入会</div>
+    </div>
+    <div class="bo-stat">
+      <div class="bo-stat-val" style="color:#f59e0b;">3</div>
+      <div class="bo-stat-label">待处理</div>
+    </div>
+    <div class="bo-stat">
+      <div class="bo-stat-val">700</div>
+      <div class="bo-stat-label">已发 Token</div>
+    </div>
+  </div>
+
+  <!-- Pending requests table -->
+  <div style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">📥 待处理申请</div>
+  <div class="bo-table" style="margin-bottom:16px;">
+    <table>
+      <thead>
+        <tr>
+          <th>申请人</th>
+          <th>WhatsApp</th>
+          <th>推荐人</th>
+          <th>申请时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Rizal</strong></td>
+          <td style="font-family:monospace;color:#94a3b8;">60178889901</td>
+          <td><span class="referrer-chip">🎁 johndoe</span></td>
+          <td style="color:#64748b;">5分钟前</td>
+          <td>
+            <button class="action-btn action-approve" onclick="this.closest('tr').style.opacity='.4'">✓ 创建账号</button>
+            <button class="action-btn action-reject" onclick="this.closest('tr').style.opacity='.4'">✕ 拒绝</button>
+          </td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Wei Lin</strong></td>
+          <td style="font-family:monospace;color:#94a3b8;">60122334455</td>
+          <td><span class="referrer-chip">🎁 sarahlim</span></td>
+          <td style="color:#64748b;">2小时前</td>
+          <td>
+            <button class="action-btn action-approve" onclick="this.closest('tr').style.opacity='.4'">✓ 创建账号</button>
+            <button class="action-btn action-reject" onclick="this.closest('tr').style.opacity='.4'">✕ 拒绝</button>
+          </td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Karthik</strong></td>
+          <td style="font-family:monospace;color:#94a3b8;">60196667788</td>
+          <td><span class="referrer-chip">🎁 johndoe</span></td>
+          <td style="color:#64748b;">昨天</td>
+          <td>
+            <button class="action-btn action-approve" onclick="this.closest('tr').style.opacity='.4'">✓ 创建账号</button>
+            <button class="action-btn action-reject" onclick="this.closest('tr').style.opacity='.4'">✕ 拒绝</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Processed table -->
+  <div style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">✅ 已处理（最近）</div>
+  <div class="bo-table" style="margin-bottom:20px;">
+    <table>
+      <thead>
+        <tr>
+          <th>会员</th>
+          <th>推荐人</th>
+          <th>状态</th>
+          <th>奖励</th>
+          <th>首次充值</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Ah Ming</strong></td>
+          <td><span class="referrer-chip">🎁 johndoe</span></td>
+          <td><span class="badge badge-approved">✓ 已入会</span></td>
+          <td style="color:#4ade80;font-weight:600;">+50 🪙 已发</td>
+          <td style="color:#64748b;">2026-05-25</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Sarah Lim</strong></td>
+          <td><span class="referrer-chip">🎁 johndoe</span></td>
+          <td><span class="badge badge-approved">✓ 已入会</span></td>
+          <td style="color:#4ade80;font-weight:600;">+50 🪙 已发</td>
+          <td style="color:#64748b;">2026-05-20</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Danny K</strong></td>
+          <td><span class="referrer-chip">🎁 sarahlim</span></td>
+          <td><span class="badge badge-approved">✓ 已入会</span></td>
+          <td style="color:#64748b;font-style:italic;">等待首次充值…</td>
+          <td style="color:#64748b;">—</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f1f5f9;">Spam99</strong></td>
+          <td style="color:#64748b;">—</td>
+          <td><span class="badge badge-rejected">✕ 已拒绝</span></td>
+          <td style="color:#64748b;">—</td>
+          <td style="color:#64748b;">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Reward settings -->
+  <div class="bo-settings">
+    <div class="bo-settings-title">⚙️ 推荐奖励设置（本组）</div>
+    <div class="settings-grid">
+      <div class="s-field">
+        <label>推荐人奖励 Token</label>
+        <input type="number" value="50">
+        <div class="s-hint">好友首次充值后自动发放</div>
+      </div>
+      <div class="s-field">
+        <label>新会员欢迎 Token</label>
+        <input type="number" value="20">
+        <div class="s-hint">账号创建后自动发放</div>
+      </div>
+      <div class="s-field">
+        <label>触发充值门槛 (RM)</label>
+        <input type="number" value="0">
+        <div class="s-hint">0 = 任意首次充值即触发</div>
+      </div>
+    </div>
+    <button class="save-btn">💾 保存设置</button>
+  </div>
+</div>
+</div>
+
+<script>
+function sw(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',['fe','join','bo'][i]===name);
+  });
+  document.querySelectorAll('.panel').forEach(p=>{
+    p.classList.toggle('active',p.id===name);
+  });
+}
+</script>
+</body>
+</html>
