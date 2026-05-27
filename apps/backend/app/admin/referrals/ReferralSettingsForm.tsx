@@ -12,7 +12,9 @@ interface Props {
     min_recharge_amount: number;
     referrer_token_reward: number;
     share_mode: "link_only" | "link_and_card";
-    share_message: string | null;
+    share_message_zh: string | null;
+    share_message_en: string | null;
+    share_message_ms: string | null;
   };
 }
 
@@ -25,7 +27,9 @@ export function ReferralSettingsForm({ initial }: Props) {
   const [minRecharge, setMinRecharge] = useState(initial.min_recharge_amount);
   const [reward, setReward] = useState(initial.referrer_token_reward);
   const [shareMode, setShareMode] = useState(initial.share_mode);
-  const [shareMsg, setShareMsg] = useState(initial.share_message ?? "");
+  const [shareMsgZh, setShareMsgZh] = useState(initial.share_message_zh ?? "");
+  const [shareMsgEn, setShareMsgEn] = useState(initial.share_message_en ?? "");
+  const [shareMsgMs, setShareMsgMs] = useState(initial.share_message_ms ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +44,9 @@ export function ReferralSettingsForm({ initial }: Props) {
       min_recharge_amount: minRecharge,
       referrer_token_reward: reward,
       share_mode: shareMode,
-      share_message: shareMsg.trim() || null,
+      share_message_zh: shareMsgZh.trim() || null,
+      share_message_en: shareMsgEn.trim() || null,
+      share_message_ms: shareMsgMs.trim() || null,
     });
     setSaving(false);
     if (res.error) {
@@ -146,21 +152,34 @@ export function ReferralSettingsForm({ initial }: Props) {
         <p className="text-xs text-zinc-500">{t("referral_settings_share_mode_hint")}</p>
       </div>
 
-      {/* Share message */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-zinc-700">{t("referral_settings_share_msg_label")}</label>
-        <textarea
-          value={shareMsg}
-          onChange={(e) => setShareMsg(e.target.value)}
-          maxLength={500}
-          rows={3}
-          placeholder={t("referral_settings_share_msg_placeholder")}
-          className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm text-zinc-800 outline-none focus:ring-2 focus:ring-amber-400 resize-none"
-        />
-        <p className="text-xs text-zinc-500 flex justify-between">
-          <span>{t("referral_settings_share_msg_hint")}</span>
-          <span className={shareMsg.length > 450 ? "text-red-500" : "text-zinc-400"}>{shareMsg.length}/500</span>
-        </p>
+      {/* Share message — 3 languages */}
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-medium text-zinc-700">{t("referral_settings_share_msg_label")}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">{t("referral_settings_share_msg_hint")}</p>
+        </div>
+        {(
+          [
+            { lang: "中文", value: shareMsgZh, setter: setShareMsgZh, placeholder: t("referral_settings_share_msg_placeholder_zh") },
+            { lang: "EN",   value: shareMsgEn, setter: setShareMsgEn, placeholder: t("referral_settings_share_msg_placeholder_en") },
+            { lang: "BM",   value: shareMsgMs, setter: setShareMsgMs, placeholder: t("referral_settings_share_msg_placeholder_ms") },
+          ] as const
+        ).map(({ lang, value, setter, placeholder }) => (
+          <div key={lang} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{lang}</span>
+              <span className={`text-xs ${value.length > 450 ? "text-red-500" : "text-zinc-400"}`}>{value.length}/500</span>
+            </div>
+            <textarea
+              value={value}
+              onChange={(e) => setter(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder={placeholder}
+              className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm text-zinc-800 outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+            />
+          </div>
+        ))}
       </div>
 
       {/* Error */}

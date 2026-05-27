@@ -8,11 +8,11 @@ interface Props {
   username: string;
   companyName: string;
   showCard: boolean;
-  shareMessage: string | null;
+  shareMessages: { zh: string | null; en: string | null; ms: string | null };
   locale: FeLocale;
 }
 
-export function ReferralClient({ referralUrl, username, companyName, showCard, shareMessage, locale }: Props) {
+export function ReferralClient({ referralUrl, username, companyName, showCard, shareMessages, locale }: Props) {
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
   const [copied, setCopied] = useState(false);
 
@@ -29,9 +29,11 @@ export function ReferralClient({ referralUrl, username, companyName, showCard, s
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Use admin-configured message if set, otherwise fall back to i18n default
+  // Pick the admin-configured message for the current locale, fallback to i18n default
   function buildShareText() {
-    const msg = shareMessage?.trim() || t("referral_share_msg", { company: companyName });
+    const msg =
+      (shareMessages[locale as keyof typeof shareMessages] ?? shareMessages.en ?? shareMessages.zh ?? shareMessages.ms)?.trim()
+      || t("referral_share_msg", { company: companyName });
     return `${msg}\n${referralUrl}`;
   }
 

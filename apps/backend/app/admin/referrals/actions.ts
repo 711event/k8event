@@ -161,7 +161,9 @@ const settingsSchema = z.object({
   min_recharge_amount:   z.number().int().min(0),
   referrer_token_reward: z.number().int().min(0),
   share_mode:            z.enum(["link_only", "link_and_card"]),
-  share_message:         z.string().max(500).optional().nullable(),
+  share_message_zh:      z.string().max(500).optional().nullable(),
+  share_message_en:      z.string().max(500).optional().nullable(),
+  share_message_ms:      z.string().max(500).optional().nullable(),
 });
 
 export async function saveReferralSettingsAction(

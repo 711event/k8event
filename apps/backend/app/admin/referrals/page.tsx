@@ -44,7 +44,7 @@ export default async function ReferralsPage(props: {
   // Referral settings
   const { data: settings } = await supabase
     .from("referral_settings")
-    .select("enabled, trigger_type, min_recharge_amount, referrer_token_reward, share_mode, share_message")
+    .select("enabled, trigger_type, min_recharge_amount, referrer_token_reward, share_mode, share_message_zh, share_message_en, share_message_ms")
     .eq("group_id", groupId)
     .maybeSingle();
 
@@ -54,7 +54,9 @@ export default async function ReferralsPage(props: {
     min_recharge_amount: settings?.min_recharge_amount ?? 0,
     referrer_token_reward: settings?.referrer_token_reward ?? 50,
     share_mode: (settings?.share_mode ?? "link_and_card") as "link_only" | "link_and_card",
-    share_message: settings?.share_message ?? null,
+    share_message_zh: settings?.share_message_zh ?? null,
+    share_message_en: settings?.share_message_en ?? null,
+    share_message_ms: settings?.share_message_ms ?? null,
   };
 
   const tabs = [
