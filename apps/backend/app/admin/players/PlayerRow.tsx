@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, RefreshCw, Copy, Check, X } from "lucide-react";
-import { changePasswordAction } from "./actions";
+import { KeyRound, RefreshCw, Copy, Check, X, Pencil } from "lucide-react";
+import { changePasswordAction, updateDisplayNameAction } from "./actions";
 import { useLang } from "@/components/admin/LangProvider";
 import { tBo } from "@/lib/i18n";
 
@@ -17,7 +17,7 @@ function randomPw(): string {
 export function PlayerRow({
   userId,
   username,
-  displayName,
+  displayName: initialDisplayName,
   createdAt,
 }: {
   userId: string;
@@ -27,20 +27,37 @@ export function PlayerRow({
 }) {
   const { locale } = useLang();
   const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
-  const [open, setOpen] = useState(false);
+
+  // Password panel
+  const [pwOpen, setPwOpen] = useState(false);
   const [pw, setPw] = useState(() => randomPw());
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  async function save() {
+  // Edit display name panel
+  const [editOpen, setEditOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(initialDisplayName ?? "");
+  const [editSaving, setEditSaving] = useState(false);
+
+  async function savePw() {
     if (pw.length < 8) { toast.error(t("player_row_pw_min")); return; }
     setSaving(true);
     const res = await changePasswordAction(userId, pw);
     setSaving(false);
     if (res.error) { toast.error(res.error); return; }
     toast.success(`${username} ${t("player_row_pw_updated")}`);
-    setOpen(false);
+    setPwOpen(false);
     setPw(randomPw());
+  }
+
+  async function saveDisplayName() {
+    if (!displayName.trim()) return;
+    setEditSaving(true);
+    const res = await updateDisplayNameAction(userId, displayName);
+    setEditSaving(false);
+    if (res.error) { toast.error(res.error); return; }
+    toast.success("显示名称已更新");
+    setEditOpen(false);
   }
 
   async function copyInfo() {
@@ -54,21 +71,68 @@ export function PlayerRow({
     <>
       <tr className="hover:bg-zinc-50">
         <td className="px-4 py-3 font-mono">{username}</td>
-        <td className="px-4 py-3">{displayName}</td>
+        <td className="px-4 py-3">{displayName || initialDisplayName}</td>
         <td className="px-4 py-3 text-zinc-500">{createdAt}</td>
         <td className="px-4 py-3">
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-zinc-300 hover:border-zinc-400 text-zinc-600 hover:text-zinc-800 transition"
-          >
-            <KeyRound size={12} />
-            {t("player_row_change_pw")}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Edit display name */}
+            <button
+              type="button"
+              onClick={() => { setEditOpen((v) => !v); setPwOpen(false); }}
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-zinc-300 hover:border-zinc-400 text-zinc-600 hover:text-zinc-800 transition"
+            >
+              <Pencil size={12} />
+              编辑
+            </button>
+            {/* Change password */}
+            <button
+              type="button"
+              onClick={() => { setPwOpen((v) => !v); setEditOpen(false); }}
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-zinc-300 hover:border-zinc-400 text-zinc-600 hover:text-zinc-800 transition"
+            >
+              <KeyRound size={12} />
+              {t("player_row_change_pw")}
+            </button>
+          </div>
         </td>
       </tr>
 
-      {open && (
+      {/* Edit display name panel */}
+      {editOpen && (
+        <tr className="bg-zinc-50 border-t border-zinc-100">
+          <td colSpan={4} className="px-4 py-3">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+                <span>显示名称</span>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  maxLength={60}
+                  className="h-9 px-3 rounded border border-zinc-300 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={saveDisplayName}
+                disabled={editSaving || !displayName.trim()}
+                className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
+              >
+                {editSaving ? "保存中…" : "保存"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                className="h-9 w-9 rounded border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-400 transition"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+
+      {/* Change password panel */}
+      {pwOpen && (
         <tr className="bg-zinc-50 border-t border-zinc-100">
           <td colSpan={4} className="px-4 py-3">
             <div className="flex flex-wrap items-end gap-2">
@@ -102,7 +166,7 @@ export function PlayerRow({
 
               <button
                 type="button"
-                onClick={save}
+                onClick={savePw}
                 disabled={saving}
                 className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
               >
@@ -111,7 +175,7 @@ export function PlayerRow({
 
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => setPwOpen(false)}
                 className="h-9 w-9 rounded border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-400 transition"
               >
                 <X size={14} />

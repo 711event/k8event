@@ -83,6 +83,29 @@ export async function createPlayerAction(
   return { ok: true, username, password };
 }
 
+export async function updateDisplayNameAction(
+  userId: string,
+  displayName: string,
+): Promise<{ error?: string }> {
+  await requireRole("admin");
+  const trimmed = displayName.trim();
+  if (!trimmed || trimmed.length > 60) return { error: "显示名称 1–60 字" };
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId())
+    .eq("role", "player")
+    .maybeSingle();
+  if (!profile) return { error: "玩家不存在或不属于本组" };
+  const admin = getSupabaseAdmin();
+  const { error } = await admin.from("profiles").update({ display_name: trimmed }).eq("user_id", userId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/players");
+  return {};
+}
+
 export async function changePasswordAction(
   userId: string,
   newPassword: string,

@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { getGroupId } from "@/lib/get-group";
 import { CreatePlayerForm } from "./CreatePlayerForm";
-import { PlayerRow } from "./PlayerRow";
+import { PlayersClient } from "./PlayersClient";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 
@@ -21,7 +21,14 @@ export default async function PlayersPage() {
     .eq("role", "player")
     .eq("group_id", getGroupId())
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(500);
+
+  const rows = (players ?? []).map((p) => ({
+    user_id: p.user_id,
+    username: p.username,
+    display_name: p.display_name,
+    createdAt: formatMalaysia(p.created_at),
+  }));
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -35,35 +42,11 @@ export default async function PlayersPage() {
         <CreatePlayerForm />
       </section>
 
-      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left">
-            <tr>
-              <th className="px-4 py-3 font-medium">{t("players_col_username")}</th>
-              <th className="px-4 py-3 font-medium">{t("players_col_displayName")}</th>
-              <th className="px-4 py-3 font-medium">{t("players_col_createdAt")}</th>
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200">
-            {error ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-red-500">{error.message}</td></tr>
-            ) : !players?.length ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-zinc-500">{t("players_empty")}</td></tr>
-            ) : (
-              players.map((p) => (
-                <PlayerRow
-                  key={p.user_id}
-                  userId={p.user_id}
-                  username={p.username ?? ""}
-                  displayName={p.display_name}
-                  createdAt={formatMalaysia(p.created_at)}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </section>
+      {error ? (
+        <p className="text-red-500 text-sm">{error.message}</p>
+      ) : (
+        <PlayersClient players={rows} />
+      )}
     </div>
   );
 }
