@@ -10,9 +10,13 @@ import { ReferralClient } from "./ReferralClient";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "邀请好友 · 711event" };
 
-// Build the public join URL for this deployment
+// Build the public join URL for this deployment.
+// Priority: explicit env > VERCEL_PROJECT_PRODUCTION_URL (stable prod domain) > VERCEL_URL (preview, avoid)
 function getBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL;
+  const url =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    process.env.VERCEL_URL;
   if (url) return url.startsWith("http") ? url : `https://${url}`;
   return "https://711event.vercel.app";
 }
