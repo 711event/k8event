@@ -128,7 +128,7 @@ export function JoinWaiting({ threadId, guestToken, credentials, locale }: Props
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm font-semibold text-[var(--gold-400)] hover:text-[var(--gold-300)] transition"
             >
-              🌐 <span className="underline underline-offset-2">{credentials.loginUrl.replace(/^https?:\/\//, "")}</span>
+              🌐 <span className="underline underline-offset-2">{credentials.loginUrl}</span>
             </a>
 
             {/* Username row */}

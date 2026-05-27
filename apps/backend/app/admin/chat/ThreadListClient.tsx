@@ -14,6 +14,7 @@ type ChatSender = "guest" | "agent" | "system";
 export interface ThreadRow {
   id: string;
   guest_name: string | null;
+  player_username: string | null;
   status: ChatThreadStatus;
   last_message_at: string | null;
   last_message_body: string | null;
@@ -124,7 +125,7 @@ export function ThreadListClient({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium truncate">
-                    {item.guest_name ?? tr("thread_list_guest")}
+                    {item.player_username ?? item.guest_name ?? tr("thread_list_guest")}
                   </span>
                   <span className="text-xs text-zinc-400 font-mono shrink-0">
                     {item.id.slice(0, 8)}

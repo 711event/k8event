@@ -29,13 +29,13 @@ export default async function ChatInboxPage(props: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
-  const [{ data: threads }, { data: urgencySettings }, { count: openCount }, { count: pendingCount }] =
+  const [{ data: rawThreads }, { data: urgencySettings }, { count: openCount }, { count: pendingCount }] =
     await Promise.all([
       (() => {
         let q = sb
           .from("chat_threads")
           .select(
-            "id, guest_name, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
+            "id, guest_name, player_id, status, last_message_at, last_message_body, last_message_kind, last_message_sender, created_at",
           )
           .eq("group_id", groupId)
           .order("last_message_at", { ascending: false, nullsFirst: false })
@@ -54,6 +54,27 @@ export default async function ChatInboxPage(props: {
 
   const warnAfterMinutes = urgencySettings?.warn_after_minutes ?? 5;
   const criticalAfterMinutes = urgencySettings?.critical_after_minutes ?? 8;
+
+  // Enrich threads with player username (show instead of guest_name when available)
+  const playerIds = [...new Set(
+    (rawThreads ?? [])
+      .map((t: { player_id: string | null }) => t.player_id)
+      .filter((id): id is string => Boolean(id))
+  )];
+  const usernameMap = new Map<string, string | null>();
+  if (playerIds.length > 0) {
+    const { data: playerProfiles } = await supabase
+      .from("profiles")
+      .select("user_id, username")
+      .in("user_id", playerIds);
+    for (const p of playerProfiles ?? []) {
+      usernameMap.set(p.user_id, p.username ?? null);
+    }
+  }
+  const threads = (rawThreads ?? []).map((t: { player_id: string | null; [key: string]: unknown }) => ({
+    ...t,
+    player_username: t.player_id ? (usernameMap.get(t.player_id) ?? null) : null,
+  }));
 
   return (
     <div className="space-y-6 max-w-4xl">

@@ -592,9 +592,9 @@ export const feTranslations = {
     join_success_body: "We'll review your application shortly. Our team will send your account details via the contact you provided.",
     join_waiting_title: "Waiting for Review",
     join_waiting_subtitle: "Our team will send your login details here directly. Please keep this page open.",
-    join_waiting_placeholder: "Send a message to support…",
+    join_waiting_placeholder: "Send a message to Livechat…",
     join_waiting_send: "Send",
-    join_waiting_online: "Support Online",
+    join_waiting_online: "Livechat",
     // Credential card
     join_cred_activated: "Account Activated",
     join_cred_username: "Username",
@@ -602,7 +602,7 @@ export const feTranslations = {
     join_cred_login_btn: "Go to Login →",
     join_cred_copy_all: "Copy All",
     join_cred_copy_all_copied: "✓ Copied",
-    join_cred_hint: "Change your password after login · Contact support below if you need help",
+    join_cred_hint: "Change your password after login · Contact Livechat below if you need help",
 
     // Tokens — referral reason
     tokens_reason_referral: "Referral Reward",
@@ -895,9 +895,9 @@ export const feTranslations = {
     join_success_body: "Kami akan menyemak permohonan anda tidak lama lagi. Pasukan kami akan menghantar butiran akaun anda melalui kenalan yang anda berikan.",
     join_waiting_title: "Menunggu Semakan",
     join_waiting_subtitle: "Pasukan kami akan menghantar butiran log masuk anda di sini. Sila jangan tutup halaman ini.",
-    join_waiting_placeholder: "Hantar mesej kepada sokongan…",
+    join_waiting_placeholder: "Hantar mesej kepada Livechat…",
     join_waiting_send: "Hantar",
-    join_waiting_online: "Sokongan Dalam Talian",
+    join_waiting_online: "Livechat",
     // Credential card
     join_cred_activated: "Akaun Diaktifkan",
     join_cred_username: "Nama Pengguna",
@@ -905,7 +905,7 @@ export const feTranslations = {
     join_cred_login_btn: "Pergi ke Log Masuk →",
     join_cred_copy_all: "Salin Semua",
     join_cred_copy_all_copied: "✓ Disalin",
-    join_cred_hint: "Tukar kata laluan anda selepas log masuk · Hubungi sokongan di bawah jika perlu bantuan",
+    join_cred_hint: "Tukar kata laluan anda selepas log masuk · Hubungi Livechat di bawah jika perlu bantuan",
 
     // Tokens — referral reason
     tokens_reason_referral: "Ganjaran Rujukan",
