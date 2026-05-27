@@ -421,6 +421,7 @@ export type Database = {
           share_message_zh: string | null;
           share_message_en: string | null;
           share_message_ms: string | null;
+          og_image_url: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -433,6 +434,7 @@ export type Database = {
           share_message_zh?: string | null;
           share_message_en?: string | null;
           share_message_ms?: string | null;
+          og_image_url?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["referral_settings"]["Insert"]>;

@@ -15,6 +15,7 @@ interface Props {
     share_message_zh: string | null;
     share_message_en: string | null;
     share_message_ms: string | null;
+    og_image_url: string | null;
   };
 }
 
@@ -30,6 +31,7 @@ export function ReferralSettingsForm({ initial }: Props) {
   const [shareMsgZh, setShareMsgZh] = useState(initial.share_message_zh ?? "");
   const [shareMsgEn, setShareMsgEn] = useState(initial.share_message_en ?? "");
   const [shareMsgMs, setShareMsgMs] = useState(initial.share_message_ms ?? "");
+  const [ogImageUrl, setOgImageUrl] = useState(initial.og_image_url ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export function ReferralSettingsForm({ initial }: Props) {
       share_message_zh: shareMsgZh.trim() || null,
       share_message_en: shareMsgEn.trim() || null,
       share_message_ms: shareMsgMs.trim() || null,
+      og_image_url: ogImageUrl.trim() || null,
     });
     setSaving(false);
     if (res.error) {
@@ -151,6 +154,24 @@ export function ReferralSettingsForm({ initial }: Props) {
         </div>
         <p className="text-xs text-zinc-500">{t("referral_settings_share_mode_hint")}</p>
       </div>
+
+      {/* OG Image URL — only when link_and_card */}
+      {shareMode === "link_and_card" && (
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-zinc-700">{t("referral_settings_og_image_label")}</label>
+          <input
+            type="url"
+            value={ogImageUrl}
+            onChange={(e) => setOgImageUrl(e.target.value)}
+            placeholder="https://i.imgur.com/xxx.jpg"
+            className="w-full h-9 px-3 rounded-lg border border-zinc-300 bg-white text-sm text-zinc-800 outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          {ogImageUrl && (
+            <img src={ogImageUrl} alt="OG preview" className="mt-2 rounded-lg border border-zinc-200 max-h-32 object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+          )}
+          <p className="text-xs text-zinc-500 leading-relaxed">{t("referral_settings_og_image_hint")}</p>
+        </div>
+      )}
 
       {/* Share message — 3 languages */}
       <div className="space-y-3">

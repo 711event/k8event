@@ -164,6 +164,7 @@ const settingsSchema = z.object({
   share_message_zh:      z.string().max(500).optional().nullable(),
   share_message_en:      z.string().max(500).optional().nullable(),
   share_message_ms:      z.string().max(500).optional().nullable(),
+  og_image_url:          z.string().url().optional().nullable().or(z.literal("")),
 });
 
 export async function saveReferralSettingsAction(

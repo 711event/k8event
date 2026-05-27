@@ -6,7 +6,33 @@ import { getGroupBranding } from "@/lib/get-branding";
 import { JoinForm } from "./JoinForm";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Join — 711event" };
+
+export async function generateMetadata(props: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const branding = await getGroupBranding();
+  const supabase = await createSupabaseServerClient();
+  const { data: settings } = await supabase
+    .from("referral_settings")
+    .select("og_image_url")
+    .eq("group_id", getGroupId())
+    .maybeSingle();
+  const ogImage = settings?.og_image_url ?? null;
+  return {
+    title: `加入 ${branding.company_name}`,
+    openGraph: {
+      title: `加入 ${branding.company_name} — 天天签到赢 Token`,
+      description: "每日签到赢 Token，连续签到有翻倍奖励！点链接立即加入。",
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title: `加入 ${branding.company_name}`,
+      description: "每日签到赢 Token，连续签到有翻倍奖励！",
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+  };
+}
 
 export default async function JoinPage(props: {
   searchParams: Promise<{ ref?: string }>;
