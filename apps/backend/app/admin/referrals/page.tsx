@@ -6,6 +6,7 @@ import { tBo } from "@/lib/i18n";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { ApproveForm } from "./ApproveForm";
 import { ReferralSettingsForm } from "./ReferralSettingsForm";
+import { DeleteRequestButton } from "./DeleteRequestButton";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function ReferralsPage(props: {
   // Fetch pending requests
   const { data: pendingRequests } = await supabase
     .from("referral_requests")
-    .select("id, name, phone, ref_username, referrer_id, created_at")
+    .select("id, name, phone, ref_username, referrer_id, created_at, chat_thread_id")
     .eq("group_id", groupId)
     .eq("status", "pending")
     .order("created_at", { ascending: true });
@@ -44,12 +45,14 @@ export default async function ReferralsPage(props: {
   // Referral settings
   const { data: settings } = await supabase
     .from("referral_settings")
-    .select("enabled, trigger_type, min_recharge_amount, referrer_token_reward, share_mode, share_message_zh, share_message_en, share_message_ms, og_image_url")
+    .select("enabled, auto_approve, username_prefix, trigger_type, min_recharge_amount, referrer_token_reward, share_mode, share_message_zh, share_message_en, share_message_ms, og_image_url")
     .eq("group_id", groupId)
     .maybeSingle();
 
   const settingsData = {
     enabled: settings?.enabled ?? true,
+    auto_approve: settings?.auto_approve ?? false,
+    username_prefix: settings?.username_prefix ?? "",
     trigger_type: (settings?.trigger_type ?? "on_first_recharge") as "on_register" | "on_first_recharge" | "on_min_recharge",
     min_recharge_amount: settings?.min_recharge_amount ?? 0,
     referrer_token_reward: settings?.referrer_token_reward ?? 50,
@@ -134,9 +137,20 @@ export default async function ReferralsPage(props: {
                         {formatMalaysia(req.created_at)}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
-                      {t("referral_status_pending")}
-                    </span>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">
+                        {t("referral_status_pending")}
+                      </span>
+                      {req.chat_thread_id && (
+                        <a
+                          href={`/admin/chat/${req.chat_thread_id}`}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition font-medium"
+                        >
+                          💬 Chat
+                        </a>
+                      )}
+                      <DeleteRequestButton requestId={req.id} />
+                    </div>
                   </div>
                   <ApproveForm
                     requestId={req.id}

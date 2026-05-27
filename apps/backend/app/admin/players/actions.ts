@@ -16,6 +16,7 @@ const usernameSchema = z
 const createPlayerSchema = z.object({
   username: usernameSchema,
   displayName: z.string().trim().max(60).optional(),
+  phone: z.string().trim().max(30).optional(),
 });
 
 function generatePassword(): string {
@@ -39,13 +40,14 @@ export async function createPlayerAction(
   const parsed = createPlayerSchema.safeParse({
     username: formData.get("username"),
     displayName: formData.get("displayName") || undefined,
+    phone: formData.get("phone") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { username, displayName } = parsed.data;
+  const { username, displayName, phone } = parsed.data;
   const password = generatePassword();
   // PLAYER_EMAIL_DOMAIN allows per-group username namespacing in shared Supabase Auth.
   // Test group omits this var (defaults to k8event.local for backward compat).
@@ -72,6 +74,7 @@ export async function createPlayerAction(
     username,
     display_name: displayName ?? username,
     group_id: getGroupId(),
+    ...(phone ? { phone } : {}),
   });
   if (profErr) {
     // Rollback the auth user if profile insert fails
@@ -101,6 +104,29 @@ export async function updateDisplayNameAction(
   if (!profile) return { error: "玩家不存在或不属于本组" };
   const admin = getSupabaseAdmin();
   const { error } = await admin.from("profiles").update({ display_name: trimmed }).eq("user_id", userId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/players");
+  return {};
+}
+
+export async function updatePhoneAction(
+  userId: string,
+  phone: string,
+): Promise<{ error?: string }> {
+  await requireRole("admin");
+  if (phone.length > 30) return { error: "联系方式最多 30 个字符" };
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId())
+    .eq("role", "player")
+    .maybeSingle();
+  if (!profile) return { error: "玩家不存在或不属于本组" };
+  const admin = getSupabaseAdmin();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (admin as any).from("profiles").update({ phone: phone || null }).eq("user_id", userId);
   if (error) return { error: error.message };
   revalidatePath("/admin/players");
   return {};

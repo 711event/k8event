@@ -17,7 +17,7 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
   const t = (k: Parameters<typeof tBo>[1]) => tBo(locale, k);
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: thread }, { data: messages }, { data: quickReplies }] = await Promise.all([
+  const [{ data: thread }, { data: messages }, { data: quickReplies }, { data: referralReq }] = await Promise.all([
     supabase
       .from("chat_threads")
       .select("id, guest_name, status, created_at, last_message_at")
@@ -39,6 +39,11 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
       .eq("group_id", getGroupId())
       .order("sort_order")
       .order("title"),
+    supabase
+      .from("referral_requests")
+      .select("id, name, phone, ref_username, status")
+      .eq("chat_thread_id", threadId)
+      .maybeSingle(),
   ]);
 
   if (!thread) notFound();
@@ -59,6 +64,33 @@ export default async function ThreadPage(props: { params: Promise<{ threadId: st
           </p>
         </div>
       </header>
+
+      {/* Referral context banner */}
+      {referralReq && (
+        <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 flex items-center gap-3 flex-wrap text-xs text-amber-800">
+          <span className="font-semibold">📋 推荐申请</span>
+          <span>姓名: <b>{referralReq.name}</b></span>
+          <span>📞 {referralReq.phone}</span>
+          <span>推荐人: <b>{referralReq.ref_username}</b></span>
+          <span className={`px-2 py-0.5 rounded-full border font-medium ${
+            referralReq.status === "approved"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : referralReq.status === "rejected"
+              ? "bg-red-50 border-red-200 text-red-700"
+              : "bg-amber-100 border-amber-200 text-amber-700"
+          }`}>
+            {referralReq.status}
+          </span>
+          {referralReq.status === "pending" && (
+            <a
+              href="/admin/referrals?tab=pending"
+              className="ml-auto text-blue-600 hover:underline font-medium"
+            >
+              去审核 →
+            </a>
+          )}
+        </div>
+      )}
 
       <AgentChat
         threadId={thread.id}

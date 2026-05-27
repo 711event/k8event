@@ -8,6 +8,7 @@ interface Player {
   user_id: string;
   username: string | null;
   display_name: string;
+  phone: string | null;
   createdAt: string;
 }
 
@@ -19,7 +20,8 @@ export function PlayersClient({ players }: { players: Player[] }) {
         const s = q.toLowerCase();
         return (
           (p.username ?? "").toLowerCase().includes(s) ||
-          p.display_name.toLowerCase().includes(s)
+          p.display_name.toLowerCase().includes(s) ||
+          (p.phone ?? "").toLowerCase().includes(s)
         );
       })
     : players;
@@ -33,7 +35,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索用户名 / 显示名称"
+          placeholder="搜索用户名 / 显示名称 / 联系方式"
           className="w-full h-9 pl-9 pr-3 rounded-lg border border-zinc-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-400"
         />
       </div>
@@ -45,6 +47,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
             <tr>
               <th className="px-4 py-3 font-medium">用户名</th>
               <th className="px-4 py-3 font-medium">显示名称</th>
+              <th className="px-4 py-3 font-medium">联系方式</th>
               <th className="px-4 py-3 font-medium">创建时间 (GMT+8)</th>
               <th className="px-4 py-3 font-medium"></th>
             </tr>
@@ -52,7 +55,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
           <tbody className="divide-y divide-zinc-200">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-zinc-500 text-center">
+                <td colSpan={5} className="px-4 py-6 text-zinc-500 text-center">
                   {q ? `找不到「${q}」相关玩家` : "暂无玩家"}
                 </td>
               </tr>
@@ -63,6 +66,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
                   userId={p.user_id}
                   username={p.username ?? ""}
                   displayName={p.display_name}
+                  phone={p.phone}
                   createdAt={p.createdAt}
                 />
               ))

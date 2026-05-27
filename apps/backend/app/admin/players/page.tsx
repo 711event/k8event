@@ -17,7 +17,7 @@ export default async function PlayersPage() {
 
   const { data: players, error } = await supabase
     .from("profiles")
-    .select("user_id, username, display_name, created_at")
+    .select("user_id, username, display_name, phone, created_at")
     .eq("role", "player")
     .eq("group_id", getGroupId())
     .order("created_at", { ascending: false })
@@ -27,6 +27,8 @@ export default async function PlayersPage() {
     user_id: p.user_id,
     username: p.username,
     display_name: p.display_name,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    phone: (p as any).phone as string | null,
     createdAt: formatMalaysia(p.created_at),
   }));
 

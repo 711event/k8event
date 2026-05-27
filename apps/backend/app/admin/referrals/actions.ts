@@ -52,7 +52,7 @@ export async function approveReferralAction(
   // Verify request belongs to this group and is still pending
   const { data: req } = await supabase
     .from("referral_requests")
-    .select("id, referrer_id, status")
+    .select("id, referrer_id, status, phone")
     .eq("id", requestId)
     .eq("group_id", groupId)
     .eq("status", "pending")
@@ -77,7 +77,7 @@ export async function approveReferralAction(
     return { error: msg };
   }
 
-  // Create profile with referred_by
+  // Create profile with referred_by and phone from the referral request
   const { error: profErr } = await admin.from("profiles").insert({
     user_id:     created.user.id,
     role:        "player",
@@ -85,6 +85,8 @@ export async function approveReferralAction(
     display_name: displayName ?? username,
     group_id:    groupId,
     referred_by: req.referrer_id ?? null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...((req as any).phone ? { phone: (req as any).phone } : {}),
   });
   if (profErr) {
     await admin.auth.admin.deleteUser(created.user.id).catch(() => {});
@@ -153,10 +155,45 @@ export async function rejectReferralAction(requestId: string): Promise<{ error?:
 }
 
 
+// ── Delete referral request ───────────────────────────────────────────────────
+
+export async function deleteReferralRequestAction(requestId: string): Promise<{ error?: string }> {
+  await requireRole("admin");
+  const supabase = await createSupabaseServerClient();
+  const admin = getSupabaseAdmin();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: req } = await (supabase as any)
+    .from("referral_requests")
+    .select("id, chat_thread_id")
+    .eq("id", requestId)
+    .eq("group_id", getGroupId())
+    .maybeSingle();
+
+  if (!req) return { error: "Not found" };
+
+  // Delete messages + close thread first to avoid FK constraint issues
+  if (req.chat_thread_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin as any).from("chat_messages").delete().eq("thread_id", req.chat_thread_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin as any).from("chat_threads").delete().eq("id", req.chat_thread_id);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (admin as any).from("referral_requests").delete().eq("id", requestId);
+
+  revalidatePath("/admin/referrals");
+  return {};
+}
+
+
 // ── Save referral settings ────────────────────────────────────────────────────
 
 const settingsSchema = z.object({
   enabled:               z.boolean(),
+  auto_approve:          z.boolean(),
+  username_prefix:       z.string().max(5).regex(/^[A-Za-z0-9]*$/, "Prefix must be letters/digits only").optional().default(""),
   trigger_type:          z.enum(["on_register", "on_first_recharge", "on_min_recharge"]),
   min_recharge_amount:   z.number().int().min(0),
   referrer_token_reward: z.number().int().min(0),

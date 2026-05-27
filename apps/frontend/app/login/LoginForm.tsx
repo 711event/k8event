@@ -28,6 +28,7 @@ export function LoginForm({ locale }: Props) {
           className="w-full h-11 px-3 rounded-md border border-[var(--border-strong)] bg-[var(--bg-raised)] text-[var(--text-hi)] focus:outline-none focus:ring-2 focus:ring-[var(--gold-500)]/40 focus:border-[var(--gold-500)]/40 transition"
         />
       </div>
+
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-xs uppercase tracking-wider text-[var(--text-lo)]">
           {t("login_password")}
@@ -41,6 +42,7 @@ export function LoginForm({ locale }: Props) {
           className="w-full h-11 px-3 rounded-md border border-[var(--border-strong)] bg-[var(--bg-raised)] text-[var(--text-hi)] focus:outline-none focus:ring-2 focus:ring-[var(--gold-500)]/40 focus:border-[var(--gold-500)]/40 transition"
         />
       </div>
+
       {state?.error && (
         <p className="text-sm text-[var(--crimson-400)]" role="alert">
           {state.error === "Invalid username or password." ||
@@ -51,6 +53,7 @@ export function LoginForm({ locale }: Props) {
               : state.error}
         </p>
       )}
+
       <button
         type="submit"
         disabled={pending}

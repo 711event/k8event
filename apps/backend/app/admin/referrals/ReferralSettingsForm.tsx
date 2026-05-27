@@ -8,6 +8,8 @@ import { tBo } from "@/lib/i18n";
 interface Props {
   initial: {
     enabled: boolean;
+    auto_approve: boolean;
+    username_prefix: string;
     trigger_type: "on_register" | "on_first_recharge" | "on_min_recharge";
     min_recharge_amount: number;
     referrer_token_reward: number;
@@ -24,6 +26,8 @@ export function ReferralSettingsForm({ initial }: Props) {
   const t = (k: Parameters<typeof tBo>[1], v?: Parameters<typeof tBo>[2]) => tBo(locale, k, v);
 
   const [enabled, setEnabled] = useState(initial.enabled);
+  const [autoApprove, setAutoApprove] = useState(initial.auto_approve);
+  const [usernamePrefix, setUsernamePrefix] = useState(initial.username_prefix);
   const [trigger, setTrigger] = useState(initial.trigger_type);
   const [minRecharge, setMinRecharge] = useState(initial.min_recharge_amount);
   const [reward, setReward] = useState(initial.referrer_token_reward);
@@ -42,6 +46,8 @@ export function ReferralSettingsForm({ initial }: Props) {
     setSaved(false);
     const res = await saveReferralSettingsAction({
       enabled,
+      auto_approve: autoApprove,
+      username_prefix: usernamePrefix.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5),
       trigger_type: trigger,
       min_recharge_amount: minRecharge,
       referrer_token_reward: reward,
@@ -82,6 +88,59 @@ export function ReferralSettingsForm({ initial }: Props) {
           />
         </button>
       </div>
+
+      {/* Auto-approve toggle */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-zinc-800">{t("referral_settings_auto_approve_label")}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">{t("referral_settings_auto_approve_hint")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAutoApprove(!autoApprove)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            autoApprove ? "bg-amber-500" : "bg-zinc-300"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+              autoApprove ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Username prefix — only relevant when auto_approve is on */}
+      {autoApprove && (
+        <div className="space-y-2 pl-3 border-l-2 border-amber-200">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-zinc-700">{t("referral_settings_prefix_label")}</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={usernamePrefix}
+                onChange={(e) => setUsernamePrefix(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5))}
+                maxLength={5}
+                placeholder={t("referral_settings_prefix_placeholder")}
+                className="w-36 h-9 px-3 rounded-lg border border-zinc-300 bg-white text-sm font-mono font-bold tracking-widest text-zinc-800 outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              {usernamePrefix && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  → <b>{usernamePrefix}00001</b>, <b>{usernamePrefix}00002</b>…
+                </span>
+              )}
+              {!usernamePrefix && (
+                <span className="text-xs text-zinc-400 font-mono">→ 00001, 00002…</span>
+              )}
+            </div>
+            <p className="text-xs text-zinc-500">{t("referral_settings_prefix_hint")}</p>
+          </div>
+          {/* Clash warning */}
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+            <p className="text-xs text-amber-800 leading-relaxed">{t("referral_settings_prefix_warning")}</p>
+          </div>
+        </div>
+      )}
 
       {/* Reward trigger */}
       <div className="space-y-1.5">
