@@ -20,6 +20,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
+import { ReferralPendingBadge } from "./ReferralPendingBadge";
 
 const iconMap = {
   LayoutDashboard,
@@ -102,6 +103,7 @@ export function AdminSidebar({
               <Icon size={16} className={active ? "text-amber-300" : ""} />
               <span className="flex-1">{it.label}</span>
               {it.href === "/admin/chat" && <ChatUnreadBadge />}
+              {it.href === "/admin/referrals" && <ReferralPendingBadge />}
             </Link>
           );
         })}

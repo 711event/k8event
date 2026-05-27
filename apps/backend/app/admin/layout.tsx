@@ -5,6 +5,7 @@ import { SignOutButton } from "@k8event/shared/components/SignOutButton";
 import { AdminSidebar, type AdminNavItem } from "@/components/admin/AdminSidebar";
 import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 import { ChatUnreadProvider } from "@/components/admin/ChatUnreadProvider";
+import { ReferralPendingProvider } from "@/components/admin/ReferralPendingProvider";
 import { LangProvider } from "@/components/admin/LangProvider";
 import { LangSwitcher } from "@/components/admin/LangSwitcher";
 import { getBoLocale } from "@/lib/get-locale";
@@ -70,6 +71,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <LangProvider locale={locale}>
       <ChatUnreadProvider groupId={groupId}>
+      <ReferralPendingProvider groupId={groupId}>
         <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
           <AdminSidebar items={links} userLabel={user.displayName} userRole={roleLabel} branding={branding} subtitle={t("sidebar_subtitle")} />
 
@@ -93,6 +95,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <main className="flex-1 p-4 sm:p-6">{children}</main>
           </div>
         </div>
+      </ReferralPendingProvider>
       </ChatUnreadProvider>
     </LangProvider>
   );
