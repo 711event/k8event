@@ -94,12 +94,23 @@ export default async function JoinPage(props: {
               <p className="text-sm font-semibold text-[var(--text-hi)] truncate">
                 {referrerDisplay} {t("join_invite_banner_msg")}
               </p>
-              <p className="text-xs text-[var(--gold-400)]">
-                {t("join_invite_welcome_tokens", { n: referrerReward })}
-              </p>
             </div>
           </div>
         )}
+
+        {/* Perks — 每日签到 + 兑换好礼 */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { icon: "📅", title: t("join_perk_checkin_title"), body: t("join_perk_checkin_body") },
+            { icon: "🎁", title: t("join_perk_reward_title"), body: t("join_perk_reward_body") },
+          ].map((p) => (
+            <div key={p.title} className="rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-strong)] p-3 space-y-1">
+              <div className="text-xl">{p.icon}</div>
+              <div className="text-xs font-semibold text-[var(--text-hi)]">{p.title}</div>
+              <div className="text-xs text-[var(--text-lo)] leading-snug">{p.body}</div>
+            </div>
+          ))}
+        </div>
 
         {/* Form */}
         {isEnabled && refUsername ? (
