@@ -42,7 +42,7 @@ export default async function JoinPage(props: {
   const referrerReward = settings?.referrer_token_reward ?? 50;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-hi)]">
+    <div data-theme="player" className="min-h-screen bg-[var(--bg-base)] text-[var(--text-hi)]">
       <div className="max-w-sm mx-auto px-4 py-8 space-y-5">
 
         {/* Brand hero */}
