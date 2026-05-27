@@ -63,6 +63,25 @@ export default async function ReferralsPage(props: {
     og_image_url: settings?.og_image_url ?? null,
   };
 
+  // Compute next sequential username from prefix (used for manual approval pre-fill)
+  const usernamePrefix = (settings?.username_prefix ?? "").toUpperCase();
+  let nextSuggestedUsername = "";
+  if (usernamePrefix) {
+    const { data: existingUsers } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("group_id", groupId)
+      .like("username", `${usernamePrefix}%`);
+    const prefixLen = usernamePrefix.length;
+    const existingNumbers = ((existingUsers ?? []) as { username: string | null }[])
+      .map((r) => r.username?.slice(prefixLen) ?? "")
+      .filter((s) => /^\d+$/.test(s))
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !isNaN(n));
+    const nextNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+    nextSuggestedUsername = `${usernamePrefix}${String(nextNum).padStart(5, "0")}`;
+  }
+
   const tabs = [
     { key: "pending", label: t("referral_tab_pending"), count: totalPending },
     { key: "history", label: t("referral_tab_history") },
@@ -154,7 +173,7 @@ export default async function ReferralsPage(props: {
                   </div>
                   <ApproveForm
                     requestId={req.id}
-                    suggestedUsername={req.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")}
+                    suggestedUsername={nextSuggestedUsername || req.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")}
                   />
                 </div>
               ))}
