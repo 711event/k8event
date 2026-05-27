@@ -1,5 +1,5 @@
 "use client";
-
+// v2
 import { useActionState, useState } from "react";
 import { submitJoinRequestAction, type JoinState } from "./actions";
 import { JoinWaiting } from "./JoinWaiting";

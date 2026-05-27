@@ -1,5 +1,5 @@
 "use client";
-
+// v2
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@k8event/shared/supabase/client";
 import { tFe, type FeLocale } from "@/lib/i18n";
