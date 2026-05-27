@@ -57,6 +57,7 @@ export type Database = {
           avatar_url: string | null;
           group_id: string | null;
           referred_by: string | null;
+          phone: string | null;
           created_at: Timestamp;
         };
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           avatar_url?: string | null;
           group_id?: string | null;
           referred_by?: string | null;
+          phone?: string | null;
           created_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
