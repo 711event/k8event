@@ -26,6 +26,7 @@ import type { AdminNavItem } from "./AdminSidebar";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 import { useChatUnread } from "./ChatUnreadProvider";
 import { ReferralPendingBadge } from "./ReferralPendingBadge";
+import { RedemptionPendingBadge } from "./RedemptionPendingBadge";
 import { useLang } from "./LangProvider";
 import { tBo } from "@/lib/i18n";
 
@@ -129,6 +130,7 @@ export function AdminMobileNav({
                     <span className="flex-1">{it.label}</span>
                     {it.href === "/admin/chat" && <ChatUnreadBadge />}
                     {it.href === "/admin/referrals" && <ReferralPendingBadge />}
+                    {it.href === "/admin/redemptions" && <RedemptionPendingBadge />}
                   </Link>
                 );
               })}

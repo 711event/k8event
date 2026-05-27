@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 import { ReferralPendingBadge } from "./ReferralPendingBadge";
+import { RedemptionPendingBadge } from "./RedemptionPendingBadge";
 
 const iconMap = {
   LayoutDashboard,
@@ -104,6 +105,7 @@ export function AdminSidebar({
               <span className="flex-1">{it.label}</span>
               {it.href === "/admin/chat" && <ChatUnreadBadge />}
               {it.href === "/admin/referrals" && <ReferralPendingBadge />}
+              {it.href === "/admin/redemptions" && <RedemptionPendingBadge />}
             </Link>
           );
         })}
