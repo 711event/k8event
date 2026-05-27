@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Lock, Clock } from "lucide-react";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { StadiumHero } from "@/components/player/StadiumHero";
 import { Chip } from "@/components/player/Chip";
 import { getFeLocale } from "@/lib/get-locale";
@@ -34,7 +35,15 @@ export default async function MatchDetailPage(props: {
     .eq("id", id)
     .maybeSingle();
 
-  const [{ data: match }, predQ, chancesQ] = await Promise.all([
+  // Also fetch worldcup activity settings to show correct chance conditions
+  const wcActivityQ = supabase
+    .from("activities")
+    .select("settings")
+    .eq("type", "worldcup_prediction")
+    .eq("group_id", getGroupId())
+    .maybeSingle();
+
+  const [{ data: match }, predQ, chancesQ, { data: wcActivity }] = await Promise.all([
     matchQ,
     user
       ? supabase
@@ -48,9 +57,15 @@ export default async function MatchDetailPage(props: {
     user
       ? supabase.rpc("available_prediction_chances", { p_player: user.id })
       : Promise.resolve({ data: 0 } as const),
+    wcActivityQ,
   ]);
 
   if (!match) notFound();
+
+  // Read configurable chance conditions (fall back to defaults)
+  const wcSettings = (wcActivity?.settings ?? {}) as Record<string, unknown>;
+  const minRechargeAmount = (wcSettings.min_recharge_amount as number | undefined) ?? 500;
+  const chancesPerRecharge = (wcSettings.chances_per_recharge as number | undefined) ?? 1;
 
   type TeamLite = { name: string; logo_url: string | null } | null;
   const home = oneOrNull(match.home) as TeamLite;
@@ -98,7 +113,7 @@ export default async function MatchDetailPage(props: {
         <BlockedCard
           icon={<Lock size={18} />}
           title={t("match_blocked_login_title")}
-          body={t("match_blocked_login_body")}
+          body={t("match_blocked_login_body", { amount: minRechargeAmount, chances: chancesPerRecharge })}
           actionHref="/login"
           actionLabel={t("match_blocked_login_btn")}
         />
@@ -128,7 +143,7 @@ export default async function MatchDetailPage(props: {
           }
           body={
             !eligible && match.status === "scheduled" && beforeKickoff
-              ? t("match_blocked_recharge_body")
+              ? t("match_blocked_recharge_body", { amount: minRechargeAmount, chances: chancesPerRecharge })
               : undefined
           }
         />

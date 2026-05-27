@@ -6,6 +6,7 @@ import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { ActivitySettingsForm } from "./ActivitySettingsForm";
 import { CheckinRewardsForm } from "./CheckinRewardsForm";
+import { PredictionChancesForm } from "./PredictionChancesForm";
 
 export const metadata = { title: "Activity Settings · Admin Panel" };
 
@@ -35,25 +36,40 @@ export default async function ActivityDetailPage(props: {
       </div>
       <h1 className="text-2xl font-semibold">{activity.name}</h1>
 
-      {/* World Cup shortcuts */}
+      {/* World Cup shortcuts + prediction chances config */}
       {activity.type === "worldcup_prediction" && (
-        <section className="rounded-lg border border-zinc-200 p-5">
-          <h2 className="text-lg font-medium mb-3">{t("activity_setting_wc_title")}</h2>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/teams"
-              className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
-            >
-              {t("activity_setting_teams")}
-            </Link>
-            <Link
-              href="/admin/matches"
-              className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
-            >
-              {t("activity_setting_matches")}
-            </Link>
-          </div>
-        </section>
+        <>
+          <section className="rounded-lg border border-zinc-200 p-5">
+            <h2 className="text-lg font-medium mb-3">{t("activity_setting_wc_title")}</h2>
+            <div className="flex gap-3">
+              <Link
+                href="/admin/teams"
+                className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
+              >
+                {t("activity_setting_teams")}
+              </Link>
+              <Link
+                href="/admin/matches"
+                className="h-9 px-4 rounded-md border border-zinc-300 text-sm font-medium hover:bg-zinc-50 inline-flex items-center"
+              >
+                {t("activity_setting_matches")}
+              </Link>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
+            <h2 className="text-lg font-medium">{t("activity_setting_prediction_title")}</h2>
+            <p className="text-sm text-zinc-500">
+              {locale === "zh"
+                ? "设置玩家获得竞猜机会的充值条件。修改后立即对本组玩家生效。"
+                : "Configure how players earn prediction chances through recharges. Changes apply immediately to this group."}
+            </p>
+            <PredictionChancesForm
+              activityId={id}
+              settings={(activity.settings as Record<string, unknown>) ?? {}}
+            />
+          </section>
+        </>
       )}
 
       {/* Daily check-in reward config */}

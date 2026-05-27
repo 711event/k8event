@@ -372,6 +372,21 @@ export const boTranslations = {
     checkin_cycle_reset: "断签重置（中断后从第1天重新开始）",
     checkin_cycle_loop: "周期结束后循环（完成后重新从第1天开始）",
 
+    // World Cup prediction chances settings
+    activity_setting_prediction_title: "竞猜机会设置",
+    prediction_chances_min_recharge: "最低充值额（RM）",
+    prediction_chances_min_recharge_hint: "当日充值达此金额才算合格",
+    prediction_chances_per_day: "每次合格充值获得机会数",
+    prediction_chances_per_day_unit: "次 / 天",
+    prediction_chances_per_day_hint: "每天只算一次，不叠加",
+    prediction_chances_max: "最多持有机会数上限",
+    prediction_chances_max_unit: "次（0 = 不限制）",
+    prediction_chances_max_hint: "防止玩家无限囤积机会。设为 0 则不限",
+    prediction_chances_effect_label: "当前设置效果：",
+    prediction_chances_saving: "保存中…",
+    prediction_chances_save: "保存竞猜设置",
+    prediction_chances_saved: "竞猜机会设置已保存",
+
     // Rewards page
     rewards_title: "奖品管理",
     rewards_count: "共 {count} 件奖品",
@@ -981,6 +996,21 @@ export const boTranslations = {
     checkin_cycle_days: "{n} Days",
     checkin_cycle_reset: "Reset on missed day (restart from Day 1)",
     checkin_cycle_loop: "Loop after cycle ends (restart from Day 1)",
+
+    // World Cup prediction chances settings
+    activity_setting_prediction_title: "Prediction Chances Settings",
+    prediction_chances_min_recharge: "Minimum Recharge Amount (RM)",
+    prediction_chances_min_recharge_hint: "Daily recharge must reach this amount to qualify",
+    prediction_chances_per_day: "Chances Earned per Qualifying Day",
+    prediction_chances_per_day_unit: "chance(s) / day",
+    prediction_chances_per_day_hint: "Counts once per day, no stacking",
+    prediction_chances_max: "Maximum Chances Cap",
+    prediction_chances_max_unit: "chance(s) (0 = unlimited)",
+    prediction_chances_max_hint: "Prevents unlimited accumulation. Set 0 for no limit",
+    prediction_chances_effect_label: "Current rule:",
+    prediction_chances_saving: "Saving…",
+    prediction_chances_save: "Save Prediction Settings",
+    prediction_chances_saved: "Prediction chance settings saved",
 
     // Rewards page
     rewards_title: "Reward Management",
