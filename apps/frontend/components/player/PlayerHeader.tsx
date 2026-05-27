@@ -55,7 +55,7 @@ export function PlayerHeader({ locale, user, branding, tokenBalance }: Props) {
           ) : null}
 
           {user ? (
-            <AvatarMenu displayName={user.displayName} username={user.username ?? ""} />
+            <AvatarMenu displayName={user.displayName} username={user.username ?? ""} locale={locale} />
           ) : null}
         </div>
       </div>

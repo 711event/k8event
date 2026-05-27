@@ -6,6 +6,12 @@ export const feTranslations = {
   zh: {
     // Header
     header_login: "登录",
+    // Avatar menu
+    menu_my_predictions: "我的预测",
+    menu_token_history: "Token 流水",
+    menu_full_leaderboard: "完整排行榜",
+    menu_my_redemptions: "我的兑换",
+    menu_sign_out: "退出登录",
     // Bottom nav
     nav_activities: "活动",
     nav_livechat: "客服",
@@ -228,6 +234,13 @@ export const feTranslations = {
 
   en: {
     header_login: "Login",
+    // Avatar menu
+    menu_my_predictions: "My Predictions",
+    menu_token_history: "Token History",
+    menu_full_leaderboard: "Full Leaderboard",
+    menu_my_redemptions: "My Redemptions",
+    menu_sign_out: "Sign Out",
+    // Bottom nav
     nav_activities: "Activities",
     nav_livechat: "Support",
     nav_reward: "Rewards",
@@ -441,6 +454,13 @@ export const feTranslations = {
 
   ms: {
     header_login: "Log Masuk",
+    // Avatar menu
+    menu_my_predictions: "Ramalan Saya",
+    menu_token_history: "Sejarah Token",
+    menu_full_leaderboard: "Papan Kedudukan Penuh",
+    menu_my_redemptions: "Penebusan Saya",
+    menu_sign_out: "Log Keluar",
+    // Bottom nav
     nav_activities: "Aktiviti",
     nav_livechat: "Livechat",
     nav_reward: "Hadiah",

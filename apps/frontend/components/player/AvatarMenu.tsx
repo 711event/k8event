@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOutAction } from "@k8event/shared/auth/sign-out";
 import { LangSwitcher } from "./LangSwitcher";
+import { tFe, type FeLocale } from "@/lib/i18n";
 
-export function AvatarMenu({ displayName, username }: { displayName: string; username: string }) {
+export function AvatarMenu({ displayName, username, locale }: { displayName: string; username: string; locale: FeLocale }) {
+  const t = (k: Parameters<typeof tFe>[1]) => tFe(locale, k);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -42,10 +44,10 @@ export function AvatarMenu({ displayName, username }: { displayName: string; use
             <LangSwitcher />
           </div>
           <nav className="py-1">
-            <Item href="/history" onClick={() => setOpen(false)} icon="📋" label="我的预测" />
-            <Item href="/tokens" onClick={() => setOpen(false)} icon="🪙" label="Token 流水" />
-            <Item href="/leaderboard" onClick={() => setOpen(false)} icon="🏆" label="完整排行榜" />
-            <Item href="/reward" onClick={() => setOpen(false)} icon="🎁" label="我的兑换" />
+            <Item href="/history" onClick={() => setOpen(false)} icon="📋" label={t("menu_my_predictions")} />
+            <Item href="/tokens" onClick={() => setOpen(false)} icon="🪙" label={t("menu_token_history")} />
+            <Item href="/leaderboard" onClick={() => setOpen(false)} icon="🏆" label={t("menu_full_leaderboard")} />
+            <Item href="/reward" onClick={() => setOpen(false)} icon="🎁" label={t("menu_my_redemptions")} />
           </nav>
           <form
             action={signOutAction}
@@ -55,7 +57,7 @@ export function AvatarMenu({ displayName, username }: { displayName: string; use
               type="submit"
               className="w-full px-4 py-2.5 text-left text-sm text-[var(--crimson-400)] hover:bg-[var(--bg-raised)] transition"
             >
-              退出登录
+              {t("menu_sign_out")}
             </button>
           </form>
         </div>
