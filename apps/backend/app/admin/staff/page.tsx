@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { StaffPageClient } from "./StaffPageClient";
 
 export const metadata = { title: "Account Management · Admin Panel" };
@@ -25,12 +26,13 @@ export default async function StaffPage(props: {
 
   const supabase = await createSupabaseServerClient();
 
-  // Fetch staff list (admin + agent accounts)
+  // Fetch staff list — scoped to THIS backend's group only
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: staffList } = await (supabase as any)
     .from("profiles")
     .select("user_id, username, display_name, role, created_at, admin_role_id, admin_roles(name)")
     .in("role", ["admin", "agent"])
+    .eq("group_id", getGroupId())
     .order("created_at", { ascending: false });
 
   // Fetch all roles

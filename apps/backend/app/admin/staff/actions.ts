@@ -6,6 +6,7 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { getSupabaseAdmin } from "@k8event/shared/supabase/admin";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 
 async function requireStaffPermission() {
   const user = await requireRole(["admin"]);
@@ -71,6 +72,7 @@ export async function createStaffAction(
     username,
     display_name: displayName,
     admin_role_id: adminRoleId || null,
+    group_id: getGroupId(),  // bind account to this backend's group
   });
 
   if (profErr) {
@@ -102,10 +104,12 @@ export async function changeStaffPasswordAction(userId: string, newPassword: str
   if (newPassword.length < 8) return { error: "密码至少 8 位" };
   // Verify the target staff member belongs to this group
   const supabase = await createSupabaseServerClient();
-  const { data: profile } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("user_id")
     .eq("user_id", userId)
+    .eq("group_id", getGroupId())
     .in("role", ["admin", "agent"])
     .maybeSingle();
   if (!profile) return { error: "账号不存在" };
@@ -119,10 +123,12 @@ export async function deleteStaffAction(userId: string): Promise<{ error?: strin
   await requireStaffPermission();
   // Verify the target staff member belongs to this group
   const supabase = await createSupabaseServerClient();
-  const { data: profile } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("user_id")
     .eq("user_id", userId)
+    .eq("group_id", getGroupId())
     .in("role", ["admin", "agent"])
     .maybeSingle();
   if (!profile) return { error: "账号不存在" };
