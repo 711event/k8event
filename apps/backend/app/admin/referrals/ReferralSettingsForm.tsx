@@ -110,9 +110,8 @@ export function ReferralSettingsForm({ initial }: Props) {
         </button>
       </div>
 
-      {/* Username prefix — only relevant when auto_approve is on */}
-      {autoApprove && (
-        <div className="space-y-2 pl-3 border-l-2 border-amber-200">
+      {/* Username prefix — used for auto-approve AND manual approval pre-fill */}
+      <div className="space-y-2 pl-3 border-l-2 border-amber-200">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-zinc-700">{t("referral_settings_prefix_label")}</label>
             <div className="flex items-center gap-2">
@@ -139,8 +138,7 @@ export function ReferralSettingsForm({ initial }: Props) {
           <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
             <p className="text-xs text-amber-800 leading-relaxed">{t("referral_settings_prefix_warning")}</p>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Reward trigger */}
       <div className="space-y-1.5">
