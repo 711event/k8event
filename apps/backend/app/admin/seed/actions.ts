@@ -341,26 +341,30 @@ export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
 
-  // Ensure two distinct "待定" placeholder teams exist
+  // Ensure two distinct TBD placeholder teams exist
   // (DB has matches_distinct_teams constraint: home_id ≠ away_id)
+  // Look up by short_code so renames don't break idempotency
   async function ensureTbd(name: string, code: string) {
-    let { data } = await supabase.from("teams").select("id").eq("name", name).maybeSingle();
+    let { data } = await supabase.from("teams").select("id, name").eq("short_code", code).maybeSingle();
     if (!data) {
       const { data: created, error } = await supabase
         .from("teams")
         .insert({ name, short_code: code, logo_url: null })
         .select("id")
         .single();
-      if (error || !created) throw new Error(error?.message ?? `无法创建占位队伍 ${name}`);
+      if (error || !created) throw new Error(error?.message ?? `Failed to create placeholder team ${name}`);
       data = created;
+    } else if (data.name !== name) {
+      // Rename if the stored name is outdated (e.g. old Chinese placeholder)
+      await supabase.from("teams").update({ name }).eq("short_code", code);
     }
     return data.id as string;
   }
 
   let tbdHomeId: string, tbdAwayId: string;
   try {
-    tbdHomeId = await ensureTbd("待定（主）", "TBD1");
-    tbdAwayId = await ensureTbd("待定（客）", "TBD2");
+    tbdHomeId = await ensureTbd("TBD (Home)", "TBD1");
+    tbdAwayId = await ensureTbd("TBD (Away)", "TBD2");
   } catch (e) {
     return { error: e instanceof Error ? e.message : "创建占位队伍失败" };
   }
