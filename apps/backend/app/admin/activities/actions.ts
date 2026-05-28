@@ -111,13 +111,18 @@ export async function updatePredictionTokenRewardAction(
 
   let updated = 0;
   if (updateMatches) {
+    // Count scheduled matches first, then bulk-update
+    const { count: matchCount } = await supabase
+      .from("matches")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "scheduled");
+    updated = matchCount ?? 0;
+
     // Bulk-update all scheduled matches (global table — no group filter needed)
-    const { count } = await supabase
+    await supabase
       .from("matches")
       .update({ token_reward: tokenReward })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .eq("status", "scheduled") as any;
-    updated = (count as number | null) ?? 0;
+      .eq("status", "scheduled");
   }
 
   revalidatePath(`/admin/activities/${activityId}`);
