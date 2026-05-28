@@ -238,10 +238,10 @@ export async function submitJoinRequestAction(
       const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
       const loginUrl = `${siteUrl}/login`;
       const credMsg = locale === "zh"
-        ? `✅ 账号已开通！请查看上方的账号信息卡片，前往登入。如有疑问请在此聊天室联系客服。`
+        ? `✅ 您的账户已成功激活！\n\n请查看您的账户资料并尝试登录。\n\n🌐 ${loginUrl}\n🔑 用户名: ${username}\n🔒 密码: ${password}\n\n如有疑问，请在此聊天室联系客服。`
         : locale === "en"
-        ? `✅ Your account has been activated! Please check the account details card above and log in. Contact support here if you have any questions.`
-        : `✅ Akaun anda telah diaktifkan! Sila semak kad maklumat akaun di atas dan log masuk. Hubungi sokongan di sini jika anda ada sebarang soalan.`;
+        ? `✅ Your account has been successfully activated!\n\nPlease check your account details and log in.\n\n🌐 ${loginUrl}\n🔑 Username: ${username}\n🔒 Password: ${password}\n\nIf you have any questions, please contact us here.`
+        : `✅ Akaun anda telah berjaya diaktifkan!\n\nSila semak butiran akaun anda dan cuba log masuk.\n\n🌐 ${loginUrl}\n🔑 Nama pengguna: ${username}\n🔒 Kata laluan: ${password}\n\nJika anda ada sebarang soalan, sila hubungi kami di sini.`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (admin as any).from("chat_messages").insert({
