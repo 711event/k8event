@@ -48,7 +48,8 @@ export async function updateBrandingAction(formData: FormData) {
   if (tagline !== null) updateData.tagline = tagline.trim() || null;
 
   if (Object.keys(updateData).length > 0) {
-    await supabase.from("groups").update(updateData).eq("id", groupId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from("groups").update(updateData as any).eq("id", groupId);
   }
 
   revalidatePath("/admin/settings");
