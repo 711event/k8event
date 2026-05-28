@@ -327,7 +327,7 @@ export const feTranslations = {
     // Bottom nav
     nav_activities: "Activities",
     nav_referral: "Invite",
-    nav_livechat: "Support",
+    nav_livechat: "Livechat",
     nav_reward: "Rewards",
     login_tagline: "Free to join · Predict & win prizes, claim daily",
     login_contact: "Contact support",
