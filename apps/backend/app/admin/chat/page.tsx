@@ -56,11 +56,15 @@ export default async function ChatInboxPage(props: {
   const criticalAfterMinutes = urgencySettings?.critical_after_minutes ?? 8;
 
   // Enrich threads with player username (show instead of guest_name when available)
-  const playerIds: string[] = [...new Set(
-    (rawThreads ?? [])
-      .map((t: { player_id: string | null }) => t.player_id)
-      .filter((id: string | null): id is string => Boolean(id))
-  )];
+  // Cast rawThreads to a typed array first so that .map/.filter preserve string types
+  // (rawThreads comes from an `as any` cast, so spread-Set would infer unknown[] otherwise)
+  const playerIds: string[] = Array.from(
+    new Set<string>(
+      ((rawThreads ?? []) as { player_id: string | null }[])
+        .map((t) => t.player_id)
+        .filter((id): id is string => id !== null)
+    )
+  );
   const usernameMap = new Map<string, string | null>();
   if (playerIds.length > 0) {
     const { data: playerProfiles } = await supabase
