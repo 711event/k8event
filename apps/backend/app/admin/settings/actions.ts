@@ -1,17 +1,14 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getSupabaseAdmin } from "@k8event/shared/supabase/admin";
 import { getGroupId } from "@/lib/get-group";
 
 export async function updateBrandingAction(formData: FormData) {
   await requireRole("admin");
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const supabase = getSupabaseAdmin();
 
   const companyName = formData.get("company_name") as string | null;
   const tagline = formData.get("tagline") as string | null;
@@ -61,10 +58,7 @@ export async function updateBrandingAction(formData: FormData) {
 
 export async function removeLogo() {
   await requireRole("admin");
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const supabase = getSupabaseAdmin();
   await supabase.from("groups").update({ logo_url: null }).eq("id", getGroupId());
   revalidatePath("/admin/settings");
   revalidatePath("/admin", "layout");

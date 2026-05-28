@@ -88,11 +88,23 @@ export async function assignRoleAction(userId: string, adminRoleId: string | nul
   await requireStaffPermission();
   const supabase = await createSupabaseServerClient();
 
+  // Verify the target user belongs to this group before modifying
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId())
+    .in("role", ["admin", "agent"])
+    .maybeSingle();
+  if (!profile) return { error: "账号不存在" };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from("profiles")
     .update({ admin_role_id: adminRoleId || null })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("group_id", getGroupId());
 
   if (error) return { error: error.message };
   revalidatePath("/admin/staff");

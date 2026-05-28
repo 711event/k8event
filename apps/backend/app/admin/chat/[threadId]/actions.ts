@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { getGroupId } from "@/lib/get-group";
 
 export type ChatActionState = { ok: true } | { error: string } | undefined;
 
@@ -23,6 +24,17 @@ export async function agentSendMessageAction(input: unknown): Promise<ChatAction
   if (!parsed.data.body && !parsed.data.imageUrl) return { error: "Empty message" };
 
   const supabase = await createSupabaseServerClient();
+
+  // Verify thread belongs to this group before inserting message
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: thread } = await (supabase as any)
+    .from("chat_threads")
+    .select("id")
+    .eq("id", parsed.data.threadId)
+    .eq("group_id", getGroupId())
+    .maybeSingle();
+  if (!thread) return { error: "Thread not found" };
+
   const isImage = !!parsed.data.imageUrl;
   const { error } = await supabase.from("chat_messages").insert({
     thread_id: parsed.data.threadId,
@@ -45,7 +57,8 @@ export async function claimThreadAction(threadId: string): Promise<ChatActionSta
   const { error } = await supabase
     .from("chat_threads")
     .update({ claimed_by: user.id, status: "claimed" })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/chat");
   revalidatePath(`/admin/chat/${threadId}`);
@@ -58,7 +71,8 @@ export async function unclaimThreadAction(threadId: string): Promise<ChatActionS
   const { error } = await supabase
     .from("chat_threads")
     .update({ claimed_by: null, status: "open" })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/chat");
   revalidatePath(`/admin/chat/${threadId}`);
@@ -71,7 +85,8 @@ export async function closeThreadAction(threadId: string): Promise<ChatActionSta
   const { error } = await supabase
     .from("chat_threads")
     .update({ status: "closed" })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/chat");
   revalidatePath(`/admin/chat/${threadId}`);
@@ -84,7 +99,8 @@ export async function markPendingAction(threadId: string): Promise<ChatActionSta
   const { error } = await supabase
     .from("chat_threads")
     .update({ status: "pending" })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/chat");
   revalidatePath(`/admin/chat/${threadId}`);
@@ -97,7 +113,8 @@ export async function resolveThreadAction(threadId: string): Promise<ChatActionS
   const { error } = await supabase
     .from("chat_threads")
     .update({ status: "closed" })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .eq("group_id", getGroupId());
   if (error) return { error: error.message };
   revalidatePath("/admin/chat");
   revalidatePath(`/admin/chat/${threadId}`);
