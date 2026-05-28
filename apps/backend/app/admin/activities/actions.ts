@@ -78,6 +78,54 @@ export async function updateActivityAction(id: string, data: Partial<ActivityFor
   return { ok: true };
 }
 
+export async function updatePredictionTokenRewardAction(
+  activityId: string,
+  tokenReward: number,
+  updateMatches: boolean,
+): Promise<{ ok?: true; updated?: number; error?: string }> {
+  await requireRole("admin");
+  if (!Number.isInteger(tokenReward) || tokenReward < 1 || tokenReward > 9999)
+    return { error: "Invalid token reward" };
+
+  const supabase = await createSupabaseServerClient();
+  const groupId = getGroupId();
+
+  // Fetch current settings to merge
+  const { data: activity } = await supabase
+    .from("activities")
+    .select("settings")
+    .eq("id", activityId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+
+  if (!activity) return { error: "Activity not found" };
+
+  const { error: actErr } = await supabase
+    .from("activities")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ settings: { ...(activity.settings as any), prediction_token_reward: tokenReward } } as any)
+    .eq("id", activityId)
+    .eq("group_id", groupId);
+
+  if (actErr) return { error: actErr.message };
+
+  let updated = 0;
+  if (updateMatches) {
+    // Bulk-update all scheduled matches (global table — no group filter needed)
+    const { count } = await supabase
+      .from("matches")
+      .update({ token_reward: tokenReward })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq("status", "scheduled") as any;
+    updated = (count as number | null) ?? 0;
+  }
+
+  revalidatePath(`/admin/activities/${activityId}`);
+  revalidatePath("/admin/matches");
+  revalidatePath("/matches");
+  return { ok: true, updated };
+}
+
 export async function toggleActivityField(
   id: string,
   field: "is_active" | "is_visible",

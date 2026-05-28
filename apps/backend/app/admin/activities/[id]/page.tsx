@@ -7,6 +7,7 @@ import { tBo } from "@/lib/i18n";
 import { ActivitySettingsForm } from "./ActivitySettingsForm";
 import { CheckinRewardsForm } from "./CheckinRewardsForm";
 import { PredictionChancesForm } from "./PredictionChancesForm";
+import { PredictionTokenRewardForm } from "./PredictionTokenRewardForm";
 
 export const metadata = { title: "Activity Settings · Admin Panel" };
 
@@ -65,6 +66,21 @@ export default async function ActivityDetailPage(props: {
                 : "Configure how players earn prediction chances through recharges. Changes apply immediately to this group."}
             </p>
             <PredictionChancesForm
+              activityId={id}
+              settings={(activity.settings as Record<string, unknown>) ?? {}}
+            />
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 p-5 space-y-4">
+            <h2 className="text-lg font-medium">
+              {locale === "zh" ? "竞猜奖励设置" : "Prediction Token Reward"}
+            </h2>
+            <p className="text-sm text-zinc-500">
+              {locale === "zh"
+                ? "设置玩家竞猜正确时获得的 Token 数量，可一键同步更新所有待开赛场次。"
+                : "Set how many Tokens a player earns for a correct prediction. Optionally apply to all scheduled matches at once."}
+            </p>
+            <PredictionTokenRewardForm
               activityId={id}
               settings={(activity.settings as Record<string, unknown>) ?? {}}
             />
