@@ -206,6 +206,16 @@ export async function submitJoinRequestAction(
         .update({ status: "approved", player_id: created.user.id })
         .eq("id", reqRow.id);
 
+      // Link the join-flow chat thread to the new player so that when they log in
+      // and open /livechat the guest route finds this thread (by player_id) and
+      // reuses it instead of creating a new one. Also set guest_name = username
+      // so the admin inbox shows RR00003 instead of the applicant's real name.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any)
+        .from("chat_threads")
+        .update({ player_id: created.user.id, guest_name: username })
+        .eq("id", threadId);
+
       // Award on_register referral tokens if applicable
       if (
         refSettings?.enabled &&
