@@ -56,7 +56,7 @@ export default async function ChatInboxPage(props: {
   const criticalAfterMinutes = urgencySettings?.critical_after_minutes ?? 8;
 
   // Enrich threads with player username (show instead of guest_name when available)
-  const playerIds = [...new Set(
+  const playerIds: string[] = [...new Set(
     (rawThreads ?? [])
       .map((t: { player_id: string | null }) => t.player_id)
       .filter((id: string | null): id is string => Boolean(id))
