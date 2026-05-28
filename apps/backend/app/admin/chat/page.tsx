@@ -59,7 +59,7 @@ export default async function ChatInboxPage(props: {
   const playerIds = [...new Set(
     (rawThreads ?? [])
       .map((t: { player_id: string | null }) => t.player_id)
-      .filter((id): id is string => Boolean(id))
+      .filter((id: string | null): id is string => Boolean(id))
   )];
   const usernameMap = new Map<string, string | null>();
   if (playerIds.length > 0) {
