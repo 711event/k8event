@@ -7,6 +7,7 @@ import { tBo } from "@/lib/i18n";
 import { CreateMatchForm } from "./CreateMatchForm";
 import { StatusBadge } from "./StatusBadge";
 import { SeedMatchesButton } from "./SeedMatchesButton";
+import { MatchTokenRewardCell } from "./MatchTokenRewardCell";
 
 export const metadata = { title: "Matches · Admin Panel" };
 
@@ -107,7 +108,9 @@ export default async function MatchesPage() {
                         <span className="font-medium">{away?.name ?? "?"}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 tabular-nums">{m.token_reward}</td>
+                    <td className="px-4 py-3">
+                      <MatchTokenRewardCell matchId={m.id} tokenReward={m.token_reward} status={m.status} />
+                    </td>
                     <td className="px-4 py-3"><StatusBadge status={m.status} result={m.result} /></td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/admin/matches/${m.id}`} className="text-sm underline">

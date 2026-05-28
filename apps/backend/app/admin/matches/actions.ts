@@ -88,6 +88,24 @@ export async function updateMatchTeamsAction(
   return { ok: true };
 }
 
+export async function updateMatchTokenRewardAction(
+  id: string,
+  tokenReward: number,
+): Promise<MatchFormState> {
+  await requireRole("admin");
+  if (!Number.isInteger(tokenReward) || tokenReward < 1 || tokenReward > 9999)
+    return { error: "Invalid token reward (1–9999)" };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("matches")
+    .update({ token_reward: tokenReward })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/matches");
+  revalidatePath("/matches");
+  return { ok: true };
+}
+
 export async function deleteMatchAction(id: string): Promise<MatchFormState> {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
