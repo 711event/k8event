@@ -73,7 +73,7 @@ export function StadiumHero({
           <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
             <TeamBadge name={home?.name ?? "?"} logoUrl={home?.logo_url} size={64} />
             <span className="font-[family-name:var(--font-display)] text-sm sm:text-base font-semibold text-[var(--text-hi)] truncate max-w-full">
-              {home?.name ?? "?"}
+              {home?.name?.startsWith("TBD") ? "?" : (home?.name ?? "?")}
             </span>
             <span className="text-[10px] uppercase tracking-wider text-[var(--text-lo)]">{t("stadium_home_label")}</span>
           </div>
@@ -90,7 +90,7 @@ export function StadiumHero({
           <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
             <TeamBadge name={away?.name ?? "?"} logoUrl={away?.logo_url} size={64} />
             <span className="font-[family-name:var(--font-display)] text-sm sm:text-base font-semibold text-[var(--text-hi)] truncate max-w-full">
-              {away?.name ?? "?"}
+              {away?.name?.startsWith("TBD") ? "?" : (away?.name ?? "?")}
             </span>
             <span className="text-[10px] uppercase tracking-wider text-[var(--text-lo)]">{t("stadium_away_label")}</span>
           </div>

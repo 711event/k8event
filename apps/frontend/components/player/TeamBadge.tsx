@@ -1,6 +1,7 @@
 import { cn } from "@k8event/shared/utils";
 
 function monogram(name: string) {
+  if (name.startsWith("TBD")) return "?";
   return name
     .split(/\s+/)
     .filter(Boolean)

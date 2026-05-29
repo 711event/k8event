@@ -68,7 +68,7 @@ export function MatchCard({
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamBadge name={home?.name ?? "?"} logoUrl={home?.logo_url} size={44} />
           <span className="text-xs font-medium text-[var(--text-hi)] truncate max-w-full">
-            {home?.name ?? "?"}
+            {home?.name?.startsWith("TBD") ? "?" : (home?.name ?? "?")}
           </span>
         </div>
         <div className="flex flex-col items-center flex-shrink-0 min-w-[80px]">
@@ -77,7 +77,7 @@ export function MatchCard({
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamBadge name={away?.name ?? "?"} logoUrl={away?.logo_url} size={44} />
           <span className="text-xs font-medium text-[var(--text-hi)] truncate max-w-full">
-            {away?.name ?? "?"}
+            {away?.name?.startsWith("TBD") ? "?" : (away?.name ?? "?")}
           </span>
         </div>
       </div>
