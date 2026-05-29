@@ -60,11 +60,11 @@ export function CreatePlayerForm() {
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm w-40">
-          <span className="font-medium">联系方式</span>
+          <span className="font-medium">{t("create_player_form_contact")}</span>
           <input
             name="phone"
             type="tel"
-            placeholder="WhatsApp / 手机号"
+            placeholder={t("create_player_form_contact_hint")}
             className="h-10 px-3 rounded-md border border-zinc-300 bg-transparent focus:outline-none focus:ring-2 focus:ring-foreground/20 text-sm"
           />
         </label>

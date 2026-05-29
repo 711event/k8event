@@ -63,7 +63,7 @@ export function PlayerRow({
     const res = await updateDisplayNameAction(userId, displayName);
     setEditSaving(false);
     if (res.error) { toast.error(res.error); return; }
-    toast.success("显示名称已更新");
+    toast.success(t("player_row_display_saved"));
     setEditOpen(false);
   }
 
@@ -72,7 +72,7 @@ export function PlayerRow({
     const res = await updatePhoneAction(userId, phone.trim());
     setPhoneSaving(false);
     if (res.error) { toast.error(res.error); return; }
-    toast.success("联系方式已更新");
+    toast.success(t("player_row_contact_saved"));
     setPhoneOpen(false);
   }
 
@@ -99,7 +99,7 @@ export function PlayerRow({
               onClick={() => { closeAll(); setPhoneOpen(true); }}
               className="text-xs text-zinc-400 hover:text-zinc-600 border border-dashed border-zinc-300 rounded px-2 py-0.5 transition"
             >
-              + 填写
+              {t("player_row_add_contact")}
             </button>
           )}
         </td>
@@ -113,7 +113,7 @@ export function PlayerRow({
               className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-zinc-300 hover:border-zinc-400 text-zinc-600 hover:text-zinc-800 transition"
             >
               <Pencil size={12} />
-              编辑
+              {t("player_row_edit")}
             </button>
             {/* Change password */}
             <button
@@ -134,7 +134,7 @@ export function PlayerRow({
           <td colSpan={5} className="px-4 py-3">
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
-                <span>显示名称</span>
+                <span>{t("player_row_display_label")}</span>
                 <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
@@ -148,7 +148,7 @@ export function PlayerRow({
                 disabled={editSaving || !displayName.trim()}
                 className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
               >
-                {editSaving ? "保存中…" : "保存"}
+                {editSaving ? t("player_row_saving_inline") : t("player_row_save_inline")}
               </button>
               <button
                 type="button"
@@ -168,12 +168,12 @@ export function PlayerRow({
           <td colSpan={5} className="px-4 py-3">
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
-                <span>联系方式 (WhatsApp / 手机号)</span>
+                <span>{t("player_row_contact_label")}</span>
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   maxLength={30}
-                  placeholder="例：0123456789"
+                  placeholder={t("player_row_contact_placeholder")}
                   className="h-9 px-3 rounded border border-zinc-300 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                 />
               </div>
@@ -183,7 +183,7 @@ export function PlayerRow({
                 disabled={phoneSaving}
                 className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
               >
-                {phoneSaving ? "保存中…" : "保存"}
+                {phoneSaving ? t("player_row_saving_inline") : t("player_row_save_inline")}
               </button>
               <button
                 type="button"

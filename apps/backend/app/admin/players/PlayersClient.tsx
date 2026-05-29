@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { PlayerRow } from "./PlayerRow";
+import { useLang } from "@/components/admin/LangProvider";
+import { tBo } from "@/lib/i18n";
 
 interface Player {
   user_id: string;
@@ -13,6 +15,8 @@ interface Player {
 }
 
 export function PlayersClient({ players }: { players: Player[] }) {
+  const { locale } = useLang();
+  const t = (k: Parameters<typeof tBo>[1], v?: Parameters<typeof tBo>[2]) => tBo(locale, k, v);
   const [q, setQ] = useState("");
 
   const filtered = q.trim()
@@ -35,7 +39,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索用户名 / 显示名称 / 联系方式"
+          placeholder={t("players_search_placeholder")}
           className="w-full h-9 pl-9 pr-3 rounded-lg border border-zinc-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-400"
         />
       </div>
@@ -45,10 +49,10 @@ export function PlayersClient({ players }: { players: Player[] }) {
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">用户名</th>
-              <th className="px-4 py-3 font-medium">显示名称</th>
-              <th className="px-4 py-3 font-medium">联系方式</th>
-              <th className="px-4 py-3 font-medium">创建时间 (GMT+8)</th>
+              <th className="px-4 py-3 font-medium">{t("players_col_username")}</th>
+              <th className="px-4 py-3 font-medium">{t("players_col_displayName")}</th>
+              <th className="px-4 py-3 font-medium">{t("players_col_contact")}</th>
+              <th className="px-4 py-3 font-medium">{t("players_col_createdAt")}</th>
               <th className="px-4 py-3 font-medium"></th>
             </tr>
           </thead>
@@ -56,7 +60,7 @@ export function PlayersClient({ players }: { players: Player[] }) {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-zinc-500 text-center">
-                  {q ? `找不到「${q}」相关玩家` : "暂无玩家"}
+                  {q ? t("players_not_found", { q }) : t("players_empty")}
                 </td>
               </tr>
             ) : (
