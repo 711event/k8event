@@ -350,7 +350,7 @@ export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
       const { data: created, error } = await supabase
         .from("teams")
         .insert({ name, short_code: code, logo_url: null })
-        .select("id")
+        .select("id, name")
         .single();
       if (error || !created) throw new Error(error?.message ?? `Failed to create placeholder team ${name}`);
       data = created;
