@@ -19,6 +19,7 @@ import {
   UserCog,
   Settings2,
   UserPlus,
+  Target,
   Menu,
   X,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const iconMap = {
   UserCog,
   Settings2,
   UserPlus,
+  Target,
 };
 
 export function AdminMobileNav({
