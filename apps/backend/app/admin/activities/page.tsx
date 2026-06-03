@@ -111,6 +111,9 @@ export default async function ActivitiesPage() {
                           <Link href="/admin/matches" className="text-xs text-zinc-500 hover:text-zinc-900 underline">
                             {t("activities_matches")}
                           </Link>
+                          <Link href="/admin/predictions" className="text-xs text-zinc-500 hover:text-zinc-900 underline">
+                            {t("activities_predictions")}
+                          </Link>
                         </>
                       )}
                       <Link href={`/admin/activities/${a.id}`} className="text-sm underline">

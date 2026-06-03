@@ -18,6 +18,7 @@ import {
   UserCog,
   Settings2,
   UserPlus,
+  Target,
 } from "lucide-react";
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
 import { ReferralPendingBadge } from "./ReferralPendingBadge";
@@ -39,6 +40,7 @@ const iconMap = {
   UserCog,
   Settings2,
   UserPlus,
+  Target,
 };
 
 export type AdminNavItem = {
