@@ -3,13 +3,18 @@ import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
 import { getGroupId } from "@/lib/get-group";
+import { getBoLocale } from "@/lib/get-locale";
+import { tBo } from "@/lib/i18n";
 
-export const metadata = { title: "Prediction Records · Admin Panel" };
+export const metadata = { title: "Predictions · Admin Panel" };
 
 export default async function PredictionsPage(props: {
   searchParams: Promise<{ date?: string; q?: string }>;
 }) {
   await requireRole("admin");
+  const locale = await getBoLocale();
+  const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
+
   const sp = await props.searchParams;
 
   // Default to yesterday GMT+8
@@ -35,14 +40,13 @@ export default async function PredictionsPage(props: {
   const chancesPerDay = Number(settings.chances_per_recharge ?? 1);
   const maxChances = Number(settings.max_chances ?? 0);
 
-  // ── Chance balances: qualifying recharge days & total predictions per player ──
+  // ── Chance balances ─────────────────────────────────────────────────────
   const { data: rechargeRows } = await supabase
     .from("daily_recharge")
     .select("player_id, amount")
     .gte("amount", minRecharge)
     .in(
       "player_id",
-      // sub-select: all player IDs in this group
       (
         await supabase
           .from("profiles")
@@ -66,7 +70,7 @@ export default async function PredictionsPage(props: {
       ).data?.map((r) => r.user_id) ?? [],
     );
 
-  // ── Players with at least one relevant record ───────────────────────────
+  // ── Players ─────────────────────────────────────────────────────────────
   const { data: players } = await supabase
     .from("profiles")
     .select("user_id, username, display_name")
@@ -127,23 +131,26 @@ export default async function PredictionsPage(props: {
   });
 
   const pickLabel = (pick: string) => {
-    if (pick === "home") return "主队胜";
-    if (pick === "away") return "客队胜";
-    return "平局";
+    if (pick === "home") return t("pred_pick_home");
+    if (pick === "away") return t("pred_pick_away");
+    return t("pred_pick_draw");
   };
+
+  const capText = maxChances > 0
+    ? t("pred_balance_cap", { max: maxChances })
+    : t("pred_balance_cap_none");
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <h1 className="text-2xl font-semibold">竞猜记录</h1>
+      <h1 className="text-2xl font-semibold">{t("pred_page_title")}</h1>
 
       {/* ── Section 1: Chance Balances ─────────────────────────────────── */}
       <section className="rounded-lg border border-zinc-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 bg-zinc-50">
           <div>
-            <h2 className="text-base font-medium">竞猜机会余额</h2>
+            <h2 className="text-base font-medium">{t("pred_balance_title")}</h2>
             <p className="text-xs text-zinc-400 mt-0.5">
-              最低充值 RM{minRecharge} · 每次获得 {chancesPerDay} 次 ·{" "}
-              {maxChances > 0 ? `上限 ${maxChances} 次` : "不限上限"}
+              {t("pred_balance_subtitle", { min: minRecharge, per: chancesPerDay, cap: capText })}
             </p>
           </div>
           {/* Search */}
@@ -152,31 +159,31 @@ export default async function PredictionsPage(props: {
             <input
               name="q"
               defaultValue={sp.q ?? ""}
-              placeholder="搜索玩家…"
+              placeholder={t("pred_search_placeholder")}
               className="h-8 px-3 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400 w-40"
             />
             <button
               type="submit"
               className="h-8 px-3 text-sm rounded bg-zinc-900 text-white hover:bg-zinc-700"
             >
-              搜索
+              {t("pred_search_btn")}
             </button>
           </form>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left border-b border-zinc-200">
             <tr>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">玩家</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">累计获得</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">已使用</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">剩余</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_player")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">{t("pred_col_earned")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">{t("pred_col_used")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">{t("pred_col_remaining")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {balances.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-zinc-400 text-center">
-                  暂无记录
+                  {t("pred_balance_empty")}
                 </td>
               </tr>
             ) : (
@@ -211,8 +218,10 @@ export default async function PredictionsPage(props: {
       <section className="rounded-lg border border-zinc-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 bg-zinc-50">
           <h2 className="text-base font-medium">
-            {date} 竞猜记录
-            <span className="ml-2 text-sm text-zinc-400 font-normal">共 {predictions.length} 条</span>
+            {t("pred_log_title", { date })}
+            <span className="ml-2 text-sm text-zinc-400 font-normal">
+              {t("pred_log_count", { count: predictions.length })}
+            </span>
           </h2>
           {/* Date picker */}
           <form method="GET" className="flex gap-2 items-center">
@@ -227,26 +236,26 @@ export default async function PredictionsPage(props: {
               type="submit"
               className="h-8 px-3 text-sm rounded bg-zinc-900 text-white hover:bg-zinc-700"
             >
-              查看
+              {t("pred_view_btn")}
             </button>
           </form>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left border-b border-zinc-200">
             <tr>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">玩家</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">比赛</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">竞猜</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">结果</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">Token</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-600">时间 (GMT+8)</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_player")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_match")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_pick")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_result")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600 text-right">{t("pred_col_token")}</th>
+              <th className="px-4 py-2.5 font-medium text-zinc-600">{t("pred_col_time")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {predictions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-zinc-400 text-center">
-                  该日期暂无竞猜记录
+                  {t("pred_log_empty")}
                 </td>
               </tr>
             ) : (
@@ -276,11 +285,11 @@ export default async function PredictionsPage(props: {
                     </td>
                     <td className="px-4 py-2.5">
                       {pred.is_correct === null ? (
-                        <span className="text-xs text-zinc-400">待结算</span>
+                        <span className="text-xs text-zinc-400">{t("pred_pending")}</span>
                       ) : pred.is_correct ? (
-                        <span className="text-xs font-medium text-green-600">✓ 正确</span>
+                        <span className="text-xs font-medium text-green-600">{t("pred_correct")}</span>
                       ) : (
-                        <span className="text-xs text-zinc-400">✗ 错误</span>
+                        <span className="text-xs text-zinc-400">{t("pred_wrong")}</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
@@ -302,8 +311,8 @@ export default async function PredictionsPage(props: {
       </section>
 
       <p className="text-xs text-zinc-400">
-        竞猜机会余额实时计算（累计合格充值天数 × {chancesPerDay} − 已用次数）。如数据异常请检查充值导入记录。
-        <Link href="/admin/recharge" className="underline ml-1">前往充值导入</Link>
+        {t("pred_footer", { per: chancesPerDay })}
+        <Link href="/admin/recharge" className="underline ml-1">{t("pred_footer_link")}</Link>
       </p>
     </div>
   );
