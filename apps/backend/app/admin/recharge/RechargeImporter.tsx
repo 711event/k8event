@@ -132,8 +132,9 @@ async function parseExcel(buffer: ArrayBuffer, locale: string): Promise<{ rows: 
 
 // ─── Sample file downloads ────────────────────────────────────────────────────
 function downloadCsvSample() {
-  const today = new Date().toISOString().slice(0, 10);
-  const content = `date,username,amount\n${today},player001,1000\n${today},player002,500\n${today},player003,250\n`;
+  // Use yesterday's date in GMT+8 as the default (most common use case is importing prior day)
+  const yesterday = new Date(Date.now() + 8 * 3600_000 - 86_400_000).toISOString().slice(0, 10);
+  const content = `date,username,amount\n${yesterday},player001,1000\n${yesterday},player002,500\n${yesterday},player003,250\n`;
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -145,11 +146,12 @@ function downloadCsvSample() {
 
 async function downloadExcelSample() {
   const { utils, writeFile } = await import("xlsx");
-  const today = new Date().toISOString().slice(0, 10);
+  // Use yesterday's date in GMT+8 as the default (most common use case is importing prior day)
+  const yesterday = new Date(Date.now() + 8 * 3600_000 - 86_400_000).toISOString().slice(0, 10);
   const data = [
-    { Date: today, Superid: "player001", In: 1000 },
-    { Date: today, Superid: "player002", In: 500 },
-    { Date: today, Superid: "player003", In: 250 },
+    { Date: yesterday, Superid: "player001", In: 1000 },
+    { Date: yesterday, Superid: "player002", In: 500 },
+    { Date: yesterday, Superid: "player003", In: 250 },
   ];
   const ws = utils.json_to_sheet(data);
   const wb = utils.book_new();
