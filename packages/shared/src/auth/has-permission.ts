@@ -14,6 +14,7 @@ const AGENT_PERMISSIONS: AdminPermissions = {
   quick_replies: true,
   roles: false,
   staff: false,
+  matches: false,   // agents never manage global match data
 };
 
 /**

@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { malaysiaToUtc } from "@k8event/shared/time/malaysia";
+
+async function requireMatchesPermission() {
+  const user = await requireRole("admin");
+  if (!hasPermission(user, "matches")) throw new Error("权限不足：无比赛管理权限");
+  return user;
+}
 
 // ─────────────────────────────────────────────
 // Actual 48 FIFA World Cup 2026 teams
@@ -166,7 +173,7 @@ export type SeedResult =
 // Action 1a: Add missing WC teams (skip existing by name)
 // ─────────────────────────────────────────────
 export async function seedTeamsAction(): Promise<SeedResult> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
 
   const { data: existing } = await supabase.from("teams").select("name");
@@ -197,7 +204,7 @@ export async function seedTeamsAction(): Promise<SeedResult> {
 // Requires all matches to be cleared first.
 // ─────────────────────────────────────────────
 export async function resetAndSeedTeamsAction(): Promise<SeedResult> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
 
   // Safety: require matches to be cleared first
@@ -234,7 +241,7 @@ export async function resetAndSeedTeamsAction(): Promise<SeedResult> {
 // Action 2: Generate 72 group-stage matches from actual schedule
 // ─────────────────────────────────────────────
 export async function seedMatchesAction(): Promise<SeedResult> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
 
   // Idempotency guard
@@ -338,7 +345,7 @@ const KNOCKOUT_SCHEDULE: { label: string; kickoff: string }[] = [
 // Action 2b: Seed 32 knockout matches (待定 vs 待定)
 // ─────────────────────────────────────────────
 export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
 
   // Ensure two distinct TBD placeholder teams exist
@@ -391,7 +398,7 @@ export async function seedKnockoutMatchesAction(): Promise<SeedResult> {
 // Action 3: Clear all scheduled matches (reset)
 // ─────────────────────────────────────────────
 export async function resetSeedMatchesAction(): Promise<SeedResult> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
 
   const { count } = await supabase

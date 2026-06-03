@@ -4,7 +4,21 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { requireRole } from "@k8event/shared/auth/require-role";
+import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { malaysiaToUtc } from "@k8event/shared/time/malaysia";
+
+/**
+ * Matches are a global shared table — write operations affect all groups.
+ * Only admins explicitly granted the "matches" permission may perform them.
+ * Admins with no role assigned (permissions = null) are unrestricted and pass.
+ */
+async function requireMatchesPermission() {
+  const user = await requireRole("admin");
+  if (!hasPermission(user, "matches")) {
+    throw new Error("权限不足：无比赛管理权限");
+  }
+  return user;
+}
 
 const matchSchema = z
   .object({
@@ -25,7 +39,7 @@ export async function createMatchAction(
   _prev: MatchFormState,
   formData: FormData,
 ): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const parsed = matchSchema.safeParse({
     homeTeamId: formData.get("homeTeamId"),
     awayTeamId: formData.get("awayTeamId"),
@@ -57,7 +71,7 @@ export async function setMatchStatusAction(
   id: string,
   status: "scheduled" | "locked" | "cancelled",
 ): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("matches").update({ status }).eq("id", id);
   if (error) return { error: error.message };
@@ -73,7 +87,7 @@ export async function updateMatchTeamsAction(
   homeTeamId: string,
   awayTeamId: string,
 ): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   if (homeTeamId === awayTeamId) return { error: "主队和客队不能相同" };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -92,7 +106,7 @@ export async function updateMatchTokenRewardAction(
   id: string,
   tokenReward: number,
 ): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   if (!Number.isInteger(tokenReward) || tokenReward < 1 || tokenReward > 9999)
     return { error: "Invalid token reward (1–9999)" };
   const supabase = await createSupabaseServerClient();
@@ -107,7 +121,7 @@ export async function updateMatchTokenRewardAction(
 }
 
 export async function deleteMatchAction(id: string): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("matches").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -125,7 +139,7 @@ export async function settleMatchAction(
   id: string,
   result: "home" | "away" | "draw",
 ): Promise<MatchFormState> {
-  await requireRole("admin");
+  await requireMatchesPermission();
   const parsed = settleSchema.safeParse({ id, result });
   if (!parsed.success) return { error: "Invalid input" };
 
