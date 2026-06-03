@@ -27,14 +27,12 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Read the cached session locally (NO network call). supabase-js will
-  // auto-refresh the token + setAll() new cookies if the JWT is near expiry.
-  // Previously this used auth.getUser() which validates the JWT against the
-  // Supabase auth server on every request; on the free tier that endpoint was
-  // being throttled and middleware was taking ~35s per request. getSession()
-  // is purely local and turns this into a sub-millisecond operation while
-  // still keeping the refresh path intact for expiring tokens.
-  await supabase.auth.getSession();
+  // Validate the JWT against the Supabase Auth server on every request.
+  // This ensures revoked or tampered sessions are rejected immediately,
+  // rather than trusting the locally-cached cookie value.
+  // (Previously used getSession() to avoid free-tier throttling; the project
+  // is now on the PRO plan so the rate limit concern no longer applies.)
+  await supabase.auth.getUser();
 
   return response;
 }

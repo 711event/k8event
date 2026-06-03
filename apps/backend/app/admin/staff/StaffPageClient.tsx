@@ -391,6 +391,9 @@ function CreateStaffForm({
             <div className="bg-white rounded px-3 py-2 border border-emerald-200 select-all">{newCreds.password}</div>
           </div>
         </div>
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          {t("staff_created_pw_note")}
+        </p>
         <button
           onClick={onCreated}
           className="h-9 px-4 rounded bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition"
