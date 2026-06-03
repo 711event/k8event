@@ -1,6 +1,5 @@
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
-import { malaysiaDateString } from "@k8event/shared/time/malaysia";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { RechargeImporter } from "./RechargeImporter";
@@ -14,7 +13,9 @@ export default async function RechargePage(props: {
   const locale = await getBoLocale();
   const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const sp = await props.searchParams;
-  const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : malaysiaDateString();
+  // Default to yesterday (GMT+8) — daily imports are always for the prior day
+  const yesterday = new Date(Date.now() + 8 * 3_600_000 - 86_400_000).toISOString().slice(0, 10);
+  const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : yesterday;
   const supabase = await createSupabaseServerClient();
 
   const { data: todays } = await supabase
