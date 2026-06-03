@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getBoLocale } from "@/lib/get-locale";
@@ -16,6 +17,12 @@ export default async function RechargePage(props: {
   // Default to yesterday (GMT+8) — daily imports are always for the prior day
   const yesterday = new Date(Date.now() + 8 * 3_600_000 - 86_400_000).toISOString().slice(0, 10);
   const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : yesterday;
+
+  // Build last-7-days tab list (yesterday → 7 days ago), newest first
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.now() + 8 * 3_600_000 - (i + 1) * 86_400_000);
+    return d.toISOString().slice(0, 10);
+  });
   const supabase = await createSupabaseServerClient();
 
   const { data: todays } = await supabase
@@ -56,9 +63,45 @@ export default async function RechargePage(props: {
         <RechargeImporter />
       </section>
 
-      <section className="rounded-lg border border-zinc-200 overflow-x-auto">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200">
-          <h2 className="text-lg font-medium">{t("recharge_today_title", { date })}</h2>
+      <section className="rounded-lg border border-zinc-200 overflow-hidden">
+        {/* 7-day date tabs */}
+        <div className="flex items-center gap-1 px-4 pt-3 pb-0 overflow-x-auto border-b border-zinc-200 bg-zinc-50">
+          {last7.map((d) => {
+            const isActive = d === date;
+            const label = d.slice(5); // "MM-DD"
+            return (
+              <Link
+                key={d}
+                href={`?date=${d}`}
+                className={
+                  "flex-shrink-0 px-3 py-1.5 text-xs font-medium rounded-t border-b-2 transition-colors " +
+                  (isActive
+                    ? "border-zinc-900 text-zinc-900 bg-white"
+                    : "border-transparent text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")
+                }
+              >
+                {label}
+              </Link>
+            );
+          })}
+          {/* Custom date input for dates outside the 7-day window */}
+          <form method="GET" className="ml-auto flex items-center gap-1.5 pb-1">
+            <input
+              type="date"
+              name="date"
+              defaultValue={date}
+              className="h-7 px-2 text-xs rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            />
+            <button
+              type="submit"
+              className="h-7 px-2 text-xs rounded bg-zinc-800 text-white hover:bg-zinc-600"
+            >
+              →
+            </button>
+          </form>
+        </div>
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-zinc-100">
+          <h2 className="text-sm font-medium text-zinc-600">{t("recharge_today_title", { date })}</h2>
           <span className="text-sm text-zinc-500">
             {t("recharge_today_count", { count: todays?.length ?? 0, eligible: eligibleCount })}
           </span>
