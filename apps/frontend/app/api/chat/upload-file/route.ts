@@ -44,7 +44,16 @@ export async function POST(req: Request) {
     "",
   );
 
-  const ext = cleanName.split(".").pop() ?? "bin";
+  const ext = (cleanName.split(".").pop() ?? "bin").toLowerCase();
+
+  // MIME and extension allowlist — block SVG/HTML/JS and other non-image/document types
+  // to prevent stored XSS via malicious files served from public storage.
+  const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "pdf"]);
+  const ALLOWED_MIME_PREFIXES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+  const mimeOk = ALLOWED_MIME_PREFIXES.includes(file.type);
+  if (!ALLOWED_EXTENSIONS.has(ext) || !mimeOk) {
+    return NextResponse.json({ error: "file_type_not_allowed" }, { status: 415 });
+  }
   const path = `guest/${thread.id}/${crypto.randomUUID()}.${ext}`;
   const arrayBuffer = await file.arrayBuffer();
 

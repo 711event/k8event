@@ -111,16 +111,27 @@ export async function approveReferralAction(
     refSettings?.trigger_type === "on_register" &&
     req.referrer_id
   ) {
-    await admin.from("token_transactions").insert({
-      player_id: req.referrer_id,
-      delta:     refSettings.referrer_token_reward,
-      reason:    "referral",
-      note:      `Referral reward — friend ${created.user.id} joined`,
-    });
-    await admin
-      .from("referral_requests")
-      .update({ referrer_rewarded: true })
-      .eq("id", requestId);
+    // Verify the referrer profile belongs to this group before awarding tokens.
+    // Defence-in-depth against cross-group token award if referral data is ever corrupted.
+    const { data: referrerProfile } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", req.referrer_id)
+      .eq("group_id", groupId)
+      .maybeSingle();
+
+    if (referrerProfile) {
+      await admin.from("token_transactions").insert({
+        player_id: req.referrer_id,
+        delta:     refSettings.referrer_token_reward,
+        reason:    "referral",
+        note:      `Referral reward — friend ${created.user.id} joined`,
+      });
+      await admin
+        .from("referral_requests")
+        .update({ referrer_rewarded: true })
+        .eq("id", requestId);
+    }
   }
 
   revalidatePath("/admin/referrals");

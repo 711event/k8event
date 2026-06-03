@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { hasPermission } from "@k8event/shared/auth/has-permission";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 
 async function requireRolePermission() {
   const user = await requireRole(["admin"]);
@@ -31,6 +32,7 @@ export async function createRoleAction(
     slug: slug.trim(),
     permissions,
     is_system: false,
+    group_id: getGroupId(),  // bind role to the current group
   });
 
   if (error) {
