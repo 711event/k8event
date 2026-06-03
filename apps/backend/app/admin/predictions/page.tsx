@@ -108,7 +108,7 @@ export default async function PredictionsPage(props: {
   const { data: rawPredictions } = await supabase
     .from("predictions")
     .select(
-      `id, pick, is_correct, awarded, submitted_at,
+      `match_id, player_id, pick, is_correct, awarded, submitted_at,
        player:profiles!predictions_player_id_fkey(user_id, username, display_name, group_id),
        match:matches!predictions_match_id_fkey(
          kickoff_at,
@@ -256,7 +256,7 @@ export default async function PredictionsPage(props: {
                 const home = Array.isArray(match?.home) ? match.home[0] : match?.home;
                 const away = Array.isArray(match?.away) ? match.away[0] : match?.away;
                 return (
-                  <tr key={pred.id} className="hover:bg-zinc-50">
+                  <tr key={`${pred.match_id}_${pred.player_id}`} className="hover:bg-zinc-50">
                     <td className="px-4 py-2.5">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       <span className="font-medium">{(player as any)?.display_name || (player as any)?.username}</span>
