@@ -11,14 +11,45 @@ import { DeleteRequestButton } from "./DeleteRequestButton";
 export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage(props: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; date_filter?: string; date_from?: string; date_to?: string; q?: string }>;
 }) {
   await requireRole("admin");
-  const { tab = "pending" } = await props.searchParams;
+  const sp = await props.searchParams;
+  const { tab = "pending" } = sp;
   const locale = await getBoLocale();
   const t = (k: Parameters<typeof tBo>[1], v?: Parameters<typeof tBo>[2]) => tBo(locale, k, v);
   const supabase = await createSupabaseServerClient();
   const groupId = getGroupId();
+
+  // ── History filters ──────────────────────────────────────────────────────
+  const dateFilter = sp.date_filter ?? "all";
+  const dateFrom = sp.date_from ?? "";
+  const dateTo = sp.date_to ?? "";
+  const q = (sp.q ?? "").trim().toLowerCase();
+
+  // Compute GMT+8 date ranges
+  const now8 = new Date(Date.now() + 8 * 3_600_000);
+  const todayStr = now8.toISOString().slice(0, 10);
+  let filterFrom = "";
+  let filterTo = "";
+  if (dateFilter === "today") {
+    filterFrom = `${todayStr}T00:00:00+08:00`;
+    filterTo   = `${todayStr}T23:59:59+08:00`;
+  } else if (dateFilter === "this_month") {
+    const y = now8.getUTCFullYear();
+    const m = String(now8.getUTCMonth() + 1).padStart(2, "0");
+    filterFrom = `${y}-${m}-01T00:00:00+08:00`;
+    filterTo   = `${todayStr}T23:59:59+08:00`;
+  } else if (dateFilter === "last_month") {
+    const firstOfThis  = new Date(Date.UTC(now8.getUTCFullYear(), now8.getUTCMonth(), 1));
+    const lastOfLast   = new Date(firstOfThis.getTime() - 86_400_000);
+    const firstOfLast  = new Date(Date.UTC(lastOfLast.getUTCFullYear(), lastOfLast.getUTCMonth(), 1));
+    filterFrom = `${firstOfLast.toISOString().slice(0, 10)}T00:00:00+08:00`;
+    filterTo   = `${lastOfLast.toISOString().slice(0, 10)}T23:59:59+08:00`;
+  } else if (dateFilter === "custom" && dateFrom && dateTo) {
+    filterFrom = `${dateFrom}T00:00:00+08:00`;
+    filterTo   = `${dateTo}T23:59:59+08:00`;
+  }
 
   // Fetch pending requests
   const { data: pendingRequests } = await supabase
@@ -28,19 +59,34 @@ export default async function ReferralsPage(props: {
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
-  // Fetch processed requests (approved + rejected)
-  const { data: processedRequests } = await supabase
+  // Fetch processed requests (approved + rejected) with optional date filter
+  let historyQuery = supabase
     .from("referral_requests")
     .select("id, name, phone, ref_username, status, referrer_rewarded, created_at, player_id, profiles!referral_requests_player_id_fkey(username)")
     .eq("group_id", groupId)
     .in("status", ["approved", "rejected"])
-    .order("created_at", { ascending: false })
-    .limit(100);
+    .order("created_at", { ascending: false });
+  if (filterFrom) historyQuery = historyQuery.gte("created_at", filterFrom);
+  if (filterTo)   historyQuery = historyQuery.lte("created_at", filterTo);
+  const { data: allProcessed } = await historyQuery.limit(500);
 
-  // Stats
+  // Client-side search filter
+  const processedRequests = q
+    ? (allProcessed ?? []).filter((r) => {
+        const account = (r.profiles as { username?: string } | null)?.username ?? "";
+        return (
+          (r.name ?? "").toLowerCase().includes(q) ||
+          (r.phone ?? "").toLowerCase().includes(q) ||
+          (r.ref_username ?? "").toLowerCase().includes(q) ||
+          account.toLowerCase().includes(q)
+        );
+      })
+    : (allProcessed ?? []);
+
+  // Stats (use unfiltered allProcessed for global counts)
   const totalPending = pendingRequests?.length ?? 0;
-  const totalApproved = processedRequests?.filter((r) => r.status === "approved").length ?? 0;
-  const totalRewarded = processedRequests?.filter((r) => r.referrer_rewarded).length ?? 0;
+  const totalApproved = (allProcessed ?? []).filter((r) => r.status === "approved").length;
+  const totalRewarded = (allProcessed ?? []).filter((r) => r.referrer_rewarded).length;
 
   // Referral settings
   const { data: settings } = await supabase
@@ -184,6 +230,76 @@ export default async function ReferralsPage(props: {
 
       {/* Tab: History */}
       {tab === "history" && (
+        <div className="space-y-3">
+          {/* Filter bar */}
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+            {/* Quick date pills */}
+            <div className="flex flex-wrap gap-2">
+              {(["all", "today", "this_month", "last_month", "custom"] as const).map((f) => {
+                const labels: Record<string, string> = {
+                  all: t("referral_filter_all"),
+                  today: t("referral_filter_today"),
+                  this_month: t("referral_filter_this_month"),
+                  last_month: t("referral_filter_last_month"),
+                  custom: t("referral_filter_custom"),
+                };
+                const active = dateFilter === f;
+                return (
+                  <a
+                    key={f}
+                    href={`?tab=history&date_filter=${f}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                      active
+                        ? "bg-zinc-900 text-white"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                    }`}
+                  >
+                    {labels[f]}
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Custom date range + search */}
+            <form method="GET" className="flex flex-wrap items-center gap-2">
+              <input type="hidden" name="tab" value="history" />
+              <input type="hidden" name="date_filter" value={dateFilter === "custom" ? "custom" : dateFilter} />
+              {dateFilter === "custom" && (
+                <>
+                  <label className="text-xs text-zinc-500">{t("referral_filter_date_from")}</label>
+                  <input
+                    type="date"
+                    name="date_from"
+                    defaultValue={dateFrom || todayStr}
+                    className="h-8 px-2 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                  />
+                  <label className="text-xs text-zinc-500">{t("referral_filter_date_to")}</label>
+                  <input
+                    type="date"
+                    name="date_to"
+                    defaultValue={dateTo || todayStr}
+                    className="h-8 px-2 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                  />
+                </>
+              )}
+              <input
+                name="q"
+                defaultValue={sp.q ?? ""}
+                placeholder={t("referral_filter_search_placeholder")}
+                className="h-8 px-3 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-56"
+              />
+              <button
+                type="submit"
+                className="h-8 px-3 text-sm rounded bg-zinc-900 text-white hover:bg-zinc-700"
+              >
+                {t("referral_filter_search_btn")}
+              </button>
+              <span className="text-xs text-zinc-400 ml-auto">
+                {t("referral_history_count", { count: processedRequests.length })}
+              </span>
+            </form>
+          </div>
+
         <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
           {!processedRequests?.length ? (
             <div className="p-8 text-center text-sm text-zinc-500">{t("referral_history_empty")}</div>
@@ -233,6 +349,7 @@ export default async function ReferralsPage(props: {
               </tbody>
             </table>
           )}
+        </div>
         </div>
       )}
 
