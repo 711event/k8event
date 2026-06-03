@@ -170,23 +170,6 @@ export function RechargeImporter() {
     unknown_user: t("recharge_status_unknown_user"),
   };
 
-  // ─── Password gate ────────────────────────────────────────────────────────────
-  const [unlocked, setUnlocked] = useState(false);
-  const [pwInput, setPwInput] = useState("");
-  const [pwError, setPwError] = useState(false);
-
-  function handleUnlock(e: React.FormEvent) {
-    e.preventDefault();
-    if (pwInput === "Mp996996") {
-      setUnlocked(true);
-      setPwError(false);
-      setPwInput("");
-    } else {
-      setPwError(true);
-      setPwInput("");
-    }
-  }
-
   const [text, setText] = useState("");
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
@@ -286,46 +269,6 @@ export function RechargeImporter() {
       unknown_user: preview.filter((r) => r.status === "unknown_user"),
     };
   }, [preview]);
-
-  // ─── Locked state ─────────────────────────────────────────────────────────────
-  if (!unlocked) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 gap-4">
-        <div className="flex flex-col items-center gap-2 text-zinc-400">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <p className="text-sm font-medium text-zinc-500">
-            {locale === "zh" ? "此功能已锁定，请输入密码解锁" : "This section is locked. Enter password to unlock."}
-          </p>
-        </div>
-        <form onSubmit={handleUnlock} className="flex items-center gap-2">
-          <input
-            type="password"
-            value={pwInput}
-            onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
-            placeholder={locale === "zh" ? "输入密码" : "Enter password"}
-            autoFocus
-            className={
-              "h-9 px-3 rounded-md border text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 " +
-              (pwError ? "border-red-400 bg-red-50" : "border-zinc-300")
-            }
-          />
-          <button
-            type="submit"
-            className="h-9 px-4 rounded-md bg-zinc-800 text-white text-sm hover:bg-zinc-700"
-          >
-            {locale === "zh" ? "解锁" : "Unlock"}
-          </button>
-        </form>
-        {pwError && (
-          <p className="text-xs text-red-500">
-            {locale === "zh" ? "密码错误，请重试" : "Incorrect password, please try again."}
-          </p>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
