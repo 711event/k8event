@@ -18,23 +18,14 @@ export function PredictionTokenRewardForm({ activityId, settings }: Props) {
   const [tokenReward, setTokenReward] = useState<number>(
     (settings.prediction_token_reward as number | undefined) ?? 10
   );
-  const [syncMatches, setSyncMatches] = useState(true);
   const [pending, startTransition] = useTransition();
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const r = await updatePredictionTokenRewardAction(activityId, tokenReward, syncMatches);
+      const r = await updatePredictionTokenRewardAction(activityId, tokenReward);
       if (r.error) { toast.error(r.error); return; }
-      if (syncMatches && r.updated !== undefined) {
-        toast.success(
-          locale === "zh"
-            ? `已保存，并更新了 ${r.updated} 场待开赛比赛`
-            : `Saved. Updated ${r.updated} scheduled match(es).`
-        );
-      } else {
-        toast.success(locale === "zh" ? "已保存" : "Saved");
-      }
+      toast.success(locale === "zh" ? "已保存" : "Saved");
     });
   }
 
@@ -57,24 +48,10 @@ export function PredictionTokenRewardForm({ activityId, settings }: Props) {
         </div>
         <p className="text-xs text-zinc-400">
           {locale === "zh"
-            ? "玩家竞猜结果正确时获得的 Token 数量"
-            : "Tokens awarded to players who predict the correct match result"}
+            ? "玩家竞猜结果正确时获得的 Token 数量（每个组独立设置）"
+            : "Tokens awarded to players who predict the correct result. Each group sets this independently."}
         </p>
       </div>
-
-      <label className="flex items-center gap-2 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={syncMatches}
-          onChange={(e) => setSyncMatches(e.target.checked)}
-          className="accent-amber-500 w-4 h-4"
-        />
-        <span className="text-sm text-zinc-700">
-          {locale === "zh"
-            ? "同步更新所有「待开赛」场次的奖励"
-            : "Apply to all scheduled matches now"}
-        </span>
-      </label>
 
       <button
         type="submit"

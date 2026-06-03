@@ -81,8 +81,7 @@ export async function updateActivityAction(id: string, data: Partial<ActivityFor
 export async function updatePredictionTokenRewardAction(
   activityId: string,
   tokenReward: number,
-  updateMatches: boolean,
-): Promise<{ ok?: true; updated?: number; error?: string }> {
+): Promise<{ ok?: true; error?: string }> {
   await requireRole("admin");
   if (!Number.isInteger(tokenReward) || tokenReward < 1 || tokenReward > 9999)
     return { error: "Invalid token reward" };
@@ -100,6 +99,9 @@ export async function updatePredictionTokenRewardAction(
 
   if (!activity) return { error: "Activity not found" };
 
+  // Save token reward in this group's activity settings only.
+  // settle_match() reads prediction_token_reward per-player from their group's
+  // activity settings, so no cross-group bulk update of matches is needed.
   const { error: actErr } = await supabase
     .from("activities")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,26 +111,8 @@ export async function updatePredictionTokenRewardAction(
 
   if (actErr) return { error: actErr.message };
 
-  let updated = 0;
-  if (updateMatches) {
-    // Count scheduled matches first, then bulk-update
-    const { count: matchCount } = await supabase
-      .from("matches")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "scheduled");
-    updated = matchCount ?? 0;
-
-    // Bulk-update all scheduled matches (global table — no group filter needed)
-    await supabase
-      .from("matches")
-      .update({ token_reward: tokenReward })
-      .eq("status", "scheduled");
-  }
-
   revalidatePath(`/admin/activities/${activityId}`);
-  revalidatePath("/admin/matches");
-  revalidatePath("/matches");
-  return { ok: true, updated };
+  return { ok: true };
 }
 
 export async function toggleActivityField(
