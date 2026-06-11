@@ -49,7 +49,7 @@ const getPublicEventData = unstable_cache(
       .eq("role", "player");
     const groupPlayerIds = (groupProfiles ?? []).map((p) => p.user_id);
 
-    const [matchesQ, top3Q, checkinActivityQ] = await Promise.all([
+    const [matchesQ, top3Q, checkinActivityQ, predictionActivityQ] = await Promise.all([
       supabase
         .from("matches")
         .select("id, kickoff_at, token_reward, status, result, home:teams!matches_home_team_id_fkey(name, logo_url), away:teams!matches_away_team_id_fkey(name, logo_url)")
@@ -60,6 +60,9 @@ const getPublicEventData = unstable_cache(
         ? supabase.from("token_earned").select("player_id, earned").in("player_id", groupPlayerIds).order("earned", { ascending: false }).limit(3)
         : Promise.resolve({ data: [] }),
       supabase.from("activities").select("id, settings").eq("type", "daily_checkin").eq("is_active", true).eq("group_id", groupId).maybeSingle(),
+      // Fetch worldcup_prediction settings so the recharge threshold shown in
+      // TokenWallet matches what the admin configured, not a hardcoded 500.
+      supabase.from("activities").select("settings").eq("type", "worldcup_prediction").eq("is_active", true).eq("group_id", groupId).maybeSingle(),
     ]);
 
     // Fetch profiles only for the top-3 players (not the entire table)
@@ -73,6 +76,7 @@ const getPublicEventData = unstable_cache(
       top3Data: top3Q.data ?? [],
       profilesData: profilesQ.data ?? [],
       checkinActivityData: checkinActivityQ.data ?? null,
+      predictionActivityData: predictionActivityQ.data ?? null,
     };
   },
   ["event-public-v2"],
@@ -111,7 +115,12 @@ export default async function EventHomePage() {
       : Promise.resolve({ data: null } as const),
   ]);
 
-  const { matchesData, top3Data, profilesData, checkinActivityData } = publicData;
+  const { matchesData, top3Data, profilesData, checkinActivityData, predictionActivityData } = publicData;
+
+  // Read the admin-configured recharge threshold for this group.
+  // Falls back to 500 if the worldcup_prediction activity has no setting yet.
+  const predictionSettings = predictionActivityData?.settings as Record<string, unknown> | null;
+  const minRecharge = Number(predictionSettings?.min_recharge_amount ?? 500);
 
   // Normalize join shape
   const matches: RawMatch[] = (matchesData).map((m) => ({
@@ -167,6 +176,7 @@ export default async function EventHomePage() {
         earned={earned}
         todayRecharge={todayRecharge}
         predictionChances={predictionChances ?? undefined}
+        threshold={minRecharge}
         guest={!user}
       />
 
