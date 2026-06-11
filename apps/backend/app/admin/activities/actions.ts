@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getGroupId } from "@/lib/get-group";
@@ -112,6 +112,8 @@ export async function updatePredictionTokenRewardAction(
   if (actErr) return { error: actErr.message };
 
   revalidatePath(`/admin/activities/${activityId}`);
+  // Clear the frontend event-page cache so match cards show the updated reward immediately
+  revalidateTag("event-public");
   return { ok: true };
 }
 
