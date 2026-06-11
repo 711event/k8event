@@ -950,3 +950,23 @@ export function tFe(
   if (!vars) return str;
   return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔒 COMPILE-TIME TRANSLATION COMPLETENESS CHECK
+//
+// `zh` is the source of truth. If you add a key to `zh` but forget `en` or
+// `ms`, TypeScript will surface a type error HERE (not at the call site).
+// Fix: add the missing key to the incomplete locale(s).
+// ─────────────────────────────────────────────────────────────────────────────
+type _FeZhKeys = keyof (typeof feTranslations)["zh"];
+type _FeLocaleCheck = {
+  en: (typeof feTranslations)["en"] extends Record<_FeZhKeys, string>
+    ? true
+    : "❌ apps/frontend/lib/i18n.ts — en locale is missing one or more zh keys";
+  ms: (typeof feTranslations)["ms"] extends Record<_FeZhKeys, string>
+    ? true
+    : "❌ apps/frontend/lib/i18n.ts — ms locale is missing one or more zh keys";
+};
+// This assignment fails to compile when any locale is incomplete.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _feLocaleCheck: _FeLocaleCheck = { en: true, ms: true };

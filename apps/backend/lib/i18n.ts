@@ -1530,3 +1530,20 @@ export function tBo(locale: BoLocale, key: BoKey, vars?: Record<string, string |
   if (!vars) return str;
   return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔒 COMPILE-TIME TRANSLATION COMPLETENESS CHECK
+//
+// `zh` is the source of truth. If you add a key to `zh` but forget `en`,
+// TypeScript will surface a type error HERE (not at the call site).
+// Fix: add the missing key to the incomplete locale.
+// ─────────────────────────────────────────────────────────────────────────────
+type _BoZhKeys = keyof (typeof boTranslations)["zh"];
+type _BoLocaleCheck = {
+  en: (typeof boTranslations)["en"] extends Record<_BoZhKeys, string>
+    ? true
+    : "❌ apps/backend/lib/i18n.ts — en locale is missing one or more zh keys";
+};
+// This assignment fails to compile when any locale is incomplete.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _boLocaleCheck: _BoLocaleCheck = { en: true };
