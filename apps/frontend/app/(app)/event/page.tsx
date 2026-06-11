@@ -117,14 +117,21 @@ export default async function EventHomePage() {
 
   const { matchesData, top3Data, profilesData, checkinActivityData, predictionActivityData } = publicData;
 
-  // Read the admin-configured recharge threshold for this group.
-  // Falls back to 500 if the worldcup_prediction activity has no setting yet.
+  // Read the admin-configured recharge threshold and token reward for this group.
+  // Falls back to defaults if the worldcup_prediction activity has no setting yet.
   const predictionSettings = predictionActivityData?.settings as Record<string, unknown> | null;
   const minRecharge = Number(predictionSettings?.min_recharge_amount ?? 500);
+  // Override match display token_reward with the group's activity setting so
+  // the "+N" badge shown on match cards matches what will actually be awarded
+  // on settlement (settle_match reads from activity settings, not matches.token_reward).
+  const displayTokenReward = predictionSettings?.prediction_token_reward
+    ? Number(predictionSettings.prediction_token_reward)
+    : null;
 
-  // Normalize join shape
+  // Normalize join shape + override token_reward for display
   const matches: RawMatch[] = (matchesData).map((m) => ({
     ...m,
+    token_reward: displayTokenReward ?? m.token_reward,
     home: oneOrNull(m.home),
     away: oneOrNull(m.away),
   })) as RawMatch[];

@@ -98,6 +98,21 @@ export default async function MatchesListPage(props: {
   };
 
   const supabase = await createSupabaseServerClient();
+
+  // Fetch this group's prediction token reward so the "+N" badge on match cards
+  // reflects the actual payout (settle_match reads from activity settings, not
+  // matches.token_reward, which may still hold the seeded default).
+  const groupId = process.env.NEXT_PUBLIC_GROUP_ID;
+  const predActivityQ = groupId
+    ? supabase
+        .from("activities")
+        .select("settings")
+        .eq("type", "worldcup_prediction")
+        .eq("is_active", true)
+        .eq("group_id", groupId)
+        .maybeSingle()
+    : Promise.resolve({ data: null });
+
   const query = supabase
     .from("matches")
     .select(
@@ -105,15 +120,23 @@ export default async function MatchesListPage(props: {
     )
     .order("kickoff_at", { ascending: active !== "finished" });
 
-  const { data } =
+  const [{ data }, { data: predActivity }] = await Promise.all([
     active === "open"
-      ? await query.eq("status", "scheduled").gte("kickoff_at", new Date().toISOString())
+      ? query.eq("status", "scheduled").gte("kickoff_at", new Date().toISOString())
       : active === "live"
-        ? await query.in("status", ["locked"])
-        : await query.eq("status", "finished").limit(40);
+        ? query.in("status", ["locked"])
+        : query.eq("status", "finished").limit(40),
+    predActivityQ,
+  ]);
+
+  const predSettings = predActivity?.settings as Record<string, unknown> | null;
+  const displayTokenReward = predSettings?.prediction_token_reward
+    ? Number(predSettings.prediction_token_reward)
+    : null;
 
   const matches = (data ?? []).map((m) => ({
     ...m,
+    token_reward: displayTokenReward ?? m.token_reward,
     home: oneOrNull(m.home),
     away: oneOrNull(m.away),
   })) as (MatchCardData & { stage?: string | null })[];
