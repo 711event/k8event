@@ -1,35 +1,17 @@
 import Link from "next/link";
 import { Trophy } from "lucide-react";
-import { unstable_cache } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@k8event/shared/supabase/database.types";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { MatchCard, type MatchCardData } from "@/components/player/MatchCard";
 import { SectionHeader } from "@/components/player/SectionHeader";
 import { EmptyState } from "@/components/player/EmptyState";
 import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
+// force-dynamic: render fresh on every request so admin changes (rules,
+// token reward, match schedule) appear immediately on the player side.
+// NOT cached: the admin backend is a separate Vercel deployment and cannot
+// revalidate a frontend unstable_cache, so caching would show stale data.
 export const metadata = { title: "比赛 · 711event" };
 export const dynamic = "force-dynamic";
-
-const getWcRules = unstable_cache(
-  async () => {
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    // Rules are identical across groups — just take the first active row
-    const { data } = await supabase
-      .from("activities")
-      .select("rules, settings")
-      .eq("type", "worldcup_prediction")
-      .limit(1)
-      .maybeSingle();
-    return data ?? null;
-  },
-  ["wc-rules-v2"],
-  { revalidate: 300, tags: ["activities"] },
-);
 
 type Tab = "open" | "live" | "finished";
 
@@ -72,15 +54,6 @@ export default async function MatchesListPage(props: {
   const locale = await getFeLocale();
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
 
-  const wcActivity = await getWcRules();
-  const wcSettings = wcActivity?.settings as Record<string, unknown> | null;
-  const rulesText =
-    locale === "zh"
-      ? wcActivity?.rules
-      : locale === "en"
-        ? (wcSettings?.rules_en as string | undefined) ?? wcActivity?.rules
-        : (wcSettings?.rules_ms as string | undefined) ?? wcActivity?.rules;
-
   const tabs: { key: Tab; label: string }[] = [
     { key: "open", label: t("matches_tab_open") },
     { key: "live", label: t("matches_tab_live") },
@@ -99,14 +72,15 @@ export default async function MatchesListPage(props: {
 
   const supabase = await createSupabaseServerClient();
 
-  // Fetch this group's prediction token reward so the "+N" badge on match cards
-  // reflects the actual payout (settle_match reads from activity settings, not
-  // matches.token_reward, which may still hold the seeded default).
+  // Fetch this group's prediction activity (rules + settings) so the rules text
+  // and the "+N" badge reflect what the admin configured for THIS group.
+  // (settle_match reads token reward from activity settings, not
+  // matches.token_reward, which may still hold the seeded default.)
   const groupId = process.env.NEXT_PUBLIC_GROUP_ID;
   const predActivityQ = groupId
     ? supabase
         .from("activities")
-        .select("settings")
+        .select("rules, settings")
         .eq("type", "worldcup_prediction")
         .eq("is_active", true)
         .eq("group_id", groupId)
@@ -133,6 +107,16 @@ export default async function MatchesListPage(props: {
   const displayTokenReward = predSettings?.prediction_token_reward
     ? Number(predSettings.prediction_token_reward)
     : null;
+
+  // Admin-configured rules text for this group, locale-aware (zh = top-level
+  // rules column; en/ms fall back to that column if their translation is unset).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rulesText =
+    locale === "zh"
+      ? (predActivity as any)?.rules
+      : locale === "en"
+        ? (predSettings?.rules_en as string | undefined) ?? (predActivity as any)?.rules
+        : (predSettings?.rules_ms as string | undefined) ?? (predActivity as any)?.rules;
 
   const matches = (data ?? []).map((m) => ({
     ...m,

@@ -1,5 +1,4 @@
 import { CalendarX2 } from "lucide-react";
-import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
@@ -16,8 +15,8 @@ import { getFeLocale } from "@/lib/get-locale";
 import { tFe } from "@/lib/i18n";
 
 export const metadata = { title: "赛事 · 711event" };
-// Remove force-dynamic — unstable_cache handles freshness for public data;
-// user-specific queries are always live per request.
+// force-dynamic: render fresh on every request so admin changes (activity
+// settings, rewards, matches) appear immediately on the player side.
 export const dynamic = "force-dynamic";
 
 type RawMatch = MatchCardData;
@@ -28,14 +27,16 @@ function oneOrNull<T>(v: T | T[] | null | undefined): T | null {
 }
 
 // ---------------------------------------------------------------------------
-// Public data: cached for 30 s per group — reduces PostgREST load significantly.
-// Uses anon key (no cookies), safe for server-side caching.
-// Cache key includes GROUP_ID so each group gets an isolated cache entry.
+// Public data — read fresh on every request (page is force-dynamic).
+// NOT cached: the admin backend is a separate Vercel deployment and cannot
+// revalidate a frontend unstable_cache, so any caching here would make admin
+// edits (activity settings, rewards, matches) appear stale on the player side.
+// Reading live guarantees the player UI always reflects the latest admin config.
+// Uses anon key (no cookies) — these are all public, group-scoped reads.
 // ---------------------------------------------------------------------------
 const GROUP_ID = process.env.NEXT_PUBLIC_GROUP_ID ?? "default";
 
-const getPublicEventData = unstable_cache(
-  async (groupId: string) => {
+async function getPublicEventData(groupId: string) {
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -78,10 +79,7 @@ const getPublicEventData = unstable_cache(
       checkinActivityData: checkinActivityQ.data ?? null,
       predictionActivityData: predictionActivityQ.data ?? null,
     };
-  },
-  ["event-public-v2"],
-  { revalidate: 30, tags: ["event-public"] },
-);
+}
 
 export default async function EventHomePage() {
   const user = await getCurrentUser();

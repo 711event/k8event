@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CalendarCheck } from "lucide-react";
-import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@k8event/shared/supabase/database.types";
 import { getCurrentUser } from "@k8event/shared/auth/get-user";
@@ -17,26 +16,23 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_REWARDS = [5, 8, 10, 12, 15, 20, 30];
 
-// Activity config changes rarely — cache for 60 s per group
-function getCheckinActivity(groupId: string) {
-  return unstable_cache(
-    async () => {
-      const supabase = createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
-      const { data } = await supabase
-        .from("activities")
-        .select("id, name, description, rules, settings, banner_url")
-        .eq("type", "daily_checkin")
-        .eq("is_active", true)
-        .eq("group_id", groupId)
-        .maybeSingle();
-      return data ?? null;
-    },
-    [`checkin-activity-${groupId}`],
-    { revalidate: 60, tags: ["activities"] },
-  )();
+// Read fresh on every request (page is force-dynamic). NOT cached: the admin
+// backend is a separate Vercel deployment and cannot revalidate a frontend
+// unstable_cache, so caching would make admin edits to the check-in activity
+// (rewards, rules, name) appear stale on the player side.
+async function getCheckinActivity(groupId: string) {
+  const supabase = createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data } = await supabase
+    .from("activities")
+    .select("id, name, description, rules, settings, banner_url")
+    .eq("type", "daily_checkin")
+    .eq("is_active", true)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  return data ?? null;
 }
 
 export default async function CheckinPage() {
