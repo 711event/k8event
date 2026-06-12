@@ -35,10 +35,11 @@ export default async function MatchDetailPage(props: {
     .eq("id", id)
     .maybeSingle();
 
-  // Also fetch worldcup activity settings to show correct chance conditions
+  // Also fetch worldcup activity rules + settings to show the admin-configured
+  // rules and correct chance conditions (not a hardcoded fallback).
   const wcActivityQ = supabase
     .from("activities")
-    .select("settings")
+    .select("rules, settings")
     .eq("type", "worldcup_prediction")
     .eq("group_id", getGroupId())
     .maybeSingle();
@@ -66,6 +67,16 @@ export default async function MatchDetailPage(props: {
   const wcSettings = (wcActivity?.settings ?? {}) as Record<string, unknown>;
   const minRechargeAmount = (wcSettings.min_recharge_amount as number | undefined) ?? 500;
   const chancesPerRecharge = (wcSettings.chances_per_recharge as number | undefined) ?? 1;
+
+  // Admin-configured rules text per locale (zh = top-level rules column;
+  // en/ms fall back to that column if their translation is unset).
+  // Falls back to the hardcoded i18n string only if no activity rules exist.
+  const adminRules =
+    locale === "zh"
+      ? (wcActivity?.rules ?? null)
+      : locale === "en"
+        ? ((wcSettings.rules_en as string | undefined) ?? wcActivity?.rules ?? null)
+        : ((wcSettings.rules_ms as string | undefined) ?? wcActivity?.rules ?? null);
 
   type TeamLite = { name: string; logo_url: string | null } | null;
   const home = oneOrNull(match.home) as TeamLite;
@@ -170,7 +181,7 @@ export default async function MatchDetailPage(props: {
           {t("match_rules_title")}
         </div>
         <div className="text-sm text-[var(--text-mid)] whitespace-pre-line leading-relaxed">
-          {t("match_rules")}
+          {adminRules ?? t("match_rules")}
         </div>
       </div>
     </div>
