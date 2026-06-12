@@ -26,7 +26,7 @@ export function CreateMatchForm({ teams }: { teams: { id: string; name: string }
   }, [state]);
 
   return (
-    <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+    <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
       <TeamSelect name="homeTeamId" label={t("match_create_home")} teams={teams} placeholder={t("match_create_select")} />
       <TeamSelect name="awayTeamId" label={t("match_create_away")} teams={teams} placeholder={t("match_create_select")} />
       <label className="flex flex-col gap-1.5 text-sm">
@@ -34,17 +34,6 @@ export function CreateMatchForm({ teams }: { teams: { id: string; name: string }
         <input
           name="kickoffLocal"
           type="datetime-local"
-          required
-          className="h-10 px-3 rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-foreground/20"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">{t("match_create_reward")}</span>
-        <input
-          name="tokenReward"
-          type="number"
-          min={1}
-          defaultValue={100}
           required
           className="h-10 px-3 rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-foreground/20"
         />

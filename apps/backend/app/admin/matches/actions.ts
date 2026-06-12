@@ -26,12 +26,16 @@ const matchSchema = z
     awayTeamId: z.string().uuid("Pick away team"),
     // datetime-local format: 2026-05-18T20:00 — interpreted as GMT+8
     kickoffLocal: z.string().min(10, "Kickoff required"),
-    tokenReward: z.coerce.number().int().positive("Reward must be > 0"),
   })
   .refine((d) => d.homeTeamId !== d.awayTeamId, {
     message: "Home and away must differ",
     path: ["awayTeamId"],
   });
+
+// matches.token_reward is a legacy column no longer used for the actual reward
+// (settle_match + all UI read the group's activity setting). New matches just
+// store this placeholder; the real reward comes from 竞猜奖励设置.
+const LEGACY_TOKEN_REWARD_PLACEHOLDER = 10;
 
 export type MatchFormState = { ok: true; id?: string } | { error: string } | undefined;
 
@@ -44,7 +48,6 @@ export async function createMatchAction(
     homeTeamId: formData.get("homeTeamId"),
     awayTeamId: formData.get("awayTeamId"),
     kickoffLocal: formData.get("kickoffLocal"),
-    tokenReward: formData.get("tokenReward"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
@@ -56,7 +59,7 @@ export async function createMatchAction(
       home_team_id: parsed.data.homeTeamId,
       away_team_id: parsed.data.awayTeamId,
       kickoff_at: kickoffUtc,
-      token_reward: parsed.data.tokenReward,
+      token_reward: LEGACY_TOKEN_REWARD_PLACEHOLDER,
     })
     .select("id")
     .single();
