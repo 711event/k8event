@@ -58,10 +58,12 @@ export function ActivityCard({ activity }: { activity: Activity }) {
   const cta = TYPE_CTA[activity.type] ?? "参与活动 →";
   const icon = TYPE_ICONS[activity.type] ?? <Trophy size={18} />;
 
-  // Token reward display
+  // Token reward display — read the same setting the admin "竞猜奖励设置" saves
+  // (prediction_token_reward), falling back to the legacy token_reward field.
   let rewardText = "";
   if (activity.type === "worldcup_prediction") {
-    const r = activity.settings.token_reward as number | undefined;
+    const r = (activity.settings.prediction_token_reward ??
+      activity.settings.token_reward) as number | undefined;
     if (r) rewardText = `猜中赢 ${r} Token`;
   } else if (activity.type === "daily_checkin") {
     const rewards = activity.settings.day_rewards as number[] | undefined;

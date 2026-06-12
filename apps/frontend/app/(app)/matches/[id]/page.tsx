@@ -68,6 +68,14 @@ export default async function MatchDetailPage(props: {
   const minRechargeAmount = (wcSettings.min_recharge_amount as number | undefined) ?? 500;
   const chancesPerRecharge = (wcSettings.chances_per_recharge as number | undefined) ?? 1;
 
+  // SINGLE SOURCE OF TRUTH for prediction reward: the group's activity setting
+  // (admin "竞猜奖励设置"). matches.token_reward is a global-table column that
+  // cannot represent per-group rewards, so we never display it directly.
+  // settle_match() awards from this same setting — display and payout stay in sync.
+  const displayTokenReward = wcSettings.prediction_token_reward
+    ? Number(wcSettings.prediction_token_reward)
+    : match.token_reward;
+
   // Admin-configured rules text per locale (zh = top-level rules column;
   // en/ms fall back to that column if their translation is unset).
   // Falls back to the hardcoded i18n string only if no activity rules exist.
@@ -103,7 +111,7 @@ export default async function MatchDetailPage(props: {
         home={home}
         away={away}
         kickoffAt={match.kickoff_at}
-        tokenReward={match.token_reward}
+        tokenReward={displayTokenReward}
         status={match.status}
         result={match.result}
       />
@@ -169,7 +177,7 @@ export default async function MatchDetailPage(props: {
             matchId={match.id}
             homeName={home?.name ?? t("predict_home")}
             awayName={away?.name ?? t("predict_away")}
-            tokenReward={match.token_reward}
+            tokenReward={displayTokenReward}
             locale={locale}
           />
         </>

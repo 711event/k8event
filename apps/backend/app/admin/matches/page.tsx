@@ -2,12 +2,12 @@ import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupId } from "@/lib/get-group";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { CreateMatchForm } from "./CreateMatchForm";
 import { StatusBadge } from "./StatusBadge";
 import { SeedMatchesButton } from "./SeedMatchesButton";
-import { MatchTokenRewardCell } from "./MatchTokenRewardCell";
 
 export const metadata = { title: "Matches · Admin Panel" };
 
@@ -17,7 +17,7 @@ export default async function MatchesPage() {
   const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: matches }, { data: teams }] = await Promise.all([
+  const [{ data: matches }, { data: teams }, { data: predActivity }] = await Promise.all([
     supabase
       .from("matches")
       .select(
@@ -26,7 +26,20 @@ export default async function MatchesPage() {
       .order("kickoff_at", { ascending: false })
       .limit(200),
     supabase.from("teams").select("id, name").order("name"),
+    // This group's single prediction reward — the one value that actually applies
+    // to every match (settle_match + all player UI read it). matches.token_reward
+    // is a legacy global-table column and is no longer used for the actual reward.
+    supabase
+      .from("activities")
+      .select("id, settings")
+      .eq("type", "worldcup_prediction")
+      .eq("group_id", getGroupId())
+      .maybeSingle(),
   ]);
+
+  const predSettings = (predActivity?.settings ?? {}) as Record<string, unknown>;
+  const groupReward = Number(predSettings.prediction_token_reward ?? 10);
+  const activityId = predActivity?.id ?? null;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -65,6 +78,14 @@ export default async function MatchesPage() {
       </section>
 
       <section className="rounded-lg border border-zinc-200 overflow-x-auto">
+        <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-800">
+          {t("matches_reward_unified_hint", { reward: groupReward })}{" "}
+          {activityId && (
+            <Link href={`/admin/activities/${activityId}`} className="underline font-medium">
+              {t("matches_reward_unified_link")}
+            </Link>
+          )}
+        </div>
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left">
             <tr>
@@ -109,7 +130,9 @@ export default async function MatchesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <MatchTokenRewardCell matchId={m.id} tokenReward={m.token_reward} status={m.status} />
+                      <span className="inline-flex items-center gap-1 text-amber-600 font-medium tabular-nums">
+                        +{groupReward}
+                      </span>
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={m.status} result={m.result} /></td>
                     <td className="px-4 py-3 text-right">
