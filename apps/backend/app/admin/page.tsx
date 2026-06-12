@@ -19,10 +19,21 @@ export default async function AdminHomePage() {
   const locale = await getBoLocale();
   const t = (k: Parameters<typeof tBo>[1], vars?: Record<string, string | number>) => tBo(locale, k, vars);
 
+  // Read this group's configured minimum recharge threshold (falls back to 500)
+  const { data: predActivity } = await supabase
+    .from("activities")
+    .select("settings")
+    .eq("type", "worldcup_prediction")
+    .eq("group_id", groupId)
+    .maybeSingle();
+  const minRecharge = Number(
+    (predActivity?.settings as Record<string, unknown> | null)?.min_recharge_amount ?? 500,
+  );
+
   const [playersCount, todayEligibleCount, pendingRedemptions, openChats] = await Promise.all([
     supabase.from("profiles").select("user_id", { count: "exact", head: true }).eq("role", "player").eq("group_id", groupId),
     playerIds.length
-      ? supabase.from("daily_recharge").select("player_id", { count: "exact", head: true }).eq("recharge_date", today).gte("amount", 500).in("player_id", playerIds)
+      ? supabase.from("daily_recharge").select("player_id", { count: "exact", head: true }).eq("recharge_date", today).gte("amount", minRecharge).in("player_id", playerIds)
       : Promise.resolve({ count: 0 }),
     playerIds.length
       ? supabase.from("redemption_requests").select("id", { count: "exact", head: true }).eq("status", "pending").in("player_id", playerIds)

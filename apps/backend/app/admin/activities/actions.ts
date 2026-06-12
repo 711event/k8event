@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { getGroupId } from "@/lib/get-group";
@@ -112,8 +112,9 @@ export async function updatePredictionTokenRewardAction(
   if (actErr) return { error: actErr.message };
 
   revalidatePath(`/admin/activities/${activityId}`);
-  // Clear the frontend event-page cache so match cards show the updated reward immediately
-  revalidateTag("event-public");
+  // Note: the frontend event page is a separate Vercel deployment with its own
+  // 30s ISR cache (tag "event-public"); it cannot be revalidated from here and
+  // will refresh on its own within 30 seconds of this save.
   return { ok: true };
 }
 

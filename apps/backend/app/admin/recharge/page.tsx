@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
+import { getGroupId } from "@/lib/get-group";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { RechargeImporter } from "./RechargeImporter";
@@ -24,6 +25,19 @@ export default async function RechargePage(props: {
     return d.toISOString().slice(0, 10);
   });
   const supabase = await createSupabaseServerClient();
+  const groupId = getGroupId();
+
+  // Read this group's configured minimum recharge threshold from the
+  // worldcup_prediction activity settings (falls back to 500 if unset).
+  const { data: predActivity } = await supabase
+    .from("activities")
+    .select("settings")
+    .eq("type", "worldcup_prediction")
+    .eq("group_id", groupId)
+    .maybeSingle();
+  const minRecharge = Number(
+    (predActivity?.settings as Record<string, unknown> | null)?.min_recharge_amount ?? 500,
+  );
 
   const { data: todays } = await supabase
     .from("daily_recharge")
@@ -33,7 +47,7 @@ export default async function RechargePage(props: {
     .eq("recharge_date", date)
     .order("amount", { ascending: false });
 
-  const eligibleCount = (todays ?? []).filter((r) => Number(r.amount) >= 500).length;
+  const eligibleCount = (todays ?? []).filter((r) => Number(r.amount) >= minRecharge).length;
 
   // Split "Bold: rest" from tip strings
   const tipPasteParts = t("recharge_tip_paste").split(/：|: (.+)/).filter(Boolean);
@@ -103,7 +117,7 @@ export default async function RechargePage(props: {
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-zinc-100">
           <h2 className="text-sm font-medium text-zinc-600">{t("recharge_today_title", { date })}</h2>
           <span className="text-sm text-zinc-500">
-            {t("recharge_today_count", { count: todays?.length ?? 0, eligible: eligibleCount })}
+            {t("recharge_today_count", { count: todays?.length ?? 0, eligible: eligibleCount, min: minRecharge })}
           </span>
         </div>
         <table className="w-full text-sm">
@@ -120,7 +134,7 @@ export default async function RechargePage(props: {
             ) : (
               todays.map((r, i) => {
                 const player = Array.isArray(r.player) ? r.player[0] : r.player;
-                const eligible = Number(r.amount) >= 500;
+                const eligible = Number(r.amount) >= minRecharge;
                 return (
                   <tr key={i}>
                     <td className="px-4 py-3">
