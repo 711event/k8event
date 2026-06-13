@@ -5,17 +5,30 @@ import { tFe } from "@/lib/i18n";
 export function RechargeProgress({
   amount,
   threshold = 500,
+  dailyCap,
   predictionChances,
 }: {
   amount: number;
   threshold?: number;
+  dailyCap?: number;
   predictionChances?: number;
 }) {
   const { locale } = useFeLang();
   const t = (k: Parameters<typeof tFe>[1], v?: Parameters<typeof tFe>[2]) => tFe(locale, k, v);
 
-  const eligible = amount >= threshold;
-  const pct = Math.min(100, Math.round((amount / threshold) * 100));
+  // New model: 1 chance per `threshold` (per_unit) deposited, capped by dailyCap.
+  const perUnit = Math.max(1, threshold);
+  const rawToday = Math.floor(amount / perUnit);
+  const cap = dailyCap && dailyCap > 0 ? dailyCap : null;
+  const todayChances = cap ? Math.min(rawToday, cap) : rawToday;
+  const earnedSomething = todayChances > 0;
+
+  // Progress bar: how far today's chances are toward the daily cap.
+  // If there's no cap, show progress toward the next whole chance.
+  const pct = cap
+    ? Math.min(100, Math.round((todayChances / cap) * 100))
+    : Math.min(100, Math.round(((amount % perUnit) / perUnit) * 100));
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
@@ -25,17 +38,17 @@ export function RechargeProgress({
         <span
           className={cn(
             "text-[11px] font-semibold",
-            eligible ? "text-[var(--pitch-400)]" : "text-[var(--text-mid)]",
+            earnedSomething ? "text-[var(--pitch-400)]" : "text-[var(--text-mid)]",
           )}
         >
-          {amount.toFixed(0)} / {threshold}
+          RM{amount.toFixed(0)}
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--bg-raised)]">
         <div
           className={cn(
             "h-full rounded-full transition-[width] duration-700 ease-out",
-            eligible
+            earnedSomething
               ? "bg-gradient-to-r from-[var(--pitch-500)] to-[var(--pitch-400)]"
               : "bg-gradient-to-r from-[var(--gold-600)] to-[var(--gold-300)]",
           )}
@@ -45,15 +58,15 @@ export function RechargeProgress({
       <p
         className={cn(
           "mt-1.5 text-xs",
-          eligible ? "text-[var(--pitch-400)]" : "text-[var(--text-mid)]",
+          earnedSomething ? "text-[var(--pitch-400)]" : "text-[var(--text-mid)]",
         )}
       >
-        {eligible
-          ? t("recharge_progress_eligible")
-          : t("recharge_progress_hint", { n: (threshold - amount).toFixed(0) })}
+        {cap
+          ? t("recharge_progress_today_capped", { unit: perUnit, today: todayChances, cap })
+          : t("recharge_progress_today", { unit: perUnit, today: todayChances })}
       </p>
 
-      {/* Accumulated prediction chances */}
+      {/* Accumulated, usable prediction chances (from RPC) */}
       {predictionChances !== undefined && (
         <div className="mt-2.5 flex items-center justify-between">
           <span className="text-[11px] uppercase tracking-wider text-[var(--text-lo)]">

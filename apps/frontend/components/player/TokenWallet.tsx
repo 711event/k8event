@@ -13,6 +13,7 @@ export function TokenWallet({
   todayRecharge,
   predictionChances,
   threshold = 500,
+  dailyCap,
   guest = false,
 }: {
   balance: number;
@@ -20,6 +21,7 @@ export function TokenWallet({
   todayRecharge: number;
   predictionChances?: number;
   threshold?: number;
+  dailyCap?: number;
   guest?: boolean;
 }) {
   const { locale } = useFeLang();
@@ -86,7 +88,7 @@ export function TokenWallet({
           </div>
 
           <div className="relative mt-4">
-            <RechargeProgress amount={todayRecharge} threshold={threshold} predictionChances={predictionChances} />
+            <RechargeProgress amount={todayRecharge} threshold={threshold} dailyCap={dailyCap} predictionChances={predictionChances} />
           </div>
         </>
       )}

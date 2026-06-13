@@ -119,6 +119,9 @@ export default async function EventHomePage() {
   // Falls back to defaults if the worldcup_prediction activity has no setting yet.
   const predictionSettings = predictionActivityData?.settings as Record<string, unknown> | null;
   const minRecharge = Number(predictionSettings?.min_recharge_amount ?? 500);
+  // Daily chance cap (chances_per_recharge) — used by the wallet to show how
+  // many chances today's deposit earned (floor(deposit / minRecharge), capped).
+  const dailyChanceCap = Number(predictionSettings?.chances_per_recharge ?? 1);
   // Override match display token_reward with the group's activity setting so
   // the "+N" badge shown on match cards matches what will actually be awarded
   // on settlement (settle_match reads from activity settings, not matches.token_reward).
@@ -182,6 +185,7 @@ export default async function EventHomePage() {
         todayRecharge={todayRecharge}
         predictionChances={predictionChances ?? undefined}
         threshold={minRecharge}
+        dailyCap={dailyChanceCap}
         guest={!user}
       />
 
