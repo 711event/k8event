@@ -43,8 +43,8 @@ export function PredictionChancesForm({ activityId, settings }: Props) {
   }
 
   const effectDesc = locale === "zh"
-    ? `玩家当日充值 ≥ RM${minRecharge}，获得 ${chancesPerRecharge} 次竞猜机会，历史累积，上限 ${maxChances === 0 ? "不限" : `${maxChances} 次`}。`
-    : `Player daily recharge ≥ RM${minRecharge} earns ${chancesPerRecharge} prediction chance(s), cumulative, max ${maxChances === 0 ? "unlimited" : `${maxChances}`}.`;
+    ? `玩家每充值 RM${minRecharge} 得 1 次机会，每日最多 ${chancesPerRecharge} 次，历史累积，持有上限 ${maxChances === 0 ? "不限" : `${maxChances} 次`}。`
+    : `1 chance per RM${minRecharge} deposited, up to ${chancesPerRecharge}/day, cumulative, holding cap ${maxChances === 0 ? "unlimited" : maxChances}.`;
 
   return (
     <form onSubmit={handleSave} className="space-y-5">

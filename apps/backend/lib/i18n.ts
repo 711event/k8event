@@ -423,11 +423,11 @@ export const boTranslations = {
 
     // World Cup prediction chances settings
     activity_setting_prediction_title: "竞猜机会设置",
-    prediction_chances_min_recharge: "最低充值额（RM）",
-    prediction_chances_min_recharge_hint: "当日充值达此金额才算合格",
-    prediction_chances_per_day: "每次合格充值获得机会数",
+    prediction_chances_min_recharge: "每充值多少得 1 次（RM）",
+    prediction_chances_min_recharge_hint: "玩家每充值这个金额得 1 次机会，向下取整（如 RM50：充 RM300 得 6 次）",
+    prediction_chances_per_day: "每日机会上限",
     prediction_chances_per_day_unit: "次 / 天",
-    prediction_chances_per_day_hint: "每天只算一次，不叠加",
+    prediction_chances_per_day_hint: "一天最多可获得的机会数（封顶，充再多也不超过）",
     prediction_chances_max: "最多持有机会数上限",
     prediction_chances_max_unit: "次（0 = 不限制）",
     prediction_chances_max_hint: "防止玩家无限囤积机会。设为 0 则不限",
@@ -1177,11 +1177,11 @@ export const boTranslations = {
 
     // World Cup prediction chances settings
     activity_setting_prediction_title: "Prediction Chances Settings",
-    prediction_chances_min_recharge: "Minimum Recharge Amount (RM)",
-    prediction_chances_min_recharge_hint: "Daily recharge must reach this amount to qualify",
-    prediction_chances_per_day: "Chances Earned per Qualifying Day",
-    prediction_chances_per_day_unit: "chance(s) / day",
-    prediction_chances_per_day_hint: "Counts once per day, no stacking",
+    prediction_chances_min_recharge: "RM per 1 Chance",
+    prediction_chances_min_recharge_hint: "Each deposit of this amount earns 1 chance, rounded down (e.g. RM50: a RM300 deposit = 6 chances)",
+    prediction_chances_per_day: "Daily Chance Cap",
+    prediction_chances_per_day_unit: "/ day",
+    prediction_chances_per_day_hint: "Most chances earnable in a single day (deposits beyond this don't add more)",
     prediction_chances_max: "Maximum Chances Cap",
     prediction_chances_max_unit: "chance(s) (0 = unlimited)",
     prediction_chances_max_hint: "Prevents unlimited accumulation. Set 0 for no limit",
