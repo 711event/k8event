@@ -30,7 +30,7 @@ export default async function StaffPage(props: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: staffList } = await (supabase as any)
     .from("profiles")
-    .select("user_id, username, display_name, role, created_at, admin_role_id, admin_roles(name)")
+    .select("user_id, username, display_name, role, created_at, admin_role_id, admin_roles(name, slug, is_system)")
     .in("role", ["admin", "agent"])
     .eq("group_id", getGroupId())
     .order("created_at", { ascending: false });

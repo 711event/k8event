@@ -36,7 +36,7 @@ type StaffRow = {
   role: "admin" | "agent";
   created_at: string;
   admin_role_id: string | null;
-  admin_roles: { name: string } | null;
+  admin_roles: { name: string; slug: string | null; is_system: boolean | null } | null;
 };
 
 type RoleRow = {
@@ -47,6 +47,23 @@ type RoleRow = {
   is_system: boolean;
   sort_order: number;
 };
+
+// System roles store a fixed Chinese name in the DB; map their slug to an i18n
+// key so they render in the active locale. Custom roles keep their own name.
+const SYSTEM_ROLE_KEY: Record<string, Parameters<typeof tBo>[1]> = {
+  super_admin: "staff_role_admin",
+  group_admin: "staff_role_group_admin",
+  group_agent: "staff_role_agent",
+};
+function displayRoleName(
+  role: { name: string; slug?: string | null; is_system?: boolean | null },
+  locale: import("@/lib/i18n").BoLocale,
+): string {
+  if (role.is_system && role.slug && SYSTEM_ROLE_KEY[role.slug]) {
+    return tBo(locale, SYSTEM_ROLE_KEY[role.slug]);
+  }
+  return role.name;
+}
 
 export function StaffPageClient({
   staffList,
@@ -207,7 +224,9 @@ function StaffRowItem({
     ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{t("staff_role_admin")}</span>
     : <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{t("staff_role_agent")}</span>;
 
-  const customRoleName = row.admin_roles?.name ?? null;
+  const customRoleName = row.admin_roles
+    ? displayRoleName(row.admin_roles, locale)
+    : null;
 
   const createdAt = new Date(row.created_at).toLocaleDateString("zh-CN", {
     year: "numeric", month: "2-digit", day: "2-digit",
@@ -285,7 +304,7 @@ function StaffRowItem({
               >
                 <option value="">{t("staff_no_custom_role")}</option>
                 {roles.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <option key={r.id} value={r.id}>{displayRoleName(r, locale)}</option>
                 ))}
               </select>
               <button
@@ -454,7 +473,7 @@ function CreateStaffForm({
             >
               <option value="">{t("staff_new_no_role")}</option>
               {roles.map(r => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+                <option key={r.id} value={r.id}>{displayRoleName(r, locale)}</option>
               ))}
             </select>
           </label>
@@ -551,7 +570,7 @@ function RolesTab({ roles, locale }: { roles: RoleRow[]; locale: import("@/lib/i
                   : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-500"
               }`}
             >
-              {r.name}
+              {displayRoleName(r, locale)}
               {r.is_system && (
                 <span className="ml-1.5 text-[9px] uppercase tracking-wide opacity-60">{t("staff_role_system")}</span>
               )}
@@ -592,7 +611,7 @@ function RoleEditor({
   onSaved: () => void;
   onDeleted: () => void;
 }) {
-  const [name, setName] = useState(role.name);
+  const [name, setName] = useState(role.is_system ? displayRoleName(role, locale) : role.name);
   const [permissions, setPermissions] = useState<Record<string, boolean>>(
     Object.fromEntries(ALL_MODULES.map(m => [m, role.permissions[m] ?? false]))
   );
@@ -627,7 +646,7 @@ function RoleEditor({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldCheck size={16} className="text-zinc-400" />
-          <h2 className="font-medium">{role.name}</h2>
+          <h2 className="font-medium">{displayRoleName(role, locale)}</h2>
           {role.is_system && (
             <span className="text-[10px] uppercase tracking-wide bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">
               {t("staff_role_system")}
