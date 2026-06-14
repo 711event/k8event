@@ -36,15 +36,11 @@ export function PlayerRow({
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Edit display name panel
+  // Edit panel (display name + contact together)
   const [editOpen, setEditOpen] = useState(false);
   const [displayName, setDisplayName] = useState(initialDisplayName ?? "");
-  const [editSaving, setEditSaving] = useState(false);
-
-  // Edit phone panel
-  const [phoneOpen, setPhoneOpen] = useState(false);
   const [phone, setPhone] = useState(initialPhone ?? "");
-  const [phoneSaving, setPhoneSaving] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
 
   async function savePw() {
     if (pw.length < 8) { toast.error(t("player_row_pw_min")); return; }
@@ -57,23 +53,22 @@ export function PlayerRow({
     setPw(randomPw());
   }
 
-  async function saveDisplayName() {
-    if (!displayName.trim()) return;
+  async function saveEdit() {
+    if (!displayName.trim()) { toast.error(t("player_row_display_label")); return; }
     setEditSaving(true);
-    const res = await updateDisplayNameAction(userId, displayName);
+    // Update display name if it changed
+    if (displayName.trim() !== (initialDisplayName ?? "")) {
+      const r = await updateDisplayNameAction(userId, displayName);
+      if (r.error) { setEditSaving(false); toast.error(r.error); return; }
+    }
+    // Update contact if it changed
+    if (phone.trim() !== (initialPhone ?? "")) {
+      const r = await updatePhoneAction(userId, phone.trim());
+      if (r.error) { setEditSaving(false); toast.error(r.error); return; }
+    }
     setEditSaving(false);
-    if (res.error) { toast.error(res.error); return; }
-    toast.success(t("player_row_display_saved"));
+    toast.success(t("player_row_profile_saved"));
     setEditOpen(false);
-  }
-
-  async function savePhone() {
-    setPhoneSaving(true);
-    const res = await updatePhoneAction(userId, phone.trim());
-    setPhoneSaving(false);
-    if (res.error) { toast.error(res.error); return; }
-    toast.success(t("player_row_contact_saved"));
-    setPhoneOpen(false);
   }
 
   async function copyInfo() {
@@ -83,7 +78,9 @@ export function PlayerRow({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const closeAll = () => { setEditOpen(false); setPwOpen(false); setPhoneOpen(false); };
+  const closeAll = () => { setEditOpen(false); setPwOpen(false); };
+
+  const currentPhone = phone || initialPhone;
 
   return (
     <>
@@ -91,22 +88,16 @@ export function PlayerRow({
         <td className="px-4 py-3 font-mono">{username}</td>
         <td className="px-4 py-3">{displayName || initialDisplayName}</td>
         <td className="px-4 py-3 text-zinc-500">
-          {phone || initialPhone ? (
-            <span className="font-mono text-zinc-700">{phone || initialPhone}</span>
+          {currentPhone ? (
+            <span className="font-mono text-zinc-700">{currentPhone}</span>
           ) : (
-            <button
-              type="button"
-              onClick={() => { closeAll(); setPhoneOpen(true); }}
-              className="text-xs text-zinc-400 hover:text-zinc-600 border border-dashed border-zinc-300 rounded px-2 py-0.5 transition"
-            >
-              {t("player_row_add_contact")}
-            </button>
+            <span className="text-zinc-300">—</span>
           )}
         </td>
         <td className="px-4 py-3 text-zinc-500">{createdAt}</td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-1.5">
-            {/* Edit display name */}
+            {/* Edit display name + contact */}
             <button
               type="button"
               onClick={() => { closeAll(); setEditOpen((v) => !v); }}
@@ -128,7 +119,7 @@ export function PlayerRow({
         </td>
       </tr>
 
-      {/* Edit display name panel */}
+      {/* Edit panel: display name + contact */}
       {editOpen && (
         <tr className="bg-zinc-50 border-t border-zinc-100">
           <td colSpan={5} className="px-4 py-3">
@@ -142,31 +133,6 @@ export function PlayerRow({
                   className="h-9 px-3 rounded border border-zinc-300 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                 />
               </div>
-              <button
-                type="button"
-                onClick={saveDisplayName}
-                disabled={editSaving || !displayName.trim()}
-                className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
-              >
-                {editSaving ? t("player_row_saving_inline") : t("player_row_save_inline")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditOpen(false)}
-                className="h-9 w-9 rounded border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-400 transition"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </td>
-        </tr>
-      )}
-
-      {/* Edit phone panel */}
-      {phoneOpen && (
-        <tr className="bg-zinc-50 border-t border-zinc-100">
-          <td colSpan={5} className="px-4 py-3">
-            <div className="flex flex-wrap items-end gap-2">
               <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
                 <span>{t("player_row_contact_label")}</span>
                 <input
@@ -179,15 +145,15 @@ export function PlayerRow({
               </div>
               <button
                 type="button"
-                onClick={savePhone}
-                disabled={phoneSaving}
+                onClick={saveEdit}
+                disabled={editSaving || !displayName.trim()}
                 className="h-9 px-4 rounded bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700 disabled:opacity-60 transition"
               >
-                {phoneSaving ? t("player_row_saving_inline") : t("player_row_save_inline")}
+                {editSaving ? t("player_row_saving_inline") : t("player_row_save_inline")}
               </button>
               <button
                 type="button"
-                onClick={() => setPhoneOpen(false)}
+                onClick={() => setEditOpen(false)}
                 className="h-9 w-9 rounded border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-400 transition"
               >
                 <X size={14} />
