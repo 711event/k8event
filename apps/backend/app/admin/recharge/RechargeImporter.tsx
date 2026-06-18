@@ -79,7 +79,12 @@ function excelDateToString(val: unknown): string | null {
 // Header detection is case-insensitive, so column order doesn't matter.
 async function parseExcel(buffer: ArrayBuffer, locale: string): Promise<{ rows: ParsedRow[]; errors: string[] }> {
   const { read, utils } = await import("xlsx");
-  const workbook = read(buffer, { type: "array", cellDates: true });
+  // Do NOT use cellDates: SheetJS converts the serial to a Date via local-time
+  // math that lands a few seconds BEFORE midnight (e.g. serial 46184 → June 10
+  // 23:59:56 local instead of June 11 00:00), shifting the day back by one in
+  // GMT+ timezones. Keep date cells as raw serial numbers and convert them with
+  // the pure-UTC formula in excelDateToString (Date.UTC epoch + serial*86400000).
+  const workbook = read(buffer, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   if (!sheet) return { rows: [], errors: [locale === "zh" ? "Excel 文件没有工作表" : "Excel file has no worksheets"] };
 
