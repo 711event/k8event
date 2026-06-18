@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
 import { formatMalaysia } from "@k8event/shared/time/malaysia";
+import { getGroupPlayerIds } from "@/lib/get-group";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { StatusBadge } from "../StatusBadge";
@@ -34,11 +35,17 @@ export default async function MatchDetailPage(props: { params: Promise<{ id: str
   const home = Array.isArray(match.home) ? match.home[0] : match.home;
   const away = Array.isArray(match.away) ? match.away[0] : match.away;
 
-  const { data: predictions } = await supabase
-    .from("predictions")
-    .select("pick, is_correct, awarded, player:profiles!predictions_player_id_fkey(username, display_name)")
-    .eq("match_id", id)
-    .order("submitted_at", { ascending: false });
+  // Matches are global/shared, so a match has predictions from every group.
+  // Scope to this group's players (predictions has no group_id column).
+  const playerIds = await getGroupPlayerIds();
+  const { data: predictions } = playerIds.length
+    ? await supabase
+        .from("predictions")
+        .select("pick, is_correct, awarded, player:profiles!predictions_player_id_fkey(username, display_name)")
+        .eq("match_id", id)
+        .in("player_id", playerIds)
+        .order("submitted_at", { ascending: false })
+    : { data: [] };
 
   return (
     <div className="space-y-8 max-w-4xl">

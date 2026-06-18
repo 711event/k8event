@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@k8event/shared/auth/require-role";
 import { createSupabaseServerClient } from "@k8event/shared/supabase/server";
-import { getGroupId } from "@/lib/get-group";
+import { getGroupId, getGroupPlayerIds } from "@/lib/get-group";
 import { getBoLocale } from "@/lib/get-locale";
 import { tBo } from "@/lib/i18n";
 import { RechargeImporter } from "./RechargeImporter";
@@ -26,6 +26,8 @@ export default async function RechargePage(props: {
   });
   const supabase = await createSupabaseServerClient();
   const groupId = getGroupId();
+  // daily_recharge has no group_id column — isolate by this group's player ids
+  const playerIds = await getGroupPlayerIds();
 
   // Read this group's configured minimum recharge threshold from the
   // worldcup_prediction activity settings (falls back to 500 if unset).
@@ -39,13 +41,16 @@ export default async function RechargePage(props: {
     (predActivity?.settings as Record<string, unknown> | null)?.min_recharge_amount ?? 500,
   );
 
-  const { data: todays } = await supabase
-    .from("daily_recharge")
-    .select(
-      "amount, player:profiles!daily_recharge_player_id_fkey(username, display_name)",
-    )
-    .eq("recharge_date", date)
-    .order("amount", { ascending: false });
+  const { data: todays } = playerIds.length
+    ? await supabase
+        .from("daily_recharge")
+        .select(
+          "amount, player:profiles!daily_recharge_player_id_fkey(username, display_name)",
+        )
+        .eq("recharge_date", date)
+        .in("player_id", playerIds)
+        .order("amount", { ascending: false })
+    : { data: [] };
 
   const eligibleCount = (todays ?? []).filter((r) => Number(r.amount) >= minRecharge).length;
 
