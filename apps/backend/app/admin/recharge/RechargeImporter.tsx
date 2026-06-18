@@ -48,7 +48,13 @@ function parseCsv(text: string, locale: string): { rows: ParsedRow[]; errors: st
 function excelDateToString(val: unknown): string | null {
   if (val === null || val === undefined || val === "") return null;
   if (val instanceof Date) {
-    return val.toISOString().slice(0, 10);
+    // Read the LOCAL calendar date — NOT toISOString(), which converts to UTC
+    // and shifts the day back in GMT+ timezones (e.g. 2026-06-12 00:00 +08:00
+    // would become 2026-06-11). The cell's intended date is its local Y-M-D.
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, "0");
+    const d = String(val.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }
   if (typeof val === "number") {
     // Excel serial: days since Dec 30, 1899 (Lotus 1-2-3 epoch)
