@@ -44,19 +44,23 @@ export async function previewRechargeAction(input: unknown): Promise<PreviewResu
   }
 
   const rows = parsed.data;
-  const usernames = Array.from(new Set(rows.map((r) => r.username)));
   const supabase = await createSupabaseServerClient();
 
+  // Match usernames case-insensitively (and trimmed) so an import row "z6771"
+  // resolves to player "Z6771". Player usernames are unique per group — auth
+  // emails (<username>@k8event.local) are case-insensitive, so two profiles
+  // differing only in case can't exist — making the lowercased key unambiguous.
+  // Fetch all of this group's players and key the lookup by normalized username.
+  const norm = (u: string) => u.trim().toLowerCase();
   const { data: profiles } = await supabase
     .from("profiles")
     .select("user_id, username")
-    .in("username", usernames)
     .eq("role", "player")
     .eq("group_id", getGroupId());
 
   const userMap = new Map<string, string>();
   for (const p of profiles ?? []) {
-    if (p.username) userMap.set(p.username, p.user_id);
+    if (p.username) userMap.set(norm(p.username), p.user_id);
   }
 
   const playerIds = Array.from(new Set([...userMap.values()]));
@@ -75,7 +79,7 @@ export async function previewRechargeAction(input: unknown): Promise<PreviewResu
   }
 
   const enriched: PreviewRow[] = rows.map((r) => {
-    const playerId = userMap.get(r.username) ?? null;
+    const playerId = userMap.get(norm(r.username)) ?? null;
     if (!playerId) {
       return {
         date: r.date,
