@@ -43,15 +43,21 @@ export async function previewRechargeAction(input: unknown): Promise<PreviewResu
     };
   }
 
-  const rows = parsed.data;
   const supabase = await createSupabaseServerClient();
+  const norm = (u: string) => u.trim().toLowerCase();
+
+  // Collapse duplicate (username, date) lines before matching. Case variants
+  // (e.g. "Z6771" and "z6771") and exact dupes now resolve to one player+date;
+  // daily_recharge holds a single daily total per player, so the later line wins.
+  const rows = Array.from(
+    new Map(parsed.data.map((r) => [`${norm(r.username)}_${r.date}`, r])).values(),
+  );
 
   // Match usernames case-insensitively (and trimmed) so an import row "z6771"
   // resolves to player "Z6771". Player usernames are unique per group — auth
   // emails (<username>@k8event.local) are case-insensitive, so two profiles
   // differing only in case can't exist — making the lowercased key unambiguous.
   // Fetch all of this group's players and key the lookup by normalized username.
-  const norm = (u: string) => u.trim().toLowerCase();
   const { data: profiles } = await supabase
     .from("profiles")
     .select("user_id, username")
@@ -120,9 +126,17 @@ export async function importRechargeAction(input: unknown): Promise<{ inserted: 
   }
   if (!parsed.data.length) return { inserted: 0 };
 
+  // Collapse duplicate (playerId, date) rows so a single upsert never touches the
+  // same conflict target twice (Postgres: "ON CONFLICT DO UPDATE command cannot
+  // affect row a second time"). daily_recharge is one total per player per day;
+  // the later row wins, matching the preview's "later overwrites" behaviour.
+  const dedupedRows = Array.from(
+    new Map(parsed.data.map((r) => [`${r.playerId}_${r.date}`, r])).values(),
+  );
+
   // Re-validate that all player IDs belong to this group (prevents cross-group injection)
   const supabase = await createSupabaseServerClient();
-  const submittedPlayerIds = Array.from(new Set(parsed.data.map((r) => r.playerId)));
+  const submittedPlayerIds = Array.from(new Set(dedupedRows.map((r) => r.playerId)));
   const { data: validProfiles } = await supabase
     .from("profiles")
     .select("user_id")
@@ -130,7 +144,7 @@ export async function importRechargeAction(input: unknown): Promise<{ inserted: 
     .eq("group_id", getGroupId())
     .eq("role", "player");
   const validPlayerIds = new Set((validProfiles ?? []).map((p) => p.user_id));
-  const filteredRows = parsed.data.filter((r) => validPlayerIds.has(r.playerId));
+  const filteredRows = dedupedRows.filter((r) => validPlayerIds.has(r.playerId));
   if (filteredRows.length === 0) return { inserted: 0 };
 
   const admin = getSupabaseAdmin();
